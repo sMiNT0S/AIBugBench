@@ -18,8 +18,8 @@ A comprehensive benchmarking tool for evaluating AI models' code generation, ref
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/ai-code-benchmark.git
-   cd ai-code-benchmark
+   git clone https://github.com/sMiNT0S/RealityCheckBench.git
+   cd RealityCheckBench
    ```
 
 2. **Install dependencies**

@@ -1,0 +1,38 @@
+# Configuration file for the data processor script
+# Contains paths, rules, and feature flags.
+
+use_legacy_paths: true
+
+paths:
+  data_source: /srv/data/production/users.json
+  legacy_data_source: ./user_data.json  # Note: This is a relative path
+  log_file: /var/log/processor.log
+
+# Validation rules for user records
+validation_rules:
+  min_age_years: 21  # Must be of legal age
+  minimum_posts: 5
+  # Required fields section
+  required_fields:
+    - id
+    - first_name
+    - last_name
+    - contact.email  # this format is tricky
+
+api_keys:
+  - service: geolocator
+    key: xyz-123-abc
+  - service: notifier
+    key: def-456-ghi
+
+# Feature flags section
+feature_flags:
+  enable_email_notifications: false
+  beta_processor_active: true
+  user_segmentation_enabled: false
+
+server_settings:
+  port: 8080
+  timeout_seconds: 60
+  retry_attempts: 3
+  max_connections: 100

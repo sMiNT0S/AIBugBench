@@ -1,0 +1,368 @@
+#!/usr/bin/env python3
+"""
+AI Code Benchmark Tool
+Main entry point for running comprehensive AI code evaluation tests.
+
+Usage: python run_benchmark.py [options]
+"""
+
+from benchmark.utils import load_test_data, ensure_directories
+from benchmark.scoring import BenchmarkScorer
+from benchmark.validators import PromptValidators
+import os
+import sys
+import json
+import argparse
+import importlib.util
+import traceback
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+import yaml
+
+# Add the benchmark package to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "benchmark"))
+
+
+class AICodeBenchmark:
+    """Main benchmark runner class."""
+
+    def __init__(
+        self, submissions_dir: str = "submissions", results_dir: str = "results"
+    ):
+        self.submissions_dir = Path(submissions_dir)
+        self.results_dir = Path(results_dir)
+        self.test_data_dir = Path("test_data")
+
+        # Initialize components
+        self.validators = PromptValidators(self.test_data_dir)
+        self.scorer = BenchmarkScorer()
+
+        # Ensure directories exist
+        ensure_directories([self.submissions_dir, self.results_dir])
+
+        # Load test data
+        self.test_data = load_test_data(self.test_data_dir)
+
+    def discover_models(self) -> List[str]:
+        """Discover all model submissions in the submissions directory."""
+        models = []
+        if not self.submissions_dir.exists():
+            print(
+                f"❌ Submissions directory '{self.submissions_dir}' not found!")
+            return models
+
+        for item in self.submissions_dir.iterdir():
+            if (
+                item.is_dir()
+                and not item.name.startswith(".")
+                and item.name != "template"
+            ):
+                models.append(item.name)
+
+        return sorted(models)
+
+    def run_single_model(self, model_name: str) -> Dict[str, Any]:
+        """Run all benchmark tests for a single model."""
+        print(f"\n🚀 Testing model: {model_name}")
+        print("=" * 50)
+
+        model_dir = self.submissions_dir / model_name
+        if not model_dir.exists():
+            return {"error": f"Model directory '{model_dir}' not found"}
+
+        results = {
+            "model_name": model_name,
+            "timestamp": datetime.now().isoformat(),
+            "prompts": {},
+            "overall_score": 0,
+            "total_possible": 0,
+        }
+
+        # Test each prompt
+        prompt_tests = [
+            ("prompt_1", "Refactoring & Analysis", self._test_prompt_1),
+            ("prompt_2", "YAML/JSON Correction", self._test_prompt_2),
+            ("prompt_3", "Data Transformation", self._test_prompt_3),
+            ("prompt_4", "API Simulation", self._test_prompt_4),
+        ]
+
+        for prompt_id, prompt_name, test_func in prompt_tests:
+            print(f"\n📝 Testing {prompt_name}...")
+            try:
+                prompt_result = test_func(model_dir)
+                results["prompts"][prompt_id] = prompt_result
+                results["overall_score"] += prompt_result.get("score", 0)
+                results["total_possible"] += prompt_result.get("max_score", 25)
+
+                status = (
+                    "✅ PASSED" if prompt_result.get(
+                        "passed", False) else "❌ FAILED"
+                )
+                score = prompt_result.get("score", 0)
+                max_score = prompt_result.get("max_score", 25)
+                print(f"   {status} - Score: {score}/{max_score}")
+
+            except Exception as e:
+                print(f"   ❌ ERROR: {str(e)}")
+                results["prompts"][prompt_id] = {
+                    "error": str(e),
+                    "traceback": traceback.format_exc(),
+                    "passed": False,
+                    "score": 0,
+                    "max_score": 25,
+                }
+                results["total_possible"] += 25
+
+        # Calculate final percentage
+        if results["total_possible"] > 0:
+            results["percentage"] = round(
+                (results["overall_score"] / results["total_possible"]) * 100, 1
+            )
+        else:
+            results["percentage"] = 0
+
+        print(
+            f"\n🎯 Final Score: {results['overall_score']}/{results['total_possible']} ({results['percentage']}%)"
+        )
+
+        return results
+
+    def _test_prompt_1(self, model_dir: Path) -> Dict[str, Any]:
+        """Test Prompt 1: Code Refactoring & Analysis."""
+        solution_file = model_dir / "prompt_1_solution.py"
+        return self.validators.validate_prompt_1_refactoring(solution_file)
+
+    def _test_prompt_2(self, model_dir: Path) -> Dict[str, Any]:
+        """Test Prompt 2: YAML/JSON Correction."""
+        yaml_file = model_dir / "prompt_2_config_fixed.yaml"
+        json_file = model_dir / "prompt_2_config.json"
+        return self.validators.validate_prompt_2_yaml_json(yaml_file, json_file)
+
+    def _test_prompt_3(self, model_dir: Path) -> Dict[str, Any]:
+        """Test Prompt 3: Data Transformation."""
+        transform_file = model_dir / "prompt_3_transform.py"
+        return self.validators.validate_prompt_3_transformation(transform_file)
+
+    def _test_prompt_4(self, model_dir: Path) -> Dict[str, Any]:
+        """Test Prompt 4: API Simulation."""
+        api_file = model_dir / "prompt_4_api_sync.py"
+        return self.validators.validate_prompt_4_api(api_file)
+
+    def run_all_models(self) -> Dict[str, Any]:
+        """Run benchmark tests for all discovered models."""
+        models = self.discover_models()
+
+        if not models:
+            print("❌ No models found in submissions directory!")
+            print(f"Please add model submissions to: {self.submissions_dir}")
+            return {"error": "No models found"}
+
+        print(f"🔍 Discovered {len(models)} model(s): {', '.join(models)}")
+
+        all_results = {
+            "benchmark_run": {
+                "timestamp": datetime.now().isoformat(),
+                "total_models": len(models),
+            },
+            "models": {},
+            "comparison": {},
+        }
+
+        # Test each model
+        for model_name in models:
+            all_results["models"][model_name] = self.run_single_model(
+                model_name)
+
+        # Generate comparison data
+        all_results["comparison"] = self._generate_comparison(
+            all_results["models"])
+
+        # Save results
+        self._save_results(all_results)
+
+        return all_results
+
+    def _generate_comparison(self, models_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate comparison statistics across all models."""
+        if not models_results:
+            return {}
+
+        comparison = {"ranking": [],
+                      "prompt_performance": {}, "summary_stats": {}}
+
+        # Create ranking
+        model_scores = []
+        for model_name, result in models_results.items():
+            if "error" not in result:
+                model_scores.append(
+                    {
+                        "model": model_name,
+                        "score": result.get("overall_score", 0),
+                        "percentage": result.get("percentage", 0),
+                    }
+                )
+
+        comparison["ranking"] = sorted(
+            model_scores, key=lambda x: x["score"], reverse=True
+        )
+
+        # Analyze prompt-specific performance
+        for prompt_id in ["prompt_1", "prompt_2", "prompt_3", "prompt_4"]:
+            prompt_scores = []
+            for model_name, result in models_results.items():
+                if "error" not in result and prompt_id in result.get("prompts", {}):
+                    prompt_result = result["prompts"][prompt_id]
+                    if "score" in prompt_result:
+                        prompt_scores.append(
+                            {
+                                "model": model_name,
+                                "score": prompt_result["score"],
+                                "passed": prompt_result.get("passed", False),
+                            }
+                        )
+
+            if prompt_scores:
+                comparison["prompt_performance"][prompt_id] = {
+                    "best_score": max(s["score"] for s in prompt_scores),
+                    "avg_score": round(
+                        sum(s["score"]
+                            for s in prompt_scores) / len(prompt_scores), 1
+                    ),
+                    "pass_rate": round(
+                        sum(1 for s in prompt_scores if s["passed"])
+                        / len(prompt_scores)
+                        * 100,
+                        1,
+                    ),
+                    "ranking": sorted(
+                        prompt_scores, key=lambda x: x["score"], reverse=True
+                    ),
+                }
+
+        return comparison
+
+    def _save_results(self, results: Dict[str, Any]) -> None:
+        """Save results to files."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Save main results
+        results_file = self.results_dir / "latest_results.json"
+        timestamped_file = self.results_dir / f"results_{timestamp}.json"
+
+        for file_path in [results_file, timestamped_file]:
+            with open(file_path, "w") as f:
+                json.dump(results, f, indent=2)
+
+        print(f"\n💾 Results saved to: {results_file}")
+        print(f"💾 Timestamped copy: {timestamped_file}")
+
+        # Generate summary report
+        self._generate_summary_report(results, timestamp)
+
+    def _generate_summary_report(self, results: Dict[str, Any], timestamp: str) -> None:
+        """Generate a human-readable summary report."""
+        report_file = self.results_dir / f"summary_report_{timestamp}.txt"
+
+        with open(report_file, "w") as f:
+            f.write("AI CODE BENCHMARK RESULTS\n")
+            f.write("=" * 50 + "\n\n")
+            f.write(f"Run Date: {results['benchmark_run']['timestamp']}\n")
+            f.write(
+                f"Models Tested: {results['benchmark_run']['total_models']}\n\n")
+
+            # Overall ranking
+            if "ranking" in results.get("comparison", {}):
+                f.write("OVERALL RANKING\n")
+                f.write("-" * 20 + "\n")
+                for i, model in enumerate(results["comparison"]["ranking"], 1):
+                    f.write(
+                        f"{i}. {model['model']}: {model['score']} points ({model['percentage']}%)\n"
+                    )
+                f.write("\n")
+
+            # Detailed results for each model
+            f.write("DETAILED RESULTS\n")
+            f.write("-" * 20 + "\n")
+            for model_name, model_result in results["models"].items():
+                f.write(f"\n{model_name}:\n")
+                if "error" in model_result:
+                    f.write(f"  ERROR: {model_result['error']}\n")
+                    continue
+
+                f.write(
+                    f"  Overall Score: {model_result['overall_score']}/{model_result['total_possible']} ({model_result['percentage']}%)\n"
+                )
+
+                for prompt_id, prompt_result in model_result.get("prompts", {}).items():
+                    prompt_name = prompt_id.replace("_", " ").title()
+                    status = (
+                        "PASSED" if prompt_result.get(
+                            "passed", False) else "FAILED"
+                    )
+                    score = prompt_result.get("score", 0)
+                    max_score = prompt_result.get("max_score", 25)
+                    f.write(
+                        f"  {prompt_name}: {status} - {score}/{max_score}\n")
+
+                    if "feedback" in prompt_result:
+                        for feedback_line in prompt_result["feedback"]:
+                            f.write(f"    • {feedback_line}\n")
+
+        print(f"📄 Summary report: {report_file}")
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(description="AI Code Benchmark Tool")
+    parser.add_argument("--model", help="Test specific model only")
+    parser.add_argument(
+        "--submissions-dir",
+        default="submissions",
+        help="Directory containing model submissions",
+    )
+    parser.add_argument(
+        "--results-dir", default="results", help="Directory to save results"
+    )
+    parser.add_argument(
+        "--quiet", "-q", action="store_true", help="Suppress detailed output"
+    )
+
+    args = parser.parse_args()
+
+    # Create benchmark instance
+    benchmark = AICodeBenchmark(args.submissions_dir, args.results_dir)
+
+    try:
+        if args.model:
+            # Test single model
+            result = benchmark.run_single_model(args.model)
+            if not args.quiet:
+                print(f"\nSingle model test completed: {args.model}")
+        else:
+            # Test all models
+            results = benchmark.run_all_models()
+            if not args.quiet and "models" in results:
+                print(
+                    f"\n🎉 Benchmark completed! Tested {len(results['models'])} model(s)"
+                )
+
+                # Show quick summary
+                if "ranking" in results.get("comparison", {}):
+                    print("\n🏆 Top Performers:")
+                    for i, model in enumerate(results["comparison"]["ranking"][:3], 1):
+                        print(
+                            f"  {i}. {model['model']}: {model['percentage']}%")
+
+    except KeyboardInterrupt:
+        print("\n\n⏹️  Benchmark interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ Benchmark failed: {str(e)}")
+        if not args.quiet:
+            traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

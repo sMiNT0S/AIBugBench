@@ -1,0 +1,39 @@
+{
+  "use_legacy_paths": true,
+  "paths": {
+    "data_source": "/srv/data/production/users.json",
+    "legacy_data_source": "./user_data.json",
+    "log_file": "/var/log/processor.log"
+  },
+  "validation_rules": {
+    "min_age_years": 21,
+    "minimum_posts": 5,
+    "required_fields": [
+      "id",
+      "first_name",
+      "last_name",
+      "contact.email"
+    ]
+  },
+  "api_keys": [
+    {
+      "service": "geolocator",
+      "key": "xyz-123-abc"
+    },
+    {
+      "service": "notifier",
+      "key": "def-456-ghi"
+    }
+  ],
+  "feature_flags": {
+    "enable_email_notifications": false,
+    "beta_processor_active": true,
+    "user_segmentation_enabled": false
+  },
+  "server_settings": {
+    "port": 8080,
+    "timeout_seconds": 60,
+    "retry_attempts": 3,
+    "max_connections": 100
+  }
+}

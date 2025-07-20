@@ -49,3 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Result output: JSON + summary reports
 - `README.md` , and setup instructions
 - Full test data and expected outputs
+
+[Unreleased]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.1.0-alpha
+[0.1.0]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.1.0-alpha

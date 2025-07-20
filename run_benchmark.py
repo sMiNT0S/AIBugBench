@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """
-AI Code Benchmark Tool
+RealityCheckBench - AI Code Evaluation Tool
 Main entry point for running comprehensive AI code evaluation tests.
 
 Usage: python run_benchmark.py [options]
 """
 
-from benchmark.utils import load_test_data, ensure_directories
+from benchmark.utils import (
+    load_test_data,
+    ensure_directories,
+    validate_submission_structure
+)
 from benchmark.scoring import BenchmarkScorer
 from benchmark.validators import PromptValidators
 import os
 import sys
 import json
 import argparse
-import importlib.util
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-import yaml
+from typing import Dict, List, Any
 
 # Add the benchmark package to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "benchmark"))
@@ -27,8 +29,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "benchmark"))
 class AICodeBenchmark:
     """Main benchmark runner class."""
 
+    # Configuration constants
+    DEFAULT_MAX_SCORE = 25
+    DEFAULT_PASS_THRESHOLD = 0.6  # 60%
+    DEFAULT_TIMEOUT = 30  # seconds
+
     def __init__(
-        self, submissions_dir: str = "submissions", results_dir: str = "results"
+        self,
+        submissions_dir: str = "submissions",
+        results_dir: str = "results"
     ):
         self.submissions_dir = Path(submissions_dir)
         self.results_dir = Path(results_dir)
@@ -71,6 +80,14 @@ class AICodeBenchmark:
         if not model_dir.exists():
             return {"error": f"Model directory '{model_dir}' not found"}
 
+        # Validate submission structure first
+        structure_validation = validate_submission_structure(model_dir)
+        missing_files = [
+            file for file, exists in structure_validation.items() if not exists
+        ]
+        if missing_files:
+            print(f"⚠️  Missing or empty files: {', '.join(missing_files)}")
+
         results = {
             "model_name": model_name,
             "timestamp": datetime.now().isoformat(),
@@ -93,14 +110,18 @@ class AICodeBenchmark:
                 prompt_result = test_func(model_dir)
                 results["prompts"][prompt_id] = prompt_result
                 results["overall_score"] += prompt_result.get("score", 0)
-                results["total_possible"] += prompt_result.get("max_score", 25)
+                results["total_possible"] += prompt_result.get(
+                    "max_score", self.DEFAULT_MAX_SCORE
+                )
 
                 status = (
                     "✅ PASSED" if prompt_result.get(
                         "passed", False) else "❌ FAILED"
                 )
                 score = prompt_result.get("score", 0)
-                max_score = prompt_result.get("max_score", 25)
+                max_score = prompt_result.get(
+                    "max_score", self.DEFAULT_MAX_SCORE
+                )
                 print(f"   {status} - Score: {score}/{max_score}")
 
             except Exception as e:
@@ -110,9 +131,9 @@ class AICodeBenchmark:
                     "traceback": traceback.format_exc(),
                     "passed": False,
                     "score": 0,
-                    "max_score": 25,
+                    "max_score": self.DEFAULT_MAX_SCORE,
                 }
-                results["total_possible"] += 25
+                results["total_possible"] += self.DEFAULT_MAX_SCORE
 
         # Calculate final percentage
         if results["total_possible"] > 0:
@@ -123,7 +144,8 @@ class AICodeBenchmark:
             results["percentage"] = 0
 
         print(
-            f"\n🎯 Final Score: {results['overall_score']}/{results['total_possible']} ({results['percentage']}%)"
+            f"\n🎯 Final Score: {results['overall_score']}/"
+            f"{results['total_possible']} ({results['percentage']}%)"
         )
 
         return results
@@ -137,7 +159,9 @@ class AICodeBenchmark:
         """Test Prompt 2: YAML/JSON Correction."""
         yaml_file = model_dir / "prompt_2_config_fixed.yaml"
         json_file = model_dir / "prompt_2_config.json"
-        return self.validators.validate_prompt_2_yaml_json(yaml_file, json_file)
+        return self.validators.validate_prompt_2_yaml_json(
+            yaml_file, json_file
+        )
 
     def _test_prompt_3(self, model_dir: Path) -> Dict[str, Any]:
         """Test Prompt 3: Data Transformation."""
@@ -183,7 +207,9 @@ class AICodeBenchmark:
 
         return all_results
 
-    def _generate_comparison(self, models_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_comparison(
+        self, models_results: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate comparison statistics across all models."""
         if not models_results:
             return {}
@@ -211,7 +237,8 @@ class AICodeBenchmark:
         for prompt_id in ["prompt_1", "prompt_2", "prompt_3", "prompt_4"]:
             prompt_scores = []
             for model_name, result in models_results.items():
-                if "error" not in result and prompt_id in result.get("prompts", {}):
+                if ("error" not in result and
+                        prompt_id in result.get("prompts", {})):
                     prompt_result = result["prompts"][prompt_id]
                     if "score" in prompt_result:
                         prompt_scores.append(
@@ -251,8 +278,8 @@ class AICodeBenchmark:
         timestamped_file = self.results_dir / f"results_{timestamp}.json"
 
         for file_path in [results_file, timestamped_file]:
-            with open(file_path, "w") as f:
-                json.dump(results, f, indent=2)
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(results, f, indent=2, ensure_ascii=False)
 
         print(f"\n💾 Results saved to: {results_file}")
         print(f"💾 Timestamped copy: {timestamped_file}")
@@ -260,16 +287,20 @@ class AICodeBenchmark:
         # Generate summary report
         self._generate_summary_report(results, timestamp)
 
-    def _generate_summary_report(self, results: Dict[str, Any], timestamp: str) -> None:
+    def _generate_summary_report(
+        self, results: Dict[str, Any], timestamp: str
+    ) -> None:
         """Generate a human-readable summary report."""
         report_file = self.results_dir / f"summary_report_{timestamp}.txt"
 
-        with open(report_file, "w") as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             f.write("AI CODE BENCHMARK RESULTS\n")
             f.write("=" * 50 + "\n\n")
             f.write(f"Run Date: {results['benchmark_run']['timestamp']}\n")
             f.write(
-                f"Models Tested: {results['benchmark_run']['total_models']}\n\n")
+                f"Models Tested: {results['benchmark_run']['total_models']}"
+                f"\n\n"
+            )
 
             # Overall ranking
             if "ranking" in results.get("comparison", {}):
@@ -277,7 +308,8 @@ class AICodeBenchmark:
                 f.write("-" * 20 + "\n")
                 for i, model in enumerate(results["comparison"]["ranking"], 1):
                     f.write(
-                        f"{i}. {model['model']}: {model['score']} points ({model['percentage']}%)\n"
+                        f"{i}. {model['model']}: {model['score']} points "
+                        f"({model['percentage']}%)\n"
                     )
                 f.write("\n")
 
@@ -291,10 +323,13 @@ class AICodeBenchmark:
                     continue
 
                 f.write(
-                    f"  Overall Score: {model_result['overall_score']}/{model_result['total_possible']} ({model_result['percentage']}%)\n"
+                    f"  Overall Score: {model_result['overall_score']}/"
+                    f"{model_result['total_possible']} "
+                    f"({model_result['percentage']}%)\n"
                 )
 
-                for prompt_id, prompt_result in model_result.get("prompts", {}).items():
+                prompts_data = model_result.get("prompts", {})
+                for prompt_id, prompt_result in prompts_data.items():
                     prompt_name = prompt_id.replace("_", " ").title()
                     status = (
                         "PASSED" if prompt_result.get(
@@ -336,7 +371,7 @@ def main():
     try:
         if args.model:
             # Test single model
-            result = benchmark.run_single_model(args.model)
+            benchmark.run_single_model(args.model)
             if not args.quiet:
                 print(f"\nSingle model test completed: {args.model}")
         else:
@@ -344,13 +379,15 @@ def main():
             results = benchmark.run_all_models()
             if not args.quiet and "models" in results:
                 print(
-                    f"\n🎉 Benchmark completed! Tested {len(results['models'])} model(s)"
+                    f"\n🎉 Benchmark completed! Tested "
+                    f"{len(results['models'])} model(s)"
                 )
 
                 # Show quick summary
                 if "ranking" in results.get("comparison", {}):
                     print("\n🏆 Top Performers:")
-                    for i, model in enumerate(results["comparison"]["ranking"][:3], 1):
+                    ranking = results["comparison"]["ranking"][:3]
+                    for i, model in enumerate(ranking, 1):
                         print(
                             f"  {i}. {model['model']}: {model['percentage']}%")
 

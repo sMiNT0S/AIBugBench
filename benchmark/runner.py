@@ -17,7 +17,10 @@ class TestRunner:
         self.test_data_dir = test_data_dir
 
     def run_python_script(
-        self, script_path: Path, args: list = None, timeout: int = 30
+        self,
+        script_path: Path,
+        args: Optional[list] = None,
+        timeout: int = 30
     ) -> Dict[str, Any]:
         """Run a Python script and capture output."""
         if args is None:
@@ -53,7 +56,9 @@ class TestRunner:
 
         except subprocess.TimeoutExpired:
             result["timeout"] = True
-            result["stderr"] = f"Script execution timed out after {timeout} seconds"
+            result["stderr"] = (
+                f"Script execution timed out after {timeout} seconds"
+            )
         except Exception as e:
             result["stderr"] = f"Execution error: {str(e)}"
 

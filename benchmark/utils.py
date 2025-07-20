@@ -3,7 +3,6 @@ Utility functions for AI Code Benchmark
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Dict, Any, List
 

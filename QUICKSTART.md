@@ -1,11 +1,11 @@
-# Quick Start Guide - AI Code Benchmark 🚀
+# Quick Start Guide - RealityCheckBench 🚀
 
 Follow these steps to get the benchmark running in under 5 minutes!
 
 ## Step 1: Create GitHub Repository
 
 1. Go to [GitHub](https://github.com/new)
-2. Repository name: `ai-code-benchmark` (or your preferred name)
+2. Repository name: `RealityCheckBench` (or your preferred name)
 3. Description: "Benchmark tool for evaluating AI code generation capabilities"
 4. Choose: Public or Private
 5. Initialize with README: **No** (we'll add our own)
@@ -15,8 +15,8 @@ Follow these steps to get the benchmark running in under 5 minutes!
 
 ```bash
 # Clone your new repository
-git clone https://github.com/YOUR_USERNAME/ai-code-benchmark.git
-cd ai-code-benchmark
+git clone https://github.com/YOUR_USERNAME/RealityCheckBench.git
+cd RealityCheckBench
 
 # Create Python virtual environment
 python -m venv venv

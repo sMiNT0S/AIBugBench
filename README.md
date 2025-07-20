@@ -1,17 +1,13 @@
-# RealityCheckBench - Setup Files
+# RealityCheckBench 🤖
 
-## requirements.txt
+A comprehensive benchmarking tool for evaluating AI models' code generation, refactoring, and problem-solving capabilities. Test any AI model's programming skills across 4 distinct challenges!
+
+## Requirements
 
 ```
 pyyaml>=6.0
 requests>=2.25.0
 ```
-
-## README.md
-
-# AI Code Benchmark Tool 🤖
-
-A comprehensive benchmarking tool for evaluating AI models' code generation, refactoring, and problem-solving capabilities. Test any AI model's programming skills across 4 distinct challenges!
 
 ## 🚀 Quick Start
 
@@ -28,7 +24,31 @@ A comprehensive benchmarking tool for evaluating AI models' code generation, ref
    pip install -r requirements.txt
    ```
 
-3. **Run the benchmark**
+3. **Set up virtual environment (strongly recommended)**
+
+   For consistent and fair benchmark results across all users, we **strongly recommend** using a virtual environment. This ensures:
+   - All tests run with the same dependency versions
+   - No interference from system-installed packages
+   - Reproducible results regardless of your local Python setup
+   - Prevention of package conflicts that could affect scoring
+
+   ```bash
+   # Create virtual environment
+   python -m venv venv
+
+   # Activate virtual environment
+   # On Windows:
+   venv\Scripts\activate
+   # On macOS/Linux:
+   source venv/bin/activate
+
+   # Install dependencies in the virtual environment
+   pip install -r requirements.txt
+   ```
+
+   > **Note**: Always activate your virtual environment before running benchmarks to ensure fair and consistent results.
+
+4. **Run the benchmark**
 
    ```bash
    python run_benchmark.py
@@ -121,7 +141,7 @@ python run_benchmark.py --quiet
 ## 📁 Repository Structure
 
 ```
-ai-code-benchmark/
+RealityCheckBench/
 ├── README.md                    # This file, main documentation
 ├── requirements.txt             # Python dependencies
 ├── run_benchmark.py             # Main entry point - single command to run all tests

@@ -6,12 +6,10 @@ import json
 import yaml
 import subprocess
 import sys
-import traceback
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any
 import importlib.util
 import tempfile
-import os
 
 
 class PromptValidators:
@@ -39,7 +37,9 @@ class PromptValidators:
         else:
             self.original_config = None
 
-    def validate_prompt_1_refactoring(self, solution_file: Path) -> Dict[str, Any]:
+    def validate_prompt_1_refactoring(
+        self, solution_file: Path
+    ) -> Dict[str, Any]:
         """Validate Prompt 1: Code Refactoring & Analysis."""
         result = {
             "passed": False,
@@ -55,7 +55,7 @@ class PromptValidators:
 
         # Test 1: Check if script is valid Python (5 points)
         try:
-            with open(solution_file, "r") as f:
+            with open(solution_file, "r", encoding="utf-8") as f:
                 code = f.read()
             compile(code, str(solution_file), "exec")
             result["tests_passed"]["valid_python"] = True
@@ -71,7 +71,8 @@ class PromptValidators:
             "has_json_import": "import json" in code or "from json" in code,
             "has_error_handling": "try:" in code and "except" in code,
             "has_logging": "logging" in code or "logger" in code,
-            "has_type_hints": "->" in code or ": str" in code or ": int" in code,
+            "has_type_hints": ("->" in code or ": str" in code or
+                               ": int" in code),
         }
 
         structure_score = sum(1 for check in checks.values() if check)
@@ -186,7 +187,7 @@ validation_rules:
             result["feedback"].append("❌ YAML file not found")
         else:
             try:
-                with open(yaml_file, "r") as f:
+                with open(yaml_file, "r", encoding="utf-8") as f:
                     yaml_data = yaml.safe_load(f)
                 result["score"] += 10
                 result["tests_passed"]["valid_yaml"] = True
@@ -215,7 +216,7 @@ validation_rules:
             result["feedback"].append("❌ JSON file not found")
         else:
             try:
-                with open(json_file, "r") as f:
+                with open(json_file, "r", encoding="utf-8") as f:
                     json_data = json.load(f)
                 result["score"] += 10
                 result["tests_passed"]["valid_json"] = True
@@ -228,7 +229,9 @@ validation_rules:
         # Test 3: Data type corrections (5 points)
         if yaml_data and json_data:
             type_checks = {
-                "use_legacy_paths": isinstance(json_data.get("use_legacy_paths"), bool),
+                "use_legacy_paths": isinstance(
+                    json_data.get("use_legacy_paths"), bool
+                ),
                 "min_age_years": isinstance(
                     json_data.get("validation_rules", {}).get(
                         "min_age_years"), int
@@ -253,7 +256,8 @@ validation_rules:
                 partial_score = int(5 * correct_types / len(type_checks))
                 result["score"] += partial_score
                 result["feedback"].append(
-                    f"⚠️  Some types corrected ({correct_types}/{len(type_checks)})"
+                    f"⚠️  Some types corrected "
+                    f"({correct_types}/{len(type_checks)})"
                 )
             else:
                 result["feedback"].append("❌ Data types not corrected")
@@ -263,7 +267,9 @@ validation_rules:
 
         return result
 
-    def validate_prompt_3_transformation(self, transform_file: Path) -> Dict[str, Any]:
+    def validate_prompt_3_transformation(
+        self, transform_file: Path
+    ) -> Dict[str, Any]:
         """Validate Prompt 3: Data Transformation."""
         result = {
             "passed": False,
@@ -282,6 +288,10 @@ validation_rules:
             spec = importlib.util.spec_from_file_location(
                 "transform_module", transform_file
             )
+            if spec is None or spec.loader is None:
+                result["feedback"].append("❌ Could not load transform module")
+                return result
+                
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
@@ -331,7 +341,9 @@ validation_rules:
 
                 for orig, trans in zip(test_users, transformed):
                     if orig.get("contact", {}).get("email"):
-                        if "contact" in trans and "email_provider" in trans["contact"]:
+                        has_contact = "contact" in trans
+                        has_provider = "email_provider" in trans["contact"]
+                        if has_contact and has_provider:
                             expected = orig["contact"]["email"].split("@")[1]
                             if trans["contact"]["email_provider"] == expected:
                                 email_checks += 1
@@ -373,22 +385,12 @@ validation_rules:
                         f"⚠️  Account tier logic issues ({correct_tiers}/{len(tier_checks)} correct)"
                     )
 
-                # Test 5: Age type correction (5 points)
-                age_checks = []
-                for user in transformed:
-                    if "stats" in user and "age" in user["stats"]:
-                        age_checks.append(isinstance(
-                            user["stats"]["age"], int))
-
-                if all(age_checks) and len(age_checks) > 0:
-                    result["score"] += 5
-                    result["tests_passed"]["age_correction"] = True
-                    result["feedback"].append(
-                        "✅ All ages converted to integers")
-
             except Exception as e:
                 result["feedback"].append(
                     f"❌ Error during transformation: {str(e)}")
+
+        # Ensure score doesn't exceed max_score
+        result["score"] = min(result["score"], result["max_score"])
 
         # Determine if passed
         result["passed"] = result["score"] >= 15  # 60% threshold
@@ -410,7 +412,7 @@ validation_rules:
             return result
 
         try:
-            with open(api_file, "r") as f:
+            with open(api_file, "r", encoding="utf-8") as f:
                 code = f.read()
 
             # Test 1: Function exists and has correct signature (5 points)

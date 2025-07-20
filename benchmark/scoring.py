@@ -3,7 +3,6 @@ Scoring system for AI Code Benchmark
 """
 
 from typing import Dict, Any, List
-from pathlib import Path
 
 
 class BenchmarkScorer:

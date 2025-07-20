@@ -1,0 +1,51 @@
+# CHANGELOG
+
+All changes implemented will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.0] - 2025-07-20
+
+### Added
+
+- This `CHANGELOG.md`
+- New config constants added: DEFAULT_MAX_SCORE, DEFAULT_PASS_THRESHOLD, and DEFAULT_TIMEOUT to replace magic numbers in scoring logic
+- validate_submission_structure() is now fully integrated to check submission completeness before running any tests
+- UTF-8 encoding explicitly added to all file I/O operations in validators.py to support Unicode and emoji characters
+
+### Changed
+
+- Replaced all remaining outdated references to ai-code-benchmark/ with RealityCheckBench/ across documentation and metadata
+- Improved internal type annotations (Optional[List] and related corrections) for clarity and static analysis
+- Optimized error handling in validators.py and runner.py for better failure diagnostics when submissions are malformed or incomplete
+- Renamed prompt example files in submission templates for better clarity and correctness
+- README.md updated with virtual environment recommendations and platform-specific setup instructions
+
+### Fixed
+
+- Encoding bug (UTF8) that caused prompt_4_api_sync.py to score 0 due to unreadable characters on Windows (CP1252 default)
+- Resolved several line-length and PEP8 issues flagged by flake8
+- Fixed critical None check in validators.py that could crash scoring under specific input conditions
+- Cleaned up unused imports across all modules
+
+### Removed
+
+- Cleaned up imports across all modules (removed `traceback`, `os`, `pathlib.Path`, etc. where unused)
+- Removed unnecessary `shutil` import from `setup.py`
+
+## [0.1.0] - 2025-07-18
+
+### Added
+
+- Initial full version of `RealityCheckBench`
+- Core benchmark logic: `runner.py`, `validators.py`, `scoring.py`, `utils.py`
+- Core file structure logic: `/RealityCheckBench` , `/benchmark`, `/docs`, `/prompts`, `/results`, `/submissions` , `/test_data` , `/tests`
+- Prompt definitions for 4 coding tasks
+- Example AI submission structure with all solution files
+- CLI usage: `run_benchmark.py` with model-specific and batch modes
+- Result output: JSON + summary reports
+- `README.md` , and setup instructions
+- Full test data and expected outputs

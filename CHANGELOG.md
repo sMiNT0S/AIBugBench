@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-07-22
+
+### Added
+
+- Comparison chart generation: activated existing `generate_comparison_chart` function to create visual progress bar charts for model performance comparison
+- Enhanced README.md output files section to document the newly functional comparison charts
+
+### Fixed
+
+- README.md Quick Start section order: virtual environment setup now correctly precedes dependency installation
+- Cross-platform compatibility: added Windows `xcopy` commands alongside Unix `cp -r` commands for template copying
+- Documentation accuracy: corrected directory reference from `detailed_reports/` to `detailed_results/` in repository structure
+- Quick Start instructions now include example model testing step to avoid "No models found" confusion
+- UTF-8 encoding in comparison chart generation to support Unicode progress bar characters on Windows
+- Integrated comparison chart generation into the main benchmark runner workflow
+
+### Changed
+
+- Enhanced README.md with more detailed repository structure documentation including missing files (CHANGELOG.md, QUICKSTART.md, EXAMPLE_SUBMISSION.md)
+
+### Removed
+
+- Non-existent `comparison_chart_TIMESTAMP.txt` file reference from output documentation (feature was implemented but not activated)
+
 ## [0.2.0] - 2025-07-20
 
 ### Added
@@ -50,5 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `README.md` , and setup instructions
 - Full test data and expected outputs
 
-[Unreleased]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.1.0-alpha
-[0.1.0]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.1.0-alpha
+[Unreleased]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.2.0-alpha...HEAD
+[0.2.0-alpha]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.2.0-alpha
+[0.1.0-alpha]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.1.0-alpha

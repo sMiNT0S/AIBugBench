@@ -18,13 +18,7 @@ requests>=2.25.0
    cd RealityCheckBench
    ```
 
-2. **Install dependencies**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Set up virtual environment (strongly recommended)**
+2. **Set up virtual environment (strongly recommended)**
 
    For consistent and fair benchmark results across all users, we **strongly recommend** using a virtual environment. This ensures:
    - All tests run with the same dependency versions
@@ -41,18 +35,37 @@ requests>=2.25.0
    venv\Scripts\activate
    # On macOS/Linux:
    source venv/bin/activate
-
-   # Install dependencies in the virtual environment
-   pip install -r requirements.txt
    ```
 
    > **Note**: Always activate your virtual environment before running benchmarks to ensure fair and consistent results.
 
-4. **Run the benchmark**
+3. **Install dependencies**
 
    ```bash
-   python run_benchmark.py
+   pip install -r requirements.txt
    ```
+
+4. **Try the example model** (to verify setup)
+
+   ```bash
+   python run_benchmark.py --model example_model
+   ```
+
+5. **Add your own AI model submissions**
+
+   ```bash
+   # Copy the template for your model
+   # On Windows (PowerShell/CMD):
+   xcopy /E /I submissions\template submissions\your_model_name
+   # On macOS/Linux:
+   cp -r submissions/template submissions/your_model_name
+   
+   # Add your AI's solutions to each prompt file in submissions/your_model_name/
+   # Then run the benchmark:
+   python run_benchmark.py --model your_model_name
+   ```
+
+   > **Quick tip**: See the "🎯 How to Add Your AI Model" section below for detailed instructions on creating submissions.
 
 ## 📋 What This Tool Tests
 
@@ -90,6 +103,9 @@ The benchmark consists of 4 progressively challenging prompts that test differen
 1. **Copy the template**
 
    ```bash
+   # On Windows (PowerShell/CMD):
+   xcopy /E /I submissions\template submissions\your_model_name
+   # On macOS/Linux:
    cp -r submissions/template submissions/your_model_name
    ```
 
@@ -115,8 +131,8 @@ The benchmark consists of 4 progressively challenging prompts that test differen
 ### Output Files
 
 - `results/latest_results.json` - Complete benchmark data
-- `results/summary_report_TIMESTAMP.txt` - Human-readable summary  
-- `results/comparison_chart_TIMESTAMP.txt` - Visual comparison
+- `results/summary_report_TIMESTAMP.txt` - Human-readable summary
+- `results/comparison_chart_TIMESTAMP.txt` - Visual comparison with progress bars
 
 ## 🛠️ Advanced Usage
 
@@ -142,10 +158,14 @@ python run_benchmark.py --quiet
 
 ```
 RealityCheckBench/
+├── .gitignore                   # Git ignore patterns
+├── CHANGELOG.md                 # Version history and changes
+├── EXAMPLE_SUBMISSION.md        # Detailed submission example walkthrough
+├── QUICKSTART.md                # Fast setup guide for new users
 ├── README.md                    # This file, main documentation
 ├── requirements.txt             # Python dependencies
 ├── run_benchmark.py             # Main entry point - single command to run all tests
-├── setup.py                     # Package installation (optional)
+├── setup.py                     # Project setup and directory creation script
 │
 ├── benchmark/                   # Core testing framework
 │   ├── __init__.py
@@ -179,20 +199,28 @@ RealityCheckBench/
 │   │   ├── prompt_3_transform.py
 │   │   └── prompt_4_api_sync.py
 │   └── template/                # Empty template for users to copy
+│       ├── prompt_1_solution.py
+│       ├── prompt_2_config_fixed.yaml
+│       ├── prompt_2_config.json
+│       ├── prompt_3_transform.py
+│       ├── prompt_4_api_sync.py
+│       └── README.md
 │
 ├── results/                     # Generated test results and reports
 │   ├── latest_results.json
-│   ├── detailed_reports/
+│   ├── detailed_results/
 │   └── comparison_charts/
 │
 ├── docs/                        # Additional documentation
-│   ├── scoring_rubric.md
 │   ├── adding_models.md
-│   └── interpreting_results.md
+│   ├── interpreting_results.md
+│   └── scoring_rubric.md
 │
 └── tests/                       # Unit tests for the framework itself
-    ├── test_validators.py
+    ├── test_runner.py
     ├── test_scoring.py
+    └── test_validators.py
+```
     └── test_runner.py
 ```
 
@@ -207,4 +235,4 @@ Contributions welcome! Ideas for new prompts:
 
 ## 📝 License
 
-MIT License - Feel free to use this tool for your AI model evaluations!
+MIT License - Feel free to use this tool for your AI model evaluations.

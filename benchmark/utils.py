@@ -153,7 +153,7 @@ def generate_comparison_chart(results: Dict[str, Any], output_file: Path) -> Non
             chart_content.append(f"  Pass Rate: {perf_data['pass_rate']}%")
 
     # Save chart
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(chart_content))
 
 

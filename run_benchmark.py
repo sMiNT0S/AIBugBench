@@ -9,7 +9,8 @@ Usage: python run_benchmark.py [options]
 from benchmark.utils import (
     load_test_data,
     ensure_directories,
-    validate_submission_structure
+    validate_submission_structure,
+    generate_comparison_chart
 )
 from benchmark.scoring import BenchmarkScorer
 from benchmark.validators import PromptValidators
@@ -286,6 +287,11 @@ class AICodeBenchmark:
 
         # Generate summary report
         self._generate_summary_report(results, timestamp)
+        
+        # Generate comparison chart
+        chart_file = self.results_dir / f"comparison_chart_{timestamp}.txt"
+        generate_comparison_chart(results, chart_file)
+        print(f"📊 Comparison chart: {chart_file}")
 
     def _generate_summary_report(
         self, results: Dict[str, Any], timestamp: str

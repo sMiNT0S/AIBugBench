@@ -55,6 +55,9 @@ pip install -r requirements.txt
 
 ```bash
 # Create a test submission
+# On Windows (PowerShell/CMD):
+xcopy /E /I submissions\template submissions\test_model
+# On macOS/Linux:
 cp -r submissions/template submissions/test_model
 
 # Run the benchmark (it will fail, but should run)
@@ -86,7 +89,15 @@ You should see output like:
 
 ### Option A: Manual Testing
 
-1. Copy the template: `cp -r submissions/template submissions/gpt4`
+1. Copy the template:
+
+   ```bash
+   # On Windows (PowerShell/CMD):
+   xcopy /E /I submissions\template submissions\gpt4
+   # On macOS/Linux:
+   cp -r submissions/template submissions/gpt4
+   ```
+
 2. Manually add GPT-4's solutions to each file
 3. Run: `python run_benchmark.py --model gpt4`
 

@@ -30,6 +30,7 @@ ENV/
 
 # IDE
 .vscode/
+.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -64,3 +65,21 @@ Thumbs.db
 
 # Keep template directory
 !submissions/template/
+
+# Claude Code documentation (exclude from commits)
+CLAUDE.md
+.claude
+.mcp.json
+test_new_user_experience.ps1
+validation_report.txt
+scripts/
+
+# Claude Code documentation artifacts (exclude planning docs)
+docs/implementation-*.md
+docs/task-*.md  
+docs/file-*.md
+docs/*-plan*.md
+docs/*-breakdown*.md
+
+# Implementation documentation archive
+Implementation fixes over time/

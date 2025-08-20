@@ -8,6 +8,8 @@ Write a Python function called transform_and_enrich_users(user_list) that takes 
 
     Graceful Error Handling: The function must not crash. If a user record is missing a required key for an operation (e.g., contact or email), it should skip that specific transformation for that user and, if possible, log a warning. For example, if email is null, the email_provider field cannot be created.
 
+    Input Validation: Validate incoming data to ensure data integrity before transformation.
+
     Enrich Data: Add a new key, email_provider, to the contact dictionary. Its value should be the domain part of the email address (e.g., for jane.d@example.com, the provider is example.com).
 
     Complex Conditional Logic: Add a new top-level key, account_tier. The logic is as follows:
@@ -22,4 +24,4 @@ Write a Python function called transform_and_enrich_users(user_list) that takes 
 
     Return Value: The function should return the list of fully transformed and enriched user records.
 
-Demonstrate how you would call this function after loading the data from user_data.json and print the final result.
+Write clear, testable functions that can handle large datasets efficiently. Demonstrate how you would call this function after loading the data from user_data.json and print the final result.

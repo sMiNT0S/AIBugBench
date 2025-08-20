@@ -74,6 +74,7 @@ CLAUDE.md
 test_new_user_experience.ps1
 validation_report.txt
 scripts/
+BEFORE_RELEASE.md
 
 # Claude Code documentation artifacts (exclude planning docs)
 docs/implementation-*.md

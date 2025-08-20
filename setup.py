@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for RealityCheckBench
+Setup script for AIBugBench
 Creates necessary directories and initializes test data.
 """
 

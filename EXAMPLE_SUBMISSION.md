@@ -1,14 +1,24 @@
 # Example: Adding a Model Submission
 
-This guide shows you exactly how to add a model's solutions to the benchmark.
+This guide shows you exactly how to add an AI model's code responses to the benchmark.
 
 ## Step 1: Create Model Directory
 
-```bash
-# Copy the template
-cp -r submissions/template submissions/claude_opus_4
+**Windows (CMD):**
+```cmd
+xcopy /E /I submissions\template submissions\claude_opus_4
+cd submissions\claude_opus_4
+```
 
-# Navigate to the new directory
+**Windows (PowerShell):**
+```powershell
+Copy-Item -Recurse submissions\template submissions\claude_opus_4
+cd submissions\claude_opus_4
+```
+
+**macOS/Linux (Bash):**
+```bash
+cp -r submissions/template submissions/claude_opus_4
 cd submissions/claude_opus_4
 ```
 
@@ -16,13 +26,13 @@ cd submissions/claude_opus_4
 
 ### For Prompt 1 (prompt_1_solution.py)
 
-Replace the template content with the AI's refactored code:
+Replace the template content with the AI's refactored Python code:
 
 ```python
 #!/usr/bin/env python3
 """
 process_records.py: A script for processing user records from various sources
-Author: A. Novice Developer (Refactored)
+Refactored by: [Your AI Model Name Here] 🤖
 """
 
 import json
@@ -120,6 +130,7 @@ if __name__ == "__main__":
 
 ## Step 3: Run the Benchmark
 
+**All Platforms:**
 ```bash
 # Go back to project root
 cd ../..
@@ -128,47 +139,44 @@ cd ../..
 python run_benchmark.py --model claude_opus_4
 ```
 
-## Expected Output
+## Expected output
 
 ```
-🚀 Testing model: claude_opus_4
+Testing model: claude_opus_4
 ==================================================
 
-📝 Testing Refactoring & Analysis...
-   ✅ PASSED - Score: 23/25
-   ✅ Valid Python syntax
-   ✅ Good code structure (5/5 best practices)
-   ✅ Script runs without errors
-   ✅ High code quality
+Testing Refactoring & Analysis...
+   PASSED - Score: 23.00/25 (92.0%)
+     └─ Syntax: 5.0/5, Structure: 3.0/3, Execution: 6.0/6
+     └─ Quality: 3.0/3, Security: 4.0/4, Performance: 1.5/2, Maintainability: 0.5/2
 
-📝 Testing YAML/JSON Correction...
-   ✅ PASSED - Score: 25/25
-   ✅ Valid YAML syntax
-   ✅ All sections preserved
-   ✅ Valid JSON syntax
-   ✅ All data types corrected
+Testing YAML/JSON Correction...
+   PASSED - Score: 25.00/25 (100.0%)
+     └─ Syntax: 4.0/4, Structure: 6.0/6, Execution: 8.0/8
+     └─ Quality: 6.0/6, Security: 1.0/1, Performance: 0.0/0, Maintainability: 0.0/0
 
-📝 Testing Data Transformation...
-   ✅ PASSED - Score: 25/25
-   ✅ Transform function found
-   ✅ Function runs without crashing
-   ✅ All IDs converted to integers
-   ✅ Email providers extracted correctly
-   ✅ Account tiers calculated correctly
+Testing Data Transformation...
+   PASSED - Score: 25.00/25 (100.0%)
+     └─ Syntax: 3.0/3, Structure: 3.0/3, Execution: 12.0/12
+     └─ Quality: 3.0/3, Security: 1.0/1, Performance: 1.0/1, Maintainability: 2.0/2
 
-📝 Testing API Simulation...
-   ✅ PASSED - Score: 20/25
-   ✅ Function signature correct
-   ✅ Uses requests library
-   ✅ Comprehensive error handling
-   ⚠️  API structure issues
+Testing API Simulation...
+   PASSED - Score: 20.50/25 (82.0%)
+     └─ Syntax: 2.0/2, Structure: 3.0/3, Execution: 6.0/7
+     └─ Quality: 2.5/3, Security: 7.0/7, Performance: 0.0/2, Maintainability: 0.0/1
 
-🎯 Final Score: 93/100 (93.0%)
+Final Score: 93.50/100 (93.5%) - Grade: A
 
-💾 Results saved to: results/latest_results.json
-💾 Timestamped copy: results/results_20250118_143025.json
-📄 Summary report: results/summary_report_20250118_143025.txt
+Results saved to: results/latest_results.json
+Timestamped copy: results/results_20250118_143025.json
+Summary report: results/summary_report_20250118_143025.txt
 ```
+
+**Enhanced feedback features:**
+- **Detailed category breakdown**: See exactly where each model excels or struggles
+- **7-category analysis**: Security, performance, and maintainability insights
+- **Prompt-specific emphasis**: Each prompt shows its unique scoring distribution
+- **Actionable feedback**: Specific rationale for each scoring decision
 
 ## Tips for Best Results
 
@@ -179,7 +187,8 @@ python run_benchmark.py --model claude_opus_4
 
 ## Testing Individual Files
 
-```python
+**All Platforms:**
+```bash
 # Test if a Python file has syntax errors
 python -m py_compile submissions/claude_opus_4/prompt_1_solution.py
 

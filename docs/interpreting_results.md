@@ -1,17 +1,18 @@
-# Interpreting Benchmark Results
+# Interpreting benchmark results
 
-## Understanding Your Results
+## Understanding your results
 
-### Overall Score
+### Overall score
 
 The benchmark provides several key metrics:
 
-- **Total Points**: Raw score out of 100 possible points
+- **Total points**: Raw score out of 100 possible points
 - **Percentage**: Overall percentage score
-- **Letter Grade**: A-F grade based on percentage
-- **Pass/Fail**: Whether each prompt meets the 60% threshold
+- **Letter grade**: A-F grade based on percentage
+- **Pass/fail**: Whether each prompt meets the 60% threshold
+- **Detailed feedback**: Comprehensive 7-category analysis across all prompts with security, performance, and maintainability insights
 
-### Example Result Analysis
+### Example result analysis
 
 🎯 Final Score: 73/100 (73.0%)
 Letter Grade: C
@@ -28,9 +29,9 @@ Prompt Breakdown:
 - Struggles with complex data transformation logic
 - Overall grade of "C" indicates room for improvement
 
-## Performance Categories
+## Performance categories
 
-### A-Grade Models (90%+): Production Ready
+### A-grade models (90%+): Production ready
 
 - Consistently high-quality code
 - Robust error handling
@@ -44,7 +45,7 @@ Prompt Breakdown:
 - Proper type handling and validation
 - Efficient algorithms
 
-### B-Grade Models (80-89%): Strong Performance  
+### B-grade models (80-89%): Strong performance  
 
 - Generally good code quality
 - Minor issues or edge cases missed
@@ -58,7 +59,7 @@ Prompt Breakdown:
 - Mostly follows best practices
 - Occasional inefficiencies
 
-### C-Grade Models (70-79%): Adequate
+### C-grade models (70-79%): Adequate
 
 - Basic functionality works
 - Some significant issues present
@@ -72,77 +73,117 @@ Prompt Breakdown:
 - Style and best practice issues
 - Works but not optimized
 
-### D-Grade Models (60-69%): Minimal Passing
+### D-grade models (60-69%): Minimal passing
 
 - Barely meets requirements
 - Multiple significant issues
 - Unreliable for production use
 - Major improvements needed
 
-### F-Grade Models (<60%): Failing
+### F-grade models (<60%): Failing
 
 - Fundamental issues with code
 - Crashes or produces incorrect output
 - Missing key requirements
 - Not suitable for any production use
 
-## Prompt-Specific Insights
+## Prompt-specific insights
 
-### Prompt 1: Code Refactoring
+### Prompt 1: Code refactoring (7-category scoring)
+
+**🆕 Enhanced scoring active**: Security, performance, and maintainability analysis
 
 **High scores indicate:**
-
 - Strong understanding of Python best practices
 - Good at identifying and fixing code quality issues
-- Capable of writing maintainable code
+- Capable of writing secure, maintainable code
+- Understands performance implications
+- Follows security best practices
 
 **Low scores suggest:**
-
 - May produce working code but misses quality aspects
 - Doesn't prioritize error handling or robustness
 - May not understand modern Python conventions
+- Could have security vulnerabilities or performance issues
+- May produce hard-to-maintain code
 
-### Prompt 2: YAML/JSON Correction
+**New feedback format example:**
+```
+✅ Security Analysis (4.0/4.0): ✓no_security_issues
+⚠️ Performance Analysis (1.87/2.0): ✓no_nested_loops ✗string_concat_in_loops
+⚠️ Maintainability Analysis (0.9/2.0): ✓no_duplication, good_naming ✗no_long_functions
+```
 
-**High scores indicate:**
+### Prompt 2: YAML/JSON correction (7-category scoring)
 
-- Good debugging and problem-solving skills
-- Understands data format specifications
-- Attention to detail with syntax and types
-
-**Low scores suggest:**
-
-- Difficulty with debugging structured data
-- May not understand type systems well
-- Struggles with data format conversions
-
-### Prompt 3: Data Transformation
+**🆕 Enhanced scoring active**: Structure and execution focused evaluation
 
 **High scores indicate:**
-
-- Strong programming logic abilities
-- Good at handling complex requirements
-- Robust error handling practices
+- Strong debugging and data format handling skills
+- Understanding of cross-format equivalence and type systems
+- Attention to YAML indentation and JSON literal standards
+- Ability to preserve complex nested data structures
 
 **Low scores suggest:**
+- Difficulty with format-specific syntax requirements
+- May not understand deep data structure equivalence
+- Struggles with type conversion between formats
+- Missing validation of data integrity during transformation
 
-- Difficulty with complex conditional logic
-- May not handle edge cases well
-- Struggles with data processing patterns
+**Enhanced feedback format example:**
+```
+✅ Execution (8.0/8.0): ✓deep_equivalence, partial_matches
+⚠️ Code Quality (4.5/6.0): ✓yaml_indentation, json_literals ✗formatting_style
+✅ Security Analysis (1.0/1.0): ✓yaml_safety
+```
 
-### Prompt 4: API Integration
+### Prompt 3: Data transformation (7-category scoring)
+
+**🆕 Enhanced scoring active**: Execution-heavy transformation testing
 
 **High scores indicate:**
-
-- Understanding of real-world programming patterns
-- Good at comprehensive error handling
-- Knows production coding practices
+- Strong programming logic and data manipulation abilities
+- Comprehensive understanding of business rule implementation
+- Robust error handling for edge cases and malformed data
+- Efficient single-pass data processing patterns
 
 **Low scores suggest:**
+- Difficulty with complex conditional logic and rule implementation
+- May not handle edge cases or malformed records gracefully
+- Struggles with type conversion and data validation
+- Missing comprehensive transformation requirements
 
-- May not understand API design patterns
-- Insufficient error handling for production code
-- Lacks experience with robust system integration
+**Enhanced feedback format example:**
+```
+✅ Execution (12.0/12.0): ✓function_runs, id_standardization, email_provider, age_normalization, account_tiers, error_handling
+⚠️ Performance Analysis (0.5/1.0): ✗single_pass
+✅ Maintainability Analysis (2.0/2.0): ✓code_organization
+```
+
+### Prompt 4: API integration (7-category scoring)
+
+**🆕 Enhanced scoring active**: Security-critical API testing with behavioral validation
+
+**High scores indicate:**
+- Understanding of production API security requirements
+- Comprehensive error handling for all HTTP status scenarios
+- Proper authentication and token handling practices
+- Network resilience with retry logic and timeout management
+
+**Low scores suggest:**
+- May not understand API security best practices
+- Insufficient error handling for production environments
+- Missing timeout configurations (security vulnerability)
+- Token leakage or improper authentication implementation
+
+**Enhanced feedback format example:**
+```
+✅ Security Analysis (7.0/7.0): ✓bearer_auth, no_token_leak, explicit_timeout
+⚠️ Execution (5.5/7.0): ✓success_handling, handle_400, handle_401 ✗handle_503, connection_error
+✅ Performance Analysis (2.0/2.0): ✓retry_resilience
+```
+
+
 
 ## Comparison Analysis
 
@@ -224,12 +265,19 @@ Track performance over time:
 
 ## Limitations and Considerations
 
-### What This Benchmark Doesn't Test
+### What this benchmark tests (enhanced)
 
-- **Performance optimization**: Code efficiency and speed
-- **Security awareness**: Vulnerability detection and prevention  
-- **Domain expertise**: Specialized knowledge areas
-- **Creativity**: Novel algorithm development
+- **✅ Security analysis**: SQL injection detection, hardcoded secrets, path traversal, unsafe execution patterns
+- **✅ Performance evaluation**: O(n²) algorithm detection, memory usage patterns, efficiency analysis
+- **✅ Maintainability assessment**: Function length analysis, code duplication, complexity indicators
+- **✅ Comprehensive quality**: Syntax, structure, execution, and style across all 7 categories
+
+### What this benchmark doesn't test
+
+- **Domain expertise**: Specialized knowledge areas (finance, medical, legal)
+- **Creative algorithm design**: Novel approaches to completely unseen problems
+- **Large-scale architecture**: System design beyond single functions/files
+- **Real-time performance**: Actual execution speed benchmarks (analyzes patterns, not timing)
 
 ### Context Matters
 

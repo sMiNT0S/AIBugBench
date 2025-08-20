@@ -4,12 +4,13 @@ A comprehensive tool for evaluating AI models' coding capabilities.
 """
 
 __version__ = "1.0.0"
-__author__ = "AI Code Benchmark Team"
+__author__ = "sMiNT0S, Polle"
+
+from .scoring import BenchmarkScorer
+from .utils import ensure_directories, load_test_data
 
 # Import main classes for easy access
 from .validators import PromptValidators
-from .scoring import BenchmarkScorer
-from .utils import load_test_data, ensure_directories
 
 __all__ = [
     "PromptValidators",

@@ -53,6 +53,7 @@ coverage.xml
 results/*.json
 results/*.txt
 !results/.gitkeep
+ai_prompt.txt
 
 # Temporary files
 *.tmp
@@ -76,8 +77,13 @@ scripts/
 
 # Claude Code documentation artifacts (exclude planning docs)
 docs/implementation-*.md
+docs/critical-ux-fixes-file-changes.md
 docs/task-*.md  
 docs/file-*.md
+docs/fixes-*.md
+docs/changes-*.md
+docs/fix-*.md
+docs/fixed-*.md
 docs/*-plan*.md
 docs/*-breakdown*.md
 

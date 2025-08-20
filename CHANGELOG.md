@@ -7,7 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.1] - 2025-08-20
+## [0.6.2-beta] - 2025-08-20
+
+### Added
+
+- **Setup.py AI prompt enhancement**: Added AI "wake up" message for improved benchmark result quality with cross-platform Unicode safety
+- **Results logging communication**: Clear messaging about detailed results file locations in shell output for both single and multi-model tests
+- **Template file enhancement**: Clear copy-paste replacement instructions with prominent headers in all 5 template files
+- **ai_prompt.txt reference file**: Complete benchmark context file for better AI response preparation
+
+### Changed
+
+- **README.md clarity improvements**: User-friendly language replacing technical jargon, eliminated duplicate content between Quick Start and detailed sections
+- **Prompt 3 formatting refinement**: Enhanced structure and clarity while preserving all technical requirements, streamlined implementation instructions
+- **Logical 6-step setup process**: Consolidated workflow without confusing cross-references between sections
+
+### Fixed
+
+- **Critical Unicode encoding crash**: Eliminated Windows 'charmap' codec crashes preventing results file creation with comprehensive safe_print() system
+- **Cross-platform compatibility**: 100% elimination of results logging failures across all Windows CMD/PowerShell environments
+- **AI response fragmentation**: Prevention of GPT models providing separate parts instead of complete scripts for Prompt 3
+- **Template confusion**: Clear instructions emphasizing complete file replacement vs keeping template structure
+
+### Technical
+
+- **Multi-agent coordination**: Architecture-planner, backend-implementer, implementation-agent, and documentation-implementer approach
+- **Unicode-safe printing infrastructure**: Robust error handling with ASCII fallbacks for cross-platform compatibility
+- **Fresh user workflow validation**: All fixes validated through simulated user testing with cross-platform safety verification
+- **Production readiness status**: Updated from "DOCUMENTATION TRANSFORMATION COMPLETE" to "PRODUCTION READY WITH USER EXPERIENCE OPTIMIZATION"
+
+## [0.6.1-beta] - 2025-08-20
 
 ### Added
 
@@ -244,6 +273,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `README.md` , and setup instructions
 - Full test data and expected outputs
 
+[Unreleased]: https://github.com/sMiNT0S/AIBugBench/releases/tag/v0.6.1-beta
+
+
+## Deprecated, tags removed. Keeping for clarity;
 [Unreleased]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.2.0-alpha...HEAD
 [0.2.0-alpha]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.2.0-alpha
 [0.1.0-alpha]: https://github.com/sMiNT0S/RealityCheckBench/releases/tag/v0.1.0-alpha

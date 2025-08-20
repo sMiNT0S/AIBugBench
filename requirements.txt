@@ -1,2 +1,3 @@
+# AI Code Benchmark Requirements
 pyyaml>=6.0
-requests>=2.25.0
+requests>=2.31.0

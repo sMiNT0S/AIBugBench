@@ -68,7 +68,7 @@ python setup.py
 pip install -r requirements.txt
 ```
 
-**What This Does**: The `setup.py` creates deliberately broken files (Python scripts, YAML config, JSON data) that AI models must fix. Without this step, there's nothing to benchmark!
+**What This Does**: The `setup.py` creates deliberately broken files (Python scripts, YAML config, JSON data) that AI models must fix. It also creates `ai_prompt.txt` - a comprehensive "wake up" message to prime your AI for better benchmark performance. Without this step, there's nothing to benchmark!
 
 **Troubleshooting**: If you get "ModuleNotFoundError" for yaml or requests, run:
 ```bash
@@ -143,6 +143,8 @@ cp -r submissions/template submissions/my_model
 ### Step 6: Get Your AI's Code Responses
 
 Now you need to give your AI model the challenges and save their code responses. Here's how:
+
+**💡 Start Here**: Begin by giving your AI the contents of `ai_prompt.txt` as the first message. This "wake up" prompt explains the benchmark format and scoring system, resulting in much better performance.
 
 1. **Find the Challenge Prompts**: Look in the `prompts/` folder for these files:
    - `prompt_1_refactoring.md` - Fix a broken Python script

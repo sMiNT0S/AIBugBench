@@ -67,7 +67,7 @@ requests>=2.25.0
    pip install -r requirements.txt
    ```
    
-   > **Why run setup.py?** It creates deliberately broken test files (`process_records.py`, `config.yaml`, `user_data.json`) that AI models must fix. Without this step, the benchmark has no test cases!
+   > **Why run setup.py?** It creates deliberately broken test files (`process_records.py`, `config.yaml`, `user_data.json`) that AI models must fix. It also generates `ai_prompt.txt` - a comprehensive "wake up" message to give your AI model before starting the benchmark for optimal results. Without this step, the benchmark has no test cases!
 
 4. **Try the example model** (to verify setup)
 
@@ -76,9 +76,9 @@ requests>=2.25.0
    python run_benchmark.py --model example_model
    ```
 
-5. **Add your own AI model code submissions**
+5. **Add your AI model's solutions**
 
-   First, create a folder for your AI model's code responses:
+   First, create a folder for your AI model:
 
    **Windows (CMD):**
    ```cmd
@@ -95,14 +95,23 @@ requests>=2.25.0
    cp -r submissions/template submissions/your_model_name
    ```
 
-   Then add your AI's Python code responses to each prompt file in `submissions/your_model_name/` and run the benchmark:
+   Next, use your editor of choice to paste your AI's solutions into each file in `submissions/your_model_name/`:
+   
+   > **💡 Pro Tip**: Start by giving your AI model the contents of `ai_prompt.txt` (created by setup.py) as an initial "wake up" message. This comprehensive prompt explains the benchmark format and scoring system, leading to better results.
+   
+   - Show the AI the contents of `test_data/` files (these contain deliberately broken code that needs fixing)
+   - Give it the specific prompt from the `prompts/` directory
+   - Copy the complete solution and replace the entire template file content
+   - Save each file
+
+6. **Run your model's benchmark**
 
    **All Platforms:**
    ```bash
    python run_benchmark.py --model your_model_name
    ```
 
-   > **Quick tip**: See the "🎯 How to Add Your AI Model" section below for detailed instructions on creating submissions.
+   > **📊 Results**: After completion, detailed results are automatically saved to the `/results` directory with scoring breakdowns, summaries, and comparison charts.
 
 ## 📋 What This Tool Tests
 
@@ -163,37 +172,6 @@ The benchmark consists of 4 progressively challenging prompts that test differen
   - **Maintainability** (1pt): Code organization and readability
 - **Expected output**: Production-ready API synchronization function with comprehensive security analysis
 
-## 🎯 How to Add Your AI Model
-
-1. **Copy the template**
-
-   **Windows (CMD):**
-   ```cmd
-   xcopy /E /I submissions\template submissions\your_model_name
-   ```
-
-   **Windows (PowerShell):**
-   ```powershell
-   Copy-Item -Recurse submissions\template submissions\your_model_name
-   ```
-
-   **macOS/Linux (Bash):**
-   ```bash
-   cp -r submissions/template submissions/your_model_name
-   ```
-
-2. **Present each prompt to your AI model**
-   - Show the AI the contents of `test_data/` files (these contain deliberately broken code that needs fixing)
-   - Give it the specific prompt from the `prompts/` directory
-   - Save the AI's Python code response in the appropriate file
-
-3. **Run the benchmark**
-
-   **All Platforms:**
-   ```bash
-   python run_benchmark.py --model your_model_name
-   ```
-
 ## 📊 Understanding results
 
 ### Scoring system
@@ -211,11 +189,22 @@ The benchmark consists of 4 progressively challenging prompts that test differen
 
 > **📖 For detailed scoring rubrics and result interpretation, see the `/docs` directory**
 
-### Output files
+### 📁 Detailed Results & Output Files
 
-- `results/latest_results.json` - Complete benchmark data with detailed scoring
-- `results/summary_report_TIMESTAMP.txt` - Human-readable summary with enhanced feedback
-- `results/comparison_chart_TIMESTAMP.txt` - Visual comparison with progress bars
+After running any benchmark, AIBugBench **automatically saves detailed results** to multiple files for comprehensive analysis:
+
+**📋 Key Result Files:**
+- **`results/latest_results.json`** - Complete benchmark data with detailed scoring breakdown for every category
+- **`results/summary_report_TIMESTAMP.txt`** - Human-readable summary with enhanced feedback and explanations
+- **`results/comparison_chart_TIMESTAMP.txt`** - Visual comparison charts with progress bars
+
+**🔍 What's Included in Results:**
+- **Complete scoring breakdown** - See exactly how points were earned in each of the 7 categories
+- **Category-specific feedback** - Understand why points were earned or lost (Security, Performance, etc.)
+- **Pass/fail details** - Detailed explanations for each test component
+- **Comparison rankings** - See how different AI models perform relative to each other
+
+**💡 Pro Tip:** After running `python run_benchmark.py --model your_model`, the tool will tell you exactly where to find these detailed results. The JSON file contains the most comprehensive data, while the summary report is perfect for human reading.
 
 ## 🛠️ Advanced usage
 
@@ -244,7 +233,7 @@ python run_benchmark.py --quiet
 
 - **`docs/scoring_rubric.md`** - Complete scoring breakdown and criteria
 - **`docs/interpreting_results.md`** - Guide to understanding benchmark results
-- **`docs/adding_models.md`** - Step-by-step model submission guide
+- **`docs/adding_models.md`** - Step-by-step guide for adding your AI model solutions
 
 ## 📁 Repository structure
 
@@ -252,7 +241,7 @@ python run_benchmark.py --quiet
 AIBugBench/
 ├── .gitignore                   # Git ignore patterns
 ├── CHANGELOG.md                 # Version history and changes
-├── EXAMPLE_SUBMISSION.md        # Detailed submission example walkthrough
+├── EXAMPLE_SUBMISSION.md        # Detailed example walkthrough for adding AI solutions
 ├── QUICKSTART.md                # Fast setup guide for new users
 ├── README.md                    # This file, main documentation
 ├── requirements.txt             # Python dependencies
@@ -282,9 +271,9 @@ AIBugBench/
 │       ├── refactored_process_records.py
 │       └── transformed_users_sample.json
 │
-├── submissions/                 # Where users put their AI model outputs
+├── submissions/                 # Where users put their AI model solutions
 │   ├── README.md                # Instructions for users
-│   ├── example_model/           # Example submission structure
+│   ├── example_model/           # Example solutions structure
 │   │   ├── prompt_1_solution.py
 │   │   ├── prompt_2_config_fixed.yaml
 │   │   ├── prompt_2_config.json
@@ -312,8 +301,6 @@ AIBugBench/
     ├── test_runner.py
     ├── test_scoring.py
     └── test_validators.py
-```
-    └── test_runner.py
 ```
 
 ## Contributing

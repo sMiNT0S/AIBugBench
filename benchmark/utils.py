@@ -148,8 +148,8 @@ def generate_comparison_chart(results: Dict[str, Any], output_file: Path) -> Non
         for prompt_id, perf_data in results["comparison"]["prompt_performance"].items():
             prompt_name = prompt_names.get(prompt_id, prompt_id)
             chart_content.append(f"\n{prompt_name}:")
-            chart_content.append(f"  Best Score: {perf_data['best_score']}/25")
-            chart_content.append(f"  Average: {perf_data['avg_score']}/25")
+            chart_content.append(f"  Best Score: {perf_data['best_score']:.2f}/25")
+            chart_content.append(f"  Average: {perf_data['avg_score']:.2f}/25")
             chart_content.append(f"  Pass Rate: {perf_data['pass_rate']}%")
 
     # Save chart

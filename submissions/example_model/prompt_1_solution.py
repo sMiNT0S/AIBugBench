@@ -85,7 +85,12 @@ class UserProcessor:
     
     def _determine_data_path(self) -> Path:
         """Determine which data path to use based on configuration."""
-        use_legacy = self.config.get('use_legacy_paths', 'false').lower() == 'true'
+        use_legacy_value = self.config.get('use_legacy_paths', False)
+        # Handle both boolean and string values
+        if isinstance(use_legacy_value, bool):
+            use_legacy = use_legacy_value
+        else:
+            use_legacy = str(use_legacy_value).lower() == 'true'
         
         if use_legacy:
             path_key = 'legacy_data_source'

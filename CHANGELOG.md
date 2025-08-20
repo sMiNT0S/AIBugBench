@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cross-platform compatibility**: 100% elimination of results logging failures across all Windows CMD/PowerShell environments
 - **AI response fragmentation**: Prevention of GPT models providing separate parts instead of complete scripts for Prompt 3
 - **Template confusion**: Clear instructions emphasizing complete file replacement vs keeping template structure
+- **Single model results not saving**: Fixed critical bug where `python run_benchmark.py --model name` did not save results to /results directory
 
 ### Technical
 
@@ -273,7 +274,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `README.md` , and setup instructions
 - Full test data and expected outputs
 
-[Unreleased]: https://github.com/sMiNT0S/AIBugBench/releases/tag/v0.6.1-beta
+[Unreleased]: 
+[0.6.1-beta]: https://github.com/sMiNT0S/AIBugBench/releases/tag/v0.6.1-beta
 
 
 ## Deprecated, tags removed. Keeping for clarity;

@@ -514,10 +514,26 @@ def main():
     try:
         if args.model:
             # Test single model
-            benchmark.run_single_model(args.model)
+            single_result = benchmark.run_single_model(args.model)
+            
+            # Create results structure compatible with _save_results
+            results_for_save = {
+                "benchmark_run": {
+                    "timestamp": datetime.now().isoformat(),
+                    "total_models": 1,
+                    "prompts_tested": 4
+                },
+                "models": {
+                    args.model: single_result
+                }
+            }
+            
+            # Save results for single model runs
+            benchmark._save_results(results_for_save)
+            
             if not args.quiet:
                 print(f"\nSingle model test completed: {args.model}")
-                
+
                 # Inform user about detailed results location
                 safe_unicode = use_safe_unicode_standalone()
                 results_icon = "" if safe_unicode else "📁 "

@@ -274,7 +274,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `README.md` , and setup instructions
 - Full test data and expected outputs
 
-[Unreleased]: 
+[Unreleased]: https://github.com/sMiNT0S/AIBugBench/releases/tag/v0.6.2-beta
 [0.6.1-beta]: https://github.com/sMiNT0S/AIBugBench/releases/tag/v0.6.1-beta
 
 

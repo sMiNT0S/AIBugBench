@@ -6,7 +6,223 @@ Creates necessary directories and initializes test data.
 
 import os
 import json
+import sys
 from pathlib import Path
+
+
+def use_safe_unicode() -> bool:
+    """Check if Unicode emojis can be safely displayed."""
+    try:
+        # Check if output is being piped or redirected
+        if not sys.stdout.isatty():
+            return True  # Use safe fallback for piped output
+        
+        # Test if current encoding supports emojis
+        encoding = sys.stdout.encoding or 'utf-8'
+        if encoding.lower() in ['cp1252', 'ascii']:
+            return True  # Use safe fallback for limited encodings
+            
+        "🚀".encode(encoding)
+        return False  # Unicode is safe
+    except (UnicodeEncodeError, LookupError, AttributeError):
+        return True   # Use safe fallback
+
+
+def create_ai_prompt_file():
+    """Create the AI prompt message file for easy reference."""
+    safe_mode = use_safe_unicode()
+    
+    if safe_mode:
+        ai_prompt_content = """Welcome to AIBugBench! 
+
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+
+Here's what you need to know:
+
+[TARGET] WHAT IS AIBUGBENCH?
+AIBugBench is a scoring system that tests your ability to:
+- Fix and refactor broken Python code
+- Convert between YAML and JSON formats correctly
+- Transform and enrich data structures
+- Implement secure API integrations with proper error handling
+
+[CHART] SCORING SYSTEM:
+You'll be scored across 7 categories (100 points total):
+- Syntax correctness
+- Code structure and organization  
+- Execution and functionality
+- Code quality and best practices
+- Security considerations
+- Performance optimization
+- Code maintainability
+
+[WRENCH] THE CHALLENGES:
+1. **Code Refactoring**: Fix a broken Python script with style, logic, and efficiency issues
+2. **Data Format Conversion**: Correct malformed YAML and convert it to proper JSON
+3. **Data Transformation**: Implement complex data processing with business rules
+4. **API Integration**: Build secure API synchronization with comprehensive error handling
+
+[BULB] SUCCESS TIPS:
+- Read requirements carefully - each challenge has specific criteria
+- Focus on clean, secure, and efficient code
+- Handle edge cases and errors properly
+- Follow Python best practices (PEP 8)
+- Test your solutions mentally before submitting
+
+Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!
+
+---
+Copy this message to your AI/LLM, then proceed with the benchmark prompts.
+"""
+    else:
+        ai_prompt_content = """Welcome to AIBugBench! 
+
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+
+Here's what you need to know:
+
+🎯 WHAT IS AIBUGBENCH?
+AIBugBench is a scoring system that tests your ability to:
+- Fix and refactor broken Python code
+- Convert between YAML and JSON formats correctly
+- Transform and enrich data structures
+- Implement secure API integrations with proper error handling
+
+📊 SCORING SYSTEM:
+You'll be scored across 7 categories (100 points total):
+- Syntax correctness
+- Code structure and organization  
+- Execution and functionality
+- Code quality and best practices
+- Security considerations
+- Performance optimization
+- Code maintainability
+
+🔧 THE CHALLENGES:
+1. **Code Refactoring**: Fix a broken Python script with style, logic, and efficiency issues
+2. **Data Format Conversion**: Correct malformed YAML and convert it to proper JSON
+3. **Data Transformation**: Implement complex data processing with business rules
+4. **API Integration**: Build secure API synchronization with comprehensive error handling
+
+💡 SUCCESS TIPS:
+- Read requirements carefully - each challenge has specific criteria
+- Focus on clean, secure, and efficient code
+- Handle edge cases and errors properly
+- Follow Python best practices (PEP 8)
+- Test your solutions mentally before submitting
+
+Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!
+
+---
+Copy this message to your AI/LLM, then proceed with the benchmark prompts.
+"""
+    
+    with open("ai_prompt.txt", "w", encoding='utf-8') as f:
+        f.write(ai_prompt_content)
+    
+    checkmark = "✅" if not safe_mode else "[OK]"
+    print(f"{checkmark} Created ai_prompt.txt")
+    return ai_prompt_content
+
+
+def display_ai_prompt():
+    """Display the AI prompt message during setup."""
+    safe_mode = use_safe_unicode()
+    
+    print("\n" + "="*60)
+    robot_icon = "🤖" if not safe_mode else "[AI]"
+    print(f"{robot_icon} AI PREPARATION PROMPT")
+    print("="*60)
+    print("\nBefore starting the benchmark, copy and paste this message")
+    print("to your AI/LLM to prepare it for the coding challenges:\n")
+    
+    print("-" * 60)
+    
+    if safe_mode:
+        ai_prompt_content = """Welcome to AIBugBench! 
+
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+
+Here's what you need to know:
+
+[TARGET] WHAT IS AIBUGBENCH?
+AIBugBench is a scoring system that tests your ability to:
+- Fix and refactor broken Python code
+- Convert between YAML and JSON formats correctly
+- Transform and enrich data structures
+- Implement secure API integrations with proper error handling
+
+[CHART] SCORING SYSTEM:
+You'll be scored across 7 categories (100 points total):
+- Syntax correctness
+- Code structure and organization  
+- Execution and functionality
+- Code quality and best practices
+- Security considerations
+- Performance optimization
+- Code maintainability
+
+[WRENCH] THE CHALLENGES:
+1. **Code Refactoring**: Fix a broken Python script with style, logic, and efficiency issues
+2. **Data Format Conversion**: Correct malformed YAML and convert it to proper JSON
+3. **Data Transformation**: Implement complex data processing with business rules
+4. **API Integration**: Build secure API synchronization with comprehensive error handling
+
+[BULB] SUCCESS TIPS:
+- Read requirements carefully - each challenge has specific criteria
+- Focus on clean, secure, and efficient code
+- Handle edge cases and errors properly
+- Follow Python best practices (PEP 8)
+- Test your solutions mentally before submitting
+
+Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!"""
+    else:
+        ai_prompt_content = """Welcome to AIBugBench! 
+
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+
+Here's what you need to know:
+
+🎯 WHAT IS AIBUGBENCH?
+AIBugBench is a scoring system that tests your ability to:
+- Fix and refactor broken Python code
+- Convert between YAML and JSON formats correctly
+- Transform and enrich data structures
+- Implement secure API integrations with proper error handling
+
+📊 SCORING SYSTEM:
+You'll be scored across 7 categories (100 points total):
+- Syntax correctness
+- Code structure and organization  
+- Execution and functionality
+- Code quality and best practices
+- Security considerations
+- Performance optimization
+- Code maintainability
+
+🔧 THE CHALLENGES:
+1. **Code Refactoring**: Fix a broken Python script with style, logic, and efficiency issues
+2. **Data Format Conversion**: Correct malformed YAML and convert it to proper JSON
+3. **Data Transformation**: Implement complex data processing with business rules
+4. **API Integration**: Build secure API synchronization with comprehensive error handling
+
+💡 SUCCESS TIPS:
+- Read requirements carefully - each challenge has specific criteria
+- Focus on clean, secure, and efficient code
+- Handle edge cases and errors properly
+- Follow Python best practices (PEP 8)
+- Test your solutions mentally before submitting
+
+Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!"""
+    
+    print(ai_prompt_content)
+    print("-" * 60)
+    file_icon = "📝" if not safe_mode else "[FILE]"
+    timer_icon = "⏳" if not safe_mode else "[WAIT]"
+    print(f"\n{file_icon} This prompt has been saved to 'ai_prompt.txt' for easy access.")
+    print(f"\n{timer_icon} Please copy this message to your AI/LLM before proceeding...")
+    print("Press Enter when you've prepared your AI and are ready to continue...")
+    input()
 
 
 def create_directory_structure():
@@ -19,14 +235,19 @@ def create_directory_structure():
         "results",
     ]
 
+    safe_mode = use_safe_unicode()
+    checkmark = "✅" if not safe_mode else "[OK]"
+    
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
-        print(f"✅ Created directory: {directory}")
+        print(f"{checkmark} Created directory: {directory}")
 
 
 def create_test_data():
     """Create the test data files."""
     test_data_dir = Path("test_data")
+    safe_mode = use_safe_unicode()
+    checkmark = "✅" if not safe_mode else "[OK]"
 
     # Create process_records.py (the broken script)
     process_records_content = """# process_records.py: A script for processing user records from various sources
@@ -121,7 +342,7 @@ if __name__ == "__main__":
 
     with open(test_data_dir / "process_records.py", "w") as f:
         f.write(process_records_content)
-    print("✅ Created test_data/process_records.py")
+    print(f"{checkmark} Created test_data/process_records.py")
 
     # Create config.yaml (the broken YAML)
     config_yaml_content = """# Configuration file for the data processor script
@@ -166,7 +387,7 @@ server_settings:
 
     with open(test_data_dir / "config.yaml", "w") as f:
         f.write(config_yaml_content)
-    print("✅ Created test_data/config.yaml")
+    print(f"{checkmark} Created test_data/config.yaml")
 
     # Create user_data.json
     user_data = {
@@ -223,7 +444,7 @@ server_settings:
 
     with open(test_data_dir / "user_data.json", "w") as f:
         json.dump(user_data, f, indent=2)
-    print("✅ Created test_data/user_data.json")
+    print(f"{checkmark} Created test_data/user_data.json")
 
 
 def create_template_files():
@@ -314,11 +535,14 @@ def sync_users_to_crm(user_data, api_token):
 ''',
     }
 
+    safe_mode = use_safe_unicode()
+    checkmark = "✅" if not safe_mode else "[OK]"
+    
     for filename, content in templates.items():
         filepath = template_dir / filename
         with open(filepath, "w") as f:
             f.write(content)
-        print(f"✅ Created template: {filename}")
+        print(f"{checkmark} Created template: {filename}")
 
 
 def create_requirements_txt():
@@ -330,37 +554,63 @@ requests>=2.31.0
 
     with open("requirements.txt", "w") as f:
         f.write(requirements)
-    print("✅ Created requirements.txt")
+    
+    safe_mode = use_safe_unicode()
+    checkmark = "✅" if not safe_mode else "[OK]"
+    print(f"{checkmark} Created requirements.txt")
 
 
 def main():
     """Run the setup process."""
-    print("🚀 AI Code Benchmark Setup")
+    safe_mode = use_safe_unicode()
+    
+    rocket_icon = "🚀" if not safe_mode else "[SETUP]"
+    print(f"{rocket_icon} AIBugBench Setup")
     print("=" * 40)
 
     # Create directory structure
-    print("\n📁 Creating directory structure...")
+    folder_icon = "📁" if not safe_mode else "[DIR]"
+    print(f"\n{folder_icon} Creating directory structure...")
     create_directory_structure()
 
     # Create test data
-    print("\n📄 Creating test data files...")
+    file_icon = "📄" if not safe_mode else "[FILES]"
+    print(f"\n{file_icon} Creating test data files...")
     create_test_data()
 
     # Create template files
-    print("\n📝 Creating submission templates...")
+    doc_icon = "📝" if not safe_mode else "[TEMPLATES]"
+    print(f"\n{doc_icon} Creating submission templates...")
     create_template_files()
 
     # Create requirements file
-    print("\n📋 Creating requirements.txt...")
+    list_icon = "📋" if not safe_mode else "[REQ]"
+    print(f"\n{list_icon} Creating requirements.txt...")
     create_requirements_txt()
 
-    print("\n✅ Setup complete!")
+    # Create AI prompt file
+    ai_icon = "🤖" if not safe_mode else "[AI]"
+    print(f"\n{ai_icon} Creating AI preparation prompt...")
+    create_ai_prompt_file()
+
+    check_icon = "✅" if not safe_mode else "[DONE]"
+    print(f"\n{check_icon} Setup complete!")
+    
+    # Display AI prompt for user to copy to their AI/LLM
+    display_ai_prompt()
+    
+    rocket_ready = "🚀" if not safe_mode else "[READY]"
+    print(f"\n{rocket_ready} Ready to start benchmarking!")
     print("\nNext steps:")
     print("1. Install dependencies: pip install -r requirements.txt")
-    print(
-        "2. Copy template to create a submission: cp -r submissions/template submissions/your_model"
-    )
-    print("3. Run benchmark: python run_benchmark.py")
+    print("2. Copy template to create a submission:")
+    print("   • Windows CMD: xcopy /E /I submissions\\template submissions\\your_model")
+    print("   • Windows PowerShell: Copy-Item -Recurse submissions\\template submissions\\your_model")
+    print("   • macOS/Linux: cp -r submissions/template submissions/your_model")
+    print("3. Run benchmark: python run_benchmark.py --model your_model")
+    
+    note_icon = "📝" if not safe_mode else "[NOTE]"
+    print(f"\n{note_icon} The AI prompt is saved in 'ai_prompt.txt' for future reference.")
 
 
 if __name__ == "__main__":

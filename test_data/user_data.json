@@ -70,7 +70,7 @@
     {
       "id": "104",
       "first_name": "Klaus",
-      "last_name": "Müller",
+      "last_name": "M\u00fcller",
       "contact": {
         "email": "klaus.m@example.de"
       },

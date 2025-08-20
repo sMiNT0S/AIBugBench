@@ -1,2 +1,11 @@
-# JSON conversion of the corrected config
-# TODO: Convert YAML to JSON with proper data types
+{
+  "_template_instructions": "REPLACE THIS ENTIRE FILE WITH YOUR AI'S COMPLETE JSON SOLUTION",
+  "_instructions": [
+    "1. Ask your AI to convert test_data/config.yaml to JSON format",
+    "2. Copy the AI's COMPLETE JSON solution",  
+    "3. REPLACE this entire file content with the AI's JSON",
+    "4. Do NOT keep this template structure",
+    "5. The AI's JSON should be complete, valid, and properly formatted"
+  ],
+  "_note": "Your AI's solution should be a complete JSON file with all data properly converted from the YAML"
+}

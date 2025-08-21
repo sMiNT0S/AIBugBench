@@ -22,6 +22,19 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.venv/
+site-packages/
+__pycache__/
+dist/
+*.egg-info/
+.results/
+AIBugBench-Showcase.spec
+repo_audit.py
+run_showcase.py
+showcase_cl1i.py
+showcase_cli.py
+
+
 
 # Virtual Environment
 venv/
@@ -49,11 +62,15 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+
 # Results (keep directory but not contents)
 results/*.json
 results/*.txt
 !results/.gitkeep
 ai_prompt.txt
+repo_audit.py
+audit_report.json
+showcase_results.json
 
 # Temporary files
 *.tmp
@@ -87,6 +104,13 @@ docs/fix-*.md
 docs/fixed-*.md
 docs/*-plan*.md
 docs/*-breakdown*.md
+docs/showcase-file-changes.md
 
 # Implementation documentation archive
 Implementation fixes over time/
+
+# Markdown pdf and related files
+compact-pdf.css 
+AIBugBench_Project_Summary2.md
+AIBugBench_Project_Summary2.pdf
+SHOWCASE_README.md

@@ -2,12 +2,13 @@
 Test runner utilities for the AI Code Benchmark
 """
 
+import contextlib
+import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import os
-from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 
 class TestRunner:
@@ -19,9 +20,9 @@ class TestRunner:
     def run_python_script(
         self,
         script_path: Path,
-        args: Optional[list] = None,
+        args: list | None = None,
         timeout: int = 30
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run a Python script and capture output."""
         if args is None:
             args = []
@@ -41,7 +42,7 @@ class TestRunner:
 
             # Run the script
             process = subprocess.run(
-                [sys.executable, str(script_path)] + args,
+                [sys.executable, str(script_path), *args],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -60,7 +61,7 @@ class TestRunner:
                 f"Script execution timed out after {timeout} seconds"
             )
         except Exception as e:
-            result["stderr"] = f"Execution error: {str(e)}"
+            result["stderr"] = f"Execution error: {e!s}"
 
         return result
 
@@ -90,7 +91,5 @@ class TestRunner:
         for filename in temp_files:
             file_path = target_dir / filename
             if file_path.exists():
-                try:
-                    file_path.unlink()
-                except OSError:
-                    pass  # Ignore errors during cleanup
+                with contextlib.suppress(OSError):
+                    file_path.unlink()  # Ignore errors during cleanup

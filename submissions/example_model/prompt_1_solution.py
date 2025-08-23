@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 #!/usr/bin/env python3
 """
 process_records.py: A script for processing user records from various sources

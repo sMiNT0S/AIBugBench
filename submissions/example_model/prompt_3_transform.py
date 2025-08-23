@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 #!/usr/bin/env python3
 """
 User data transformation and enrichment module.

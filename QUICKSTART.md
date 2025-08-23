@@ -5,6 +5,7 @@ Get AIBugBench running and test your AI model's code generation skills in 15 min
 ## Before You Begin
 
 **What You Need**:
+
 - Python 3.8 or newer
 - Git (for downloading the project)
 - 15 minutes of your time
@@ -13,6 +14,7 @@ Get AIBugBench running and test your AI model's code generation skills in 15 min
 This guide walks you through setting up AIBugBench, running the built-in example to verify everything works, then testing your own AI model's code responses. You'll benchmark how well AI models fix deliberately broken Python, YAML, and JSON files across 7 quality categories.
 
 **Choose Your Platform**:
+
 - Windows users: Look for "Windows (CMD)" or "Windows (PowerShell)" instructions
 - Mac/Linux users: Look for "macOS/Linux (Bash)" instructions
 
@@ -21,18 +23,21 @@ This guide walks you through setting up AIBugBench, running the built-in example
 ### Step 1: Download the Project
 
 **Windows (CMD)**:
+
 ```cmd
 git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
 ```
 
 **Windows (PowerShell)**:
+
 ```powershell
 git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
 ```
 
 **macOS/Linux (Bash)**:
+
 ```bash
 git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
@@ -41,18 +46,21 @@ cd AIBugBench
 ### Step 2: Set Up Python Environment
 
 **Windows (CMD)**:
+
 ```cmd
 python -m venv venv
 venv\Scripts\activate
 ```
 
 **Windows (PowerShell)**:
+
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
 ```
 
 **macOS/Linux (Bash)**:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -63,6 +71,7 @@ source venv/bin/activate
 ### Step 3: Create Test Data and Install Dependencies
 
 **All Platforms**:
+
 ```bash
 python setup.py
 pip install -r requirements.txt
@@ -71,6 +80,7 @@ pip install -r requirements.txt
 **What This Does**: The `setup.py` creates deliberately broken files (Python scripts, YAML config, JSON data) that AI models must fix. It also creates `ai_prompt.txt` - a comprehensive "wake up" message to prime your AI for better benchmark performance. Without this step, there's nothing to benchmark!
 
 **Troubleshooting**: If you get "ModuleNotFoundError" for yaml or requests, run:
+
 ```bash
 pip install pyyaml requests
 ```
@@ -82,12 +92,13 @@ pip install pyyaml requests
 Let's run the benchmark with the built-in example model to make sure everything works:
 
 **All Platforms**:
+
 ```bash
 python run_benchmark.py --model example_model
 ```
 
 **Expected Output** (yours may vary slightly):
-```
+
 Testing model: example_model
 ==================================================
 
@@ -104,15 +115,18 @@ Testing API Simulation...
    PASSED - Score: 18.00/25
 
 Final Score: 88.17/200 (44.1%)
+
 ```
 
 **What This Means**:
+
 - **PASSED**: The AI's code submission worked correctly
 - **Score**: Points earned out of 25 possible per challenge
 - **Final Score**: Total across all 4 challenges (out of 100, not 200 - ignore the display bug)
 - **44.1%**: This example model performs moderately well
 
-**Troubleshooting**: 
+**Troubleshooting**:
+
 - If you see "FAILED" scores, that's normal for some models
 - If you get "FileNotFoundError", make sure you ran `python setup.py`
 - If you get import errors, double-check your virtual environment is activated
@@ -124,16 +138,19 @@ Final Score: 88.17/200 (44.1%)
 First, create a folder for your AI model's code submissions:
 
 **Windows (CMD)**:
+
 ```cmd
 xcopy /E /I submissions\template submissions\my_model
 ```
 
 **Windows (PowerShell)**:
+
 ```powershell
 Copy-Item -Recurse submissions\template submissions\my_model
 ```
 
 **macOS/Linux (Bash)**:
+
 ```bash
 cp -r submissions/template submissions/my_model
 ```
@@ -165,11 +182,13 @@ Now you need to give your AI model the challenges and save their code responses.
 ### Step 7: Run Your Benchmark
 
 **All Platforms**:
+
 ```bash
 python run_benchmark.py --model my_model
 ```
 
 **Expected Output** (will vary based on your AI's performance):
+
 ```
 Testing model: my_model
 ==================================================
@@ -192,6 +211,7 @@ Final Score: 55.82/200 (27.9%)
 ### Step 8: Understand Your Results
 
 **Scoring Categories** (each challenge tests different aspects):
+
 - **Syntax**: Does the code run without errors?
 - **Structure**: Is the code well-organized?
 - **Execution**: Does it solve the problem correctly?
@@ -201,6 +221,7 @@ Final Score: 55.82/200 (27.9%)
 - **Maintainability**: Is it easy to modify and understand?
 
 **Grade Scale**:
+
 - 90-100: A (Excellent)
 - 80-89: B (Good)
 - 70-79: C (Satisfactory)
@@ -212,6 +233,7 @@ Final Score: 55.82/200 (27.9%)
 Want to compare several AI models? Create separate folders for each:
 
 **All Platforms**:
+
 ```bash
 python run_benchmark.py --model gpt4
 python run_benchmark.py --model claude
@@ -219,6 +241,7 @@ python run_benchmark.py --model gemini
 ```
 
 Or test all models at once:
+
 ```bash
 python run_benchmark.py
 ```
@@ -295,11 +318,13 @@ code = response.content[0].text
 ### Common Issues
 
 **"ModuleNotFoundError: No module named 'yaml'"**
+
 ```bash
 pip install pyyaml
 ```
 
 **"ModuleNotFoundError: No module named 'requests'"**
+
 ```bash
 pip install requests
 ```
@@ -308,11 +333,13 @@ pip install requests
 Make sure you ran `python setup.py` to create the test files.
 
 **"Permission denied" or script execution errors (Windows PowerShell)**
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 **Virtual environment won't activate**
+
 - Windows CMD: Use `venv\Scripts\activate.bat`
 - Windows PowerShell: Use `venv\Scripts\Activate.ps1`
 - macOS/Linux: Use `source venv/bin/activate`
@@ -330,15 +357,17 @@ Check that your Python files contain actual code, not explanations or markdown f
 3. **Test Step by Step**: Run each command individually to isolate problems
 4. **Check Python Version**: Run `python --version` - you need Python 3.8 or newer
 
-## Success!
+## Success
 
 If everything worked, you now have:
+
 - ✅ AIBugBench installed and working
 - ✅ Baseline results from the example model
 - ✅ Your AI model's performance scores
 - ✅ Understanding of what the scores mean
 
 **Next Steps**:
+
 - Try different AI models and compare results
 - Read the detailed documentation in `docs/` to understand the scoring system
 - Check out `results/` folder for detailed analysis files

@@ -8,24 +8,27 @@ Usage: python run_benchmark.py [options]
 
 # Ensure UTF-8 encoding for cross-platform compatibility
 import os
-if os.name == 'nt':  # Windows
-    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 
-from benchmark.utils import (
-    load_test_data,
-    ensure_directories,
-    validate_submission_structure,
-    generate_comparison_chart
-)
-from benchmark.scoring import BenchmarkScorer
-from benchmark.validators import PromptValidators
-import sys
-import json
+if os.name == "nt":  # Windows
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
 import argparse
-import traceback
+import contextlib
 from datetime import datetime
+import json
 from pathlib import Path
-from typing import Dict, List, Any
+import sys
+import traceback
+from typing import Any
+
+from benchmark.scoring import BenchmarkScorer
+from benchmark.utils import (
+    ensure_directories,
+    generate_comparison_chart,
+    load_test_data,
+    validate_submission_structure,
+)
+from benchmark.validators import PromptValidators
 
 # Add the benchmark package to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "benchmark"))
@@ -37,16 +40,16 @@ def use_safe_unicode_standalone() -> bool:
         # Check if output is being piped or redirected
         if not sys.stdout.isatty():
             return True  # Use safe fallback for piped output
-        
+
         # Test if current encoding supports emojis
-        encoding = sys.stdout.encoding or 'utf-8'
-        if encoding.lower() in ['cp1252', 'ascii']:
+        encoding = sys.stdout.encoding or "utf-8"
+        if encoding.lower() in ["cp1252", "ascii"]:
             return True  # Use safe fallback for limited encodings
-            
+
         "🚀".encode(encoding)
         return False  # Unicode is safe
     except (UnicodeEncodeError, LookupError, AttributeError):
-        return True   # Use safe fallback
+        return True  # Use safe fallback
 
 
 class AICodeBenchmark:
@@ -57,11 +60,7 @@ class AICodeBenchmark:
     DEFAULT_PASS_THRESHOLD = 0.6  # 60%
     DEFAULT_TIMEOUT = 30  # seconds
 
-    def __init__(
-        self,
-        submissions_dir: str = "submissions",
-        results_dir: str = "results"
-    ):
+    def __init__(self, submissions_dir: str = "submissions", results_dir: str = "results"):
         self.submissions_dir = Path(submissions_dir)
         self.results_dir = Path(results_dir)
         self.test_data_dir = Path("test_data")
@@ -80,19 +79,20 @@ class AICodeBenchmark:
         """Detect if Unicode emojis are safe to use."""
         try:
             import sys
+
             # Check if output is being piped or redirected
             if not sys.stdout.isatty():
                 return True  # Use safe fallback for piped output
-            
+
             # Test if current encoding supports emojis
-            encoding = sys.stdout.encoding or 'utf-8'
-            if encoding.lower() in ['cp1252', 'ascii']:
+            encoding = sys.stdout.encoding or "utf-8"
+            if encoding.lower() in ["cp1252", "ascii"]:
                 return True  # Use safe fallback for limited encodings
-                
+
             "🚀".encode(encoding)
             return False  # Unicode is safe
         except (UnicodeEncodeError, LookupError, AttributeError):
-            return True   # Use safe fallback
+            return True  # Use safe fallback
 
     def safe_print(self, message: str) -> None:
         """Print message with Unicode safety and error handling."""
@@ -101,64 +101,68 @@ class AICodeBenchmark:
         except UnicodeEncodeError:
             # Fallback: strip non-ASCII characters and try again
             try:
-                ascii_message = message.encode('ascii', 'ignore').decode('ascii')
+                ascii_message = message.encode("ascii", "ignore").decode("ascii")
                 print(ascii_message)
             except Exception:
                 # Last resort: print a basic message
                 print("(Output encoding error - message suppressed)")
         except Exception as e:
             # Any other printing error
-            try:
-                print(f"Print error: {str(e)}")
-            except Exception:
-                pass  # Even error reporting failed
+            with contextlib.suppress(Exception):
+                print(f"Print error: {e!s}")
 
-    def format_detailed_score(self, detailed_scoring: Dict[str, Any]) -> str:
+    def format_detailed_score(self, detailed_scoring: dict[str, Any]) -> str:
         """Format detailed scoring for terminal display."""
         lines = []
-        
+
         # Category breakdown
         if detailed_scoring:
             categories = []
             # Consistent category ordering
-            category_order = ["syntax", "structure", "execution", "quality", "security", "performance", "maintainability"]
-            
+            category_order = [
+                "syntax",
+                "structure",
+                "execution",
+                "quality",
+                "security",
+                "performance",
+                "maintainability",
+            ]
+
             for category in category_order:
                 if category in detailed_scoring:
                     scores = detailed_scoring[category]
                     earned = scores.get("earned", 0)
                     max_pts = scores.get("max", 0)
                     categories.append(f"{category.title()}: {earned:.1f}/{max_pts:.1f}")
-            
+
             # Split into two lines for readability
             mid = len(categories) // 2
             if categories:
                 lines.append(f"     └─ {', '.join(categories[:mid])}")
                 if len(categories) > mid:
                     lines.append(f"        {', '.join(categories[mid:])}")
-        
-        return '\n'.join(lines)
 
-    def discover_models(self) -> List[str]:
+        return "\n".join(lines)
+
+    def discover_models(self) -> list[str]:
         """Discover all model submissions in the submissions directory."""
         models = []
         if not self.submissions_dir.exists():
             safe_unicode = self.use_safe_unicode()
             error_icon = "ERROR:" if safe_unicode else "❌"
-            self.safe_print(f"{error_icon} Submissions directory '{self.submissions_dir}' not found!")
+            self.safe_print(
+                f"{error_icon} Submissions directory '{self.submissions_dir}' not found!"
+            )
             return models
 
         for item in self.submissions_dir.iterdir():
-            if (
-                item.is_dir()
-                and not item.name.startswith(".")
-                and item.name != "template"
-            ):
+            if item.is_dir() and not item.name.startswith(".") and item.name != "template":
                 models.append(item.name)
 
         return sorted(models)
 
-    def run_single_model(self, model_name: str) -> Dict[str, Any]:
+    def run_single_model(self, model_name: str) -> dict[str, Any]:
         """Run all benchmark tests for a single model."""
         print(f"\nTesting model: {model_name}")
         print("=" * 50)
@@ -169,9 +173,7 @@ class AICodeBenchmark:
 
         # Validate submission structure first
         structure_validation = validate_submission_structure(model_dir)
-        missing_files = [
-            file for file, exists in structure_validation.items() if not exists
-        ]
+        missing_files = [file for file, exists in structure_validation.items() if not exists]
         if missing_files:
             safe_unicode = self.use_safe_unicode()
             warning_icon = "WARNING:" if safe_unicode else "⚠️"
@@ -201,21 +203,17 @@ class AICodeBenchmark:
                 prompt_result = test_func(model_dir)
                 results["prompts"][prompt_id] = prompt_result
                 results["overall_score"] += prompt_result.get("score", 0)
-                results["total_possible"] += prompt_result.get(
-                    "max_score", self.DEFAULT_MAX_SCORE
-                )
+                results["total_possible"] += prompt_result.get("max_score", self.DEFAULT_MAX_SCORE)
 
                 safe_unicode = self.use_safe_unicode()
                 passed = prompt_result.get("passed", False)
                 if safe_unicode:
                     status = "PASSED" if passed else "FAILED"
                 else:
-                    status = ("✅ PASSED" if passed else "❌ FAILED")
+                    status = "✅ PASSED" if passed else "❌ FAILED"
                 score = prompt_result.get("score", 0)
-                max_score = prompt_result.get(
-                    "max_score", self.DEFAULT_MAX_SCORE
-                )
-                
+                max_score = prompt_result.get("max_score", self.DEFAULT_MAX_SCORE)
+
                 # Display enhanced scoring details if available
                 if prompt_result.get("detailed_scoring"):
                     detailed_display = self.format_detailed_score(prompt_result["detailed_scoring"])
@@ -227,7 +225,7 @@ class AICodeBenchmark:
             except Exception as e:
                 safe_unicode = self.use_safe_unicode()
                 error_icon = "ERROR:" if safe_unicode else "❌ ERROR:"
-                self.safe_print(f"   {error_icon} {str(e)}")
+                self.safe_print(f"   {error_icon} {e!s}")
                 results["prompts"][prompt_id] = {
                     "error": str(e),
                     "traceback": traceback.format_exc(),
@@ -247,7 +245,7 @@ class AICodeBenchmark:
 
         safe_unicode = self.use_safe_unicode()
         final_icon = "" if safe_unicode else "🎯 "
-        
+
         self.safe_print(
             f"\n{final_icon}Final Score: {results['overall_score']:.2f}/"
             f"{results['total_possible']} ({results['percentage']}%)"
@@ -255,30 +253,28 @@ class AICodeBenchmark:
 
         return results
 
-    def _test_prompt_1(self, model_dir: Path) -> Dict[str, Any]:
+    def _test_prompt_1(self, model_dir: Path) -> dict[str, Any]:
         """Test Prompt 1: Code Refactoring & Analysis."""
         solution_file = model_dir / "prompt_1_solution.py"
         return self.validators.validate_prompt_1_refactoring(solution_file)
 
-    def _test_prompt_2(self, model_dir: Path) -> Dict[str, Any]:
+    def _test_prompt_2(self, model_dir: Path) -> dict[str, Any]:
         """Test Prompt 2: YAML/JSON Correction."""
         yaml_file = model_dir / "prompt_2_config_fixed.yaml"
         json_file = model_dir / "prompt_2_config.json"
-        return self.validators.validate_prompt_2_yaml_json(
-            yaml_file, json_file
-        )
+        return self.validators.validate_prompt_2_yaml_json(yaml_file, json_file)
 
-    def _test_prompt_3(self, model_dir: Path) -> Dict[str, Any]:
+    def _test_prompt_3(self, model_dir: Path) -> dict[str, Any]:
         """Test Prompt 3: Data Transformation."""
         transform_file = model_dir / "prompt_3_transform.py"
         return self.validators.validate_prompt_3_transformation(transform_file)
 
-    def _test_prompt_4(self, model_dir: Path) -> Dict[str, Any]:
+    def _test_prompt_4(self, model_dir: Path) -> dict[str, Any]:
         """Test Prompt 4: API Simulation."""
         api_file = model_dir / "prompt_4_api_sync.py"
         return self.validators.validate_prompt_4_api(api_file)
 
-    def run_all_models(self) -> Dict[str, Any]:
+    def run_all_models(self) -> dict[str, Any]:
         """Run benchmark tests for all discovered models."""
         models = self.discover_models()
 
@@ -304,27 +300,22 @@ class AICodeBenchmark:
 
         # Test each model
         for model_name in models:
-            all_results["models"][model_name] = self.run_single_model(
-                model_name)
+            all_results["models"][model_name] = self.run_single_model(model_name)
 
         # Generate comparison data
-        all_results["comparison"] = self._generate_comparison(
-            all_results["models"])
+        all_results["comparison"] = self._generate_comparison(all_results["models"])
 
         # Save results
         self._save_results(all_results)
 
         return all_results
 
-    def _generate_comparison(
-        self, models_results: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_comparison(self, models_results: dict[str, Any]) -> dict[str, Any]:
         """Generate comparison statistics across all models."""
         if not models_results:
             return {}
 
-        comparison = {"ranking": [],
-                      "prompt_performance": {}, "summary_stats": {}}
+        comparison = {"ranking": [], "prompt_performance": {}, "summary_stats": {}}
 
         # Create ranking
         model_scores = []
@@ -338,16 +329,13 @@ class AICodeBenchmark:
                     }
                 )
 
-        comparison["ranking"] = sorted(
-            model_scores, key=lambda x: x["score"], reverse=True
-        )
+        comparison["ranking"] = sorted(model_scores, key=lambda x: x["score"], reverse=True)
 
         # Analyze prompt-specific performance
         for prompt_id in ["prompt_1", "prompt_2", "prompt_3", "prompt_4"]:
             prompt_scores = []
             for model_name, result in models_results.items():
-                if ("error" not in result and
-                        prompt_id in result.get("prompts", {})):
+                if "error" not in result and prompt_id in result.get("prompts", {}):
                     prompt_result = result["prompts"][prompt_id]
                     if "score" in prompt_result:
                         prompt_scores.append(
@@ -362,23 +350,18 @@ class AICodeBenchmark:
                 comparison["prompt_performance"][prompt_id] = {
                     "best_score": max(s["score"] for s in prompt_scores),
                     "avg_score": round(
-                        sum(s["score"]
-                            for s in prompt_scores) / len(prompt_scores), 1
+                        sum(s["score"] for s in prompt_scores) / len(prompt_scores), 1
                     ),
                     "pass_rate": round(
-                        sum(1 for s in prompt_scores if s["passed"])
-                        / len(prompt_scores)
-                        * 100,
+                        sum(1 for s in prompt_scores if s["passed"]) / len(prompt_scores) * 100,
                         1,
                     ),
-                    "ranking": sorted(
-                        prompt_scores, key=lambda x: x["score"], reverse=True
-                    ),
+                    "ranking": sorted(prompt_scores, key=lambda x: x["score"], reverse=True),
                 }
 
         return comparison
 
-    def _save_results(self, results: Dict[str, Any]) -> None:
+    def _save_results(self, results: dict[str, Any]) -> None:
         """Save results to files with robust error handling."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -405,7 +388,7 @@ class AICodeBenchmark:
         # Report saved files with safe Unicode handling
         safe_unicode = self.use_safe_unicode()
         save_icon = "" if safe_unicode else "💾 "
-        
+
         if saved_files:
             self.safe_print(f"\n{save_icon}Results saved to:")
             for file_path in saved_files:
@@ -418,7 +401,7 @@ class AICodeBenchmark:
             self._generate_summary_report(results, timestamp)
         except Exception as e:
             self.safe_print(f"Warning: Failed to generate summary report: {e}")
-        
+
         # Generate comparison chart
         try:
             chart_file = self.results_dir / f"comparison_chart_{timestamp}.txt"
@@ -428,9 +411,7 @@ class AICodeBenchmark:
         except Exception as e:
             self.safe_print(f"Warning: Failed to generate comparison chart: {e}")
 
-    def _generate_summary_report(
-        self, results: Dict[str, Any], timestamp: str
-    ) -> None:
+    def _generate_summary_report(self, results: dict[str, Any], timestamp: str) -> None:
         """Generate a human-readable summary report."""
         report_file = self.results_dir / f"summary_report_{timestamp}.txt"
 
@@ -438,10 +419,7 @@ class AICodeBenchmark:
             f.write("AI CODE BENCHMARK RESULTS\n")
             f.write("=" * 50 + "\n\n")
             f.write(f"Run Date: {results['benchmark_run']['timestamp']}\n")
-            f.write(
-                f"Models Tested: {results['benchmark_run']['total_models']}"
-                f"\n\n"
-            )
+            f.write(f"Models Tested: {results['benchmark_run']['total_models']}\n\n")
 
             # Overall ranking
             if "ranking" in results.get("comparison", {}):
@@ -449,8 +427,7 @@ class AICodeBenchmark:
                 f.write("-" * 20 + "\n")
                 for i, model in enumerate(results["comparison"]["ranking"], 1):
                     f.write(
-                        f"{i}. {model['model']}: {model['score']} points "
-                        f"({model['percentage']}%)\n"
+                        f"{i}. {model['model']}: {model['score']} points ({model['percentage']}%)\n"
                     )
                 f.write("\n")
 
@@ -472,14 +449,10 @@ class AICodeBenchmark:
                 prompts_data = model_result.get("prompts", {})
                 for prompt_id, prompt_result in prompts_data.items():
                     prompt_name = prompt_id.replace("_", " ").title()
-                    status = (
-                        "PASSED" if prompt_result.get(
-                            "passed", False) else "FAILED"
-                    )
+                    status = "PASSED" if prompt_result.get("passed", False) else "FAILED"
                     score = prompt_result.get("score", 0)
                     max_score = prompt_result.get("max_score", 25)
-                    f.write(
-                        f"  {prompt_name}: {status} - {score}/{max_score}\n")
+                    f.write(f"  {prompt_name}: {status} - {score}/{max_score}\n")
 
                     if "feedback" in prompt_result:
                         for feedback_line in prompt_result["feedback"]:
@@ -499,12 +472,8 @@ def main():
         default="submissions",
         help="Directory containing model submissions",
     )
-    parser.add_argument(
-        "--results-dir", default="results", help="Directory to save results"
-    )
-    parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Suppress detailed output"
-    )
+    parser.add_argument("--results-dir", default="results", help="Directory to save results")
+    parser.add_argument("--quiet", "-q", action="store_true", help="Suppress detailed output")
 
     args = parser.parse_args()
 
@@ -515,22 +484,20 @@ def main():
         if args.model:
             # Test single model
             single_result = benchmark.run_single_model(args.model)
-            
+
             # Create results structure compatible with _save_results
             results_for_save = {
                 "benchmark_run": {
                     "timestamp": datetime.now().isoformat(),
                     "total_models": 1,
-                    "prompts_tested": 4
+                    "prompts_tested": 4,
                 },
-                "models": {
-                    args.model: single_result
-                }
+                "models": {args.model: single_result},
             }
-            
+
             # Save results for single model runs
             benchmark._save_results(results_for_save)
-            
+
             if not args.quiet:
                 print(f"\nSingle model test completed: {args.model}")
 
@@ -538,10 +505,22 @@ def main():
                 safe_unicode = use_safe_unicode_standalone()
                 results_icon = "" if safe_unicode else "📁 "
                 print(f"\n{results_icon}Detailed results have been saved to:")
-                print(f"  • {benchmark.results_dir}/latest_results.json - Complete benchmark data with detailed scoring")
-                print(f"  • {benchmark.results_dir}/summary_report_*.txt - Human-readable summary with enhanced feedback")
-                print(f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison with progress bars")
-                print("\nFor complete scoring breakdowns and analysis, check these files in the /results directory.")
+                print(
+                    f"  • {benchmark.results_dir}/latest_results.json - Complete benchmark data "
+                    f"with detailed scoring"
+                )
+                print(
+                    f"  • {benchmark.results_dir}/summary_report_*.txt - Human-readable summary "
+                    f"with enhanced feedback"
+                )
+                print(
+                    f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison "
+                    f"with progress bars"
+                )
+                print(
+                    "\nFor complete scoring breakdowns and analysis, check these files "
+                    "in the /results directory."
+                )
         else:
             # Test all models
             results = benchmark.run_all_models()
@@ -549,7 +528,10 @@ def main():
                 safe_unicode = use_safe_unicode_standalone()
                 complete_icon = "" if safe_unicode else "🎉 "
                 try:
-                    print(f"\n{complete_icon}Benchmark completed! Tested {len(results['models'])} model(s)")
+                    print(
+                        f"\n{complete_icon}Benchmark completed! "
+                        f"Tested {len(results['models'])} model(s)"
+                    )
                 except UnicodeEncodeError:
                     print(f"\nBenchmark completed! Tested {len(results['models'])} model(s)")
 
@@ -566,24 +548,48 @@ def main():
                             print(f"  {i}. {model['model']}: {model['percentage']}%")
                         except UnicodeEncodeError:
                             print(f"  {i}. {model['model']}: {model['percentage']}%")
-                
+
                 # Inform user about detailed results location for all models
                 results_icon = "" if safe_unicode else "📁 "
                 try:
                     print(f"\n{results_icon}Detailed results have been saved to:")
                 except UnicodeEncodeError:
                     print("\nDetailed results have been saved to:")
-                
+
                 try:
-                    print(f"  • {benchmark.results_dir}/latest_results.json - Complete benchmark data with detailed scoring")
-                    print(f"  • {benchmark.results_dir}/summary_report_*.txt - Human-readable summary with enhanced feedback") 
-                    print(f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison with progress bars")
-                    print("\nFor complete scoring breakdowns and analysis, check these files in the /results directory.")
+                    print(
+                        f"  • {benchmark.results_dir}/latest_results.json - Complete data "
+                        f"with detailed scoring"
+                    )
+                    print(
+                        f"  • {benchmark.results_dir}/summary_report_*.txt - Summary "
+                        f"with enhanced feedback"
+                    )
+                    print(
+                        f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison "
+                        f"with progress bars"
+                    )
+                    print(
+                        "\nFor complete scoring breakdowns and analysis, check these files "
+                        "in the /results directory."
+                    )
                 except UnicodeEncodeError:
-                    print(f"  • {benchmark.results_dir}/latest_results.json - Complete benchmark data with detailed scoring")
-                    print(f"  • {benchmark.results_dir}/summary_report_*.txt - Human-readable summary with enhanced feedback")
-                    print(f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison with progress bars")
-                    print("\nFor complete scoring breakdowns and analysis, check these files in the /results directory.")
+                    print(
+                        f"  • {benchmark.results_dir}/latest_results.json - Complete data "
+                        f"with detailed scoring"
+                    )
+                    print(
+                        f"  • {benchmark.results_dir}/summary_report_*.txt - Summary "
+                        f"with enhanced feedback"
+                    )
+                    print(
+                        f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison "
+                        f"with progress bars"
+                    )
+                    print(
+                        "\nFor complete scoring breakdowns and analysis, check these files "
+                        "in the /results directory."
+                    )
 
     except KeyboardInterrupt:
         safe_unicode = use_safe_unicode_standalone()
@@ -597,9 +603,9 @@ def main():
         safe_unicode = use_safe_unicode_standalone()
         error_icon = "" if safe_unicode else "❌ "
         try:
-            print(f"\n{error_icon}Benchmark failed: {str(e)}")
+            print(f"\n{error_icon}Benchmark failed: {e!s}")
         except UnicodeEncodeError:
-            print(f"\nBenchmark failed: {str(e)}")
+            print(f"\nBenchmark failed: {e!s}")
         if not args.quiet:
             traceback.print_exc()
         sys.exit(1)

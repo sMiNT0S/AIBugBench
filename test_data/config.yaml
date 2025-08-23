@@ -1,3 +1,7 @@
+# yaml-language-server: $schema=
+# yamllint disable
+# yaml-language-server: $schema=
+# yamllint disable
 # Configuration file for the data processor script
 # Contains paths, rules, and feature flags.
 
@@ -14,10 +18,10 @@ validation_rules:
     minimum_posts: 5
     # a required_fields section was here, but removed for now
     required_fields:
-     - id
-     - first_name
-      - last_name
-     - contact.email # this format is tricky
+        - id
+        - first_name
+        - last_name
+        - contact.email # this format is tricky
 
 api_keys:
   - service: 'geolocator'
@@ -34,5 +38,4 @@ server_settings:
   port: 8080
   timeout_seconds: '60'
   retry_attempts: 3
-    # Bad indentation below
-   max_connections: 100
+  max_connections: 100

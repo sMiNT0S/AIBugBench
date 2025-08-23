@@ -2,7 +2,7 @@
 Scoring system for AI Code Benchmark
 """
 
-from typing import Dict, Any, List
+from typing import Any
 
 
 class BenchmarkScorer:
@@ -35,7 +35,7 @@ class BenchmarkScorer:
                 return grade
         return "F"
 
-    def generate_feedback_summary(self, results: Dict[str, Any]) -> List[str]:
+    def generate_feedback_summary(self, results: dict[str, Any]) -> list[str]:
         """Generate high-level feedback based on results."""
         feedback = []
 
@@ -70,8 +70,7 @@ class BenchmarkScorer:
 
         for prompt_id, prompt_result in prompts.items():
             if "error" in prompt_result:
-                weaknesses.append(
-                    f"{prompt_names.get(prompt_id, prompt_id)} (Error)")
+                weaknesses.append(f"{prompt_names.get(prompt_id, prompt_id)} (Error)")
                 continue
 
             score = prompt_result.get("score", 0)
@@ -87,12 +86,11 @@ class BenchmarkScorer:
             feedback.append(f"💪 Strengths: {', '.join(strengths)}")
 
         if weaknesses:
-            feedback.append(
-                f"📚 Areas for improvement: {', '.join(weaknesses)}")
+            feedback.append(f"📚 Areas for improvement: {', '.join(weaknesses)}")
 
         return feedback
 
-    def generate_improvement_suggestions(self, results: Dict[str, Any]) -> List[str]:
+    def generate_improvement_suggestions(self, results: dict[str, Any]) -> list[str]:
         """Generate specific improvement suggestions based on test results."""
         suggestions = []
 
@@ -107,13 +105,9 @@ class BenchmarkScorer:
             tests = p1.get("tests_passed", {})
 
             if not tests.get("valid_python"):
-                suggestions.append(
-                    "📌 Fix Python syntax errors in your refactored code"
-                )
+                suggestions.append("📌 Fix Python syntax errors in your refactored code")
             elif not tests.get("runs_successfully"):
-                suggestions.append(
-                    "📌 Ensure your refactored script runs without runtime errors"
-                )
+                suggestions.append("📌 Ensure your refactored script runs without runtime errors")
             elif not tests.get("good_structure"):
                 suggestions.append(
                     "📌 Add error handling, logging, and type hints to improve code structure"
@@ -141,9 +135,7 @@ class BenchmarkScorer:
                     "📌 Add error handling to prevent crashes in data transformation"
                 )
             elif not tests.get("email_provider"):
-                suggestions.append(
-                    "📌 Handle edge cases like null emails in transformation"
-                )
+                suggestions.append("📌 Handle edge cases like null emails in transformation")
             elif not tests.get("account_tiers"):
                 suggestions.append("📌 Review account tier calculation logic")
 
@@ -161,7 +153,7 @@ class BenchmarkScorer:
 
         return suggestions
 
-    def compare_models(self, all_results: Dict[str, Any]) -> Dict[str, Any]:
+    def compare_models(self, all_results: dict[str, Any]) -> dict[str, Any]:
         """Generate detailed model comparison analysis."""
         if "models" not in all_results:
             return {}
@@ -211,20 +203,17 @@ class BenchmarkScorer:
         for model_name, model_result in models.items():
             if "error" not in model_result and "prompts" in model_result:
                 scores = []
-                for prompt_id, prompt_result in model_result["prompts"].items():
+                for _prompt_id, prompt_result in model_result["prompts"].items():
                     if "score" in prompt_result:
                         max_score = prompt_result.get("max_score", 25)
                         percentage = (
-                            (prompt_result["score"] / max_score * 100)
-                            if max_score > 0
-                            else 0
+                            (prompt_result["score"] / max_score * 100) if max_score > 0 else 0
                         )
                         scores.append(percentage)
 
                 if scores:
                     avg_score = sum(scores) / len(scores)
-                    variance = sum((s - avg_score) **
-                                   2 for s in scores) / len(scores)
+                    variance = sum((s - avg_score) ** 2 for s in scores) / len(scores)
                     std_dev = variance**0.5
 
                     comparison["consistency_analysis"][model_name] = {

@@ -1,5 +1,7 @@
 # AIBugBench 🤖
 
+![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/python-3.13%2B-blue) ![CI](https://img.shields.io/github/actions/workflow/status/sMiNT0S/AIBugBench/ci.yml?branch=main) ![Status](https://img.shields.io/badge/status-public--ready-green)
+
 A comprehensive benchmarking tool for evaluating AI models' code generation, refactoring, and problem-solving capabilities. Test any AI model's programming skills across 4 distinct challenges!
 
 ## Requirements
@@ -14,18 +16,21 @@ requests>=2.25.0
 1. **Clone the repository**
 
    **Windows (CMD):**
+
    ```cmd
    git clone https://github.com/sMiNT0S/AIBugBench.git
    cd AIBugBench
    ```
 
    **Windows (PowerShell):**
+
    ```powershell
    git clone https://github.com/sMiNT0S/AIBugBench.git
    cd AIBugBench
    ```
 
    **macOS/Linux (Bash):**
+
    ```bash
    git clone https://github.com/sMiNT0S/AIBugBench.git
    cd AIBugBench
@@ -40,18 +45,21 @@ requests>=2.25.0
    - Prevention of package conflicts that could affect scoring
 
    **Windows (CMD):**
+
    ```cmd
    python -m venv venv
    venv\Scripts\activate
    ```
 
    **Windows (PowerShell):**
+
    ```powershell
    python -m venv venv
    venv\Scripts\Activate.ps1
    ```
 
    **macOS/Linux (Bash):**
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate
@@ -62,16 +70,18 @@ requests>=2.25.0
 3. **Run setup and install dependencies**
 
    **All Platforms:**
+
    ```bash
    python setup.py
    pip install -r requirements.txt
    ```
-   
+
    > **Why run setup.py?** It creates deliberately broken test files (`process_records.py`, `config.yaml`, `user_data.json`) that AI models must fix. It also generates `ai_prompt.txt` - a comprehensive "wake up" message to give your AI model before starting the benchmark for optimal results. Without this step, the benchmark has no test cases!
 
 4. **Try the example model** (to verify setup)
 
    **All Platforms:**
+
    ```bash
    python run_benchmark.py --model example_model
    ```
@@ -81,24 +91,27 @@ requests>=2.25.0
    First, create a folder for your AI model:
 
    **Windows (CMD):**
+
    ```cmd
    xcopy /E /I submissions\template submissions\your_model_name
    ```
 
    **Windows (PowerShell):**
+
    ```powershell
    Copy-Item -Recurse submissions\template submissions\your_model_name
    ```
 
    **macOS/Linux (Bash):**
+
    ```bash
    cp -r submissions/template submissions/your_model_name
    ```
 
    Next, use your editor of choice to paste your AI's solutions into each file in `submissions/your_model_name/`:
-   
+
    > **💡 Pro Tip**: Start by giving your AI model the contents of `ai_prompt.txt` (created by setup.py) as an initial "wake up" message. This comprehensive prompt explains the benchmark format and scoring system, leading to better results.
-   
+
    - Show the AI the contents of `test_data/` files (these contain deliberately broken code that needs fixing)
    - Give it the specific prompt from the `prompts/` directory
    - Copy the complete solution and replace the entire template file content
@@ -107,6 +120,7 @@ requests>=2.25.0
 6. **Run your model's benchmark**
 
    **All Platforms:**
+
    ```bash
    python run_benchmark.py --model your_model_name
    ```
@@ -181,6 +195,7 @@ The benchmark consists of 4 progressively challenging prompts that test differen
 - **Overall grades**: A (90%+), B (80%+), C (70%+), D (60%+), F (<60%)
 
 **🆕 Enhanced 7-category scoring system:**
+
 - **Security analysis**: SQL injection detection, hardcoded secrets, path traversal, unsafe execution patterns
 - **Performance evaluation**: O(n²) algorithm detection, memory usage patterns, efficiency analysis
 - **Maintainability metrics**: Function length analysis, code duplication detection, complexity indicators
@@ -194,11 +209,13 @@ The benchmark consists of 4 progressively challenging prompts that test differen
 After running any benchmark, AIBugBench **automatically saves detailed results** to multiple files for comprehensive analysis:
 
 **📋 Key Result Files:**
+
 - **`results/latest_results.json`** - Complete benchmark data with detailed scoring breakdown for every category
 - **`results/summary_report_TIMESTAMP.txt`** - Human-readable summary with enhanced feedback and explanations
 - **`results/comparison_chart_TIMESTAMP.txt`** - Visual comparison charts with progress bars
 
 **🔍 What's Included in Results:**
+
 - **Complete scoring breakdown** - See exactly how points were earned in each of the 7 categories
 - **Category-specific feedback** - Understand why points were earned or lost (Security, Performance, etc.)
 - **Pass/fail details** - Detailed explanations for each test component
@@ -211,6 +228,7 @@ After running any benchmark, AIBugBench **automatically saves detailed results**
 ### Test Specific Model Only
 
 **All Platforms:**
+
 ```bash
 python run_benchmark.py --model gpt4
 ```
@@ -218,6 +236,7 @@ python run_benchmark.py --model gpt4
 ### Custom Directories
 
 **All Platforms:**
+
 ```bash
 python run_benchmark.py --submissions-dir my_tests --results-dir my_results
 ```
@@ -225,6 +244,7 @@ python run_benchmark.py --submissions-dir my_tests --results-dir my_results
 ### Quiet Mode
 
 **All Platforms:**
+
 ```bash
 python run_benchmark.py --quiet
 ```
@@ -311,6 +331,29 @@ Contributions welcome! Ideas for new prompts:
 - Algorithm implementation
 - Security vulnerability detection
 - Performance optimization challenges
+
+## ❓ FAQ
+
+**Q: Which Python versions are supported?**  
+Target: 3.11+ (CI). Newer versions (e.g. 3.13) usually work but not guaranteed.
+
+**Q: Where do benchmark results go?**  
+In `results/` (JSON + summary + charts) with timestamps.
+
+**Q: Do prompts make real network calls?**  
+No. Prompt 4 HTTP calls are mocked for deterministic scoring.
+
+**Q: How do I add a new model?**  
+Copy `submissions/template` to `submissions/your_model_name`, replace each file entirely, then run benchmark.
+
+**Q: Why pin dependencies?**  
+Ensures fair, reproducible scoring across machines/time.
+
+**Q: Can I run just one model?**  
+`python run_benchmark.py --model your_model_name`.
+
+**Q: How do I regenerate test data?**  
+Run `python setup.py` (rebuilds broken sources + ai_prompt.txt).
 
 ## 📝 License
 

@@ -4,10 +4,9 @@ Setup script for AIBugBench
 Creates necessary directories and initializes test data.
 """
 
-import os
 import json
-import sys
 from pathlib import Path
+import sys
 
 
 def use_safe_unicode() -> bool:
@@ -16,26 +15,27 @@ def use_safe_unicode() -> bool:
         # Check if output is being piped or redirected
         if not sys.stdout.isatty():
             return True  # Use safe fallback for piped output
-        
+
         # Test if current encoding supports emojis
-        encoding = sys.stdout.encoding or 'utf-8'
-        if encoding.lower() in ['cp1252', 'ascii']:
+        encoding = sys.stdout.encoding or "utf-8"
+        if encoding.lower() in ["cp1252", "ascii"]:
             return True  # Use safe fallback for limited encodings
-            
+
         "🚀".encode(encoding)
         return False  # Unicode is safe
     except (UnicodeEncodeError, LookupError, AttributeError):
-        return True   # Use safe fallback
+        return True  # Use safe fallback
 
 
 def create_ai_prompt_file():
     """Create the AI prompt message file for easy reference."""
     safe_mode = use_safe_unicode()
-    
-    if safe_mode:
-        ai_prompt_content = """Welcome to AIBugBench! 
 
-I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+    if safe_mode:
+        ai_prompt_content = """Welcome to AIBugBench!
+
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
+that evaluates AI code generation across 4 different programming challenges.
 
 Here's what you need to know:
 
@@ -49,7 +49,7 @@ AIBugBench is a scoring system that tests your ability to:
 [CHART] SCORING SYSTEM:
 You'll be scored across 7 categories (100 points total):
 - Syntax correctness
-- Code structure and organization  
+- Code structure and organization
 - Execution and functionality
 - Code quality and best practices
 - Security considerations
@@ -75,9 +75,10 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
 Copy this message to your AI/LLM, then proceed with the benchmark prompts.
 """
     else:
-        ai_prompt_content = """Welcome to AIBugBench! 
+        ai_prompt_content = """Welcome to AIBugBench!
 
-I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
+that evaluates AI code generation across 4 different programming challenges.
 
 Here's what you need to know:
 
@@ -91,7 +92,7 @@ AIBugBench is a scoring system that tests your ability to:
 📊 SCORING SYSTEM:
 You'll be scored across 7 categories (100 points total):
 - Syntax correctness
-- Code structure and organization  
+- Code structure and organization
 - Execution and functionality
 - Code quality and best practices
 - Security considerations
@@ -116,10 +117,10 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
 ---
 Copy this message to your AI/LLM, then proceed with the benchmark prompts.
 """
-    
-    with open("ai_prompt.txt", "w", encoding='utf-8') as f:
+
+    with open("ai_prompt.txt", "w", encoding="utf-8") as f:
         f.write(ai_prompt_content)
-    
+
     checkmark = "✅" if not safe_mode else "[OK]"
     print(f"{checkmark} Created ai_prompt.txt")
     return ai_prompt_content
@@ -128,20 +129,21 @@ Copy this message to your AI/LLM, then proceed with the benchmark prompts.
 def display_ai_prompt():
     """Display the AI prompt message during setup."""
     safe_mode = use_safe_unicode()
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     robot_icon = "🤖" if not safe_mode else "[AI]"
     print(f"{robot_icon} AI PREPARATION PROMPT")
-    print("="*60)
+    print("=" * 60)
     print("\nBefore starting the benchmark, copy and paste this message")
     print("to your AI/LLM to prepare it for the coding challenges:\n")
-    
-    print("-" * 60)
-    
-    if safe_mode:
-        ai_prompt_content = """Welcome to AIBugBench! 
 
-I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+    print("-" * 60)
+
+    if safe_mode:
+        ai_prompt_content = """Welcome to AIBugBench!
+
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
+that evaluates AI code generation across 4 different programming challenges.
 
 Here's what you need to know:
 
@@ -155,7 +157,7 @@ AIBugBench is a scoring system that tests your ability to:
 [CHART] SCORING SYSTEM:
 You'll be scored across 7 categories (100 points total):
 - Syntax correctness
-- Code structure and organization  
+- Code structure and organization
 - Execution and functionality
 - Code quality and best practices
 - Security considerations
@@ -177,9 +179,10 @@ You'll be scored across 7 categories (100 points total):
 
 Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!"""
     else:
-        ai_prompt_content = """Welcome to AIBugBench! 
+        ai_prompt_content = """Welcome to AIBugBench!
 
-I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool that evaluates AI code generation across 4 different programming challenges.
+I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
+that evaluates AI code generation across 4 different programming challenges.
 
 Here's what you need to know:
 
@@ -193,7 +196,7 @@ AIBugBench is a scoring system that tests your ability to:
 📊 SCORING SYSTEM:
 You'll be scored across 7 categories (100 points total):
 - Syntax correctness
-- Code structure and organization  
+- Code structure and organization
 - Execution and functionality
 - Code quality and best practices
 - Security considerations
@@ -214,7 +217,7 @@ You'll be scored across 7 categories (100 points total):
 - Test your solutions mentally before submitting
 
 Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!"""
-    
+
     print(ai_prompt_content)
     print("-" * 60)
     file_icon = "📝" if not safe_mode else "[FILE]"
@@ -237,7 +240,7 @@ def create_directory_structure():
 
     safe_mode = use_safe_unicode()
     checkmark = "✅" if not safe_mode else "[OK]"
-    
+
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
         print(f"{checkmark} Created directory: {directory}")
@@ -250,7 +253,8 @@ def create_test_data():
     checkmark = "✅" if not safe_mode else "[OK]"
 
     # Create process_records.py (the broken script)
-    process_records_content = """# process_records.py: A script for processing user records from various sources
+    process_records_content = """# process_records.py: A script for processing user records from
+# various sources
 # Author: A. Novice Developer
 
 import json, yaml, sys, os
@@ -345,7 +349,9 @@ if __name__ == "__main__":
     print(f"{checkmark} Created test_data/process_records.py")
 
     # Create config.yaml (the broken YAML)
-    config_yaml_content = """# Configuration file for the data processor script
+    config_yaml_content = """# yaml-language-server: $schema=
+# yamllint disable
+# Configuration file for the data processor script
 # Contains paths, rules, and feature flags.
 
 use_legacy_paths: 'true'
@@ -490,17 +496,14 @@ import yaml
 def transform_and_enrich_users(user_list):
     """
     Transform and enrich user records.
-    
     Requirements:
     1. Standardize IDs to integers
     2. Add email_provider to contact dict
     3. Add account_tier based on activity
     4. Ensure age is always an integer
     5. Handle missing data gracefully
-    
     Args:
         user_list: List of user dictionaries
-        
     Returns:
         List of transformed user dictionaries
     """
@@ -515,18 +518,15 @@ import requests
 def sync_users_to_crm(user_data, api_token):
     """
     Synchronize users with CRM system.
-    
     Requirements:
     1. POST to https://api.crm-system.com/v2/users/sync
     2. Include proper headers (Content-Type, Authorization)
     3. Send users in {"users": [...]} format
     4. Handle all specified error cases
     5. Return job_id on success
-    
     Args:
         user_data: List of user records
         api_token: Bearer token for authentication
-        
     Returns:
         job_id on success, None on failure
     """
@@ -537,7 +537,7 @@ def sync_users_to_crm(user_data, api_token):
 
     safe_mode = use_safe_unicode()
     checkmark = "✅" if not safe_mode else "[OK]"
-    
+
     for filename, content in templates.items():
         filepath = template_dir / filename
         with open(filepath, "w") as f:
@@ -554,7 +554,7 @@ requests>=2.31.0
 
     with open("requirements.txt", "w") as f:
         f.write(requirements)
-    
+
     safe_mode = use_safe_unicode()
     checkmark = "✅" if not safe_mode else "[OK]"
     print(f"{checkmark} Created requirements.txt")
@@ -563,7 +563,7 @@ requests>=2.31.0
 def main():
     """Run the setup process."""
     safe_mode = use_safe_unicode()
-    
+
     rocket_icon = "🚀" if not safe_mode else "[SETUP]"
     print(f"{rocket_icon} AIBugBench Setup")
     print("=" * 40)
@@ -595,20 +595,22 @@ def main():
 
     check_icon = "✅" if not safe_mode else "[DONE]"
     print(f"\n{check_icon} Setup complete!")
-    
+
     # Display AI prompt for user to copy to their AI/LLM
     display_ai_prompt()
-    
+
     rocket_ready = "🚀" if not safe_mode else "[READY]"
     print(f"\n{rocket_ready} Ready to start benchmarking!")
     print("\nNext steps:")
     print("1. Install dependencies: pip install -r requirements.txt")
     print("2. Copy template to create a submission:")
     print("   • Windows CMD: xcopy /E /I submissions\\template submissions\\your_model")
-    print("   • Windows PowerShell: Copy-Item -Recurse submissions\\template submissions\\your_model")
+    print(
+        "   • Windows PowerShell: Copy-Item -Recurse submissions\\template submissions\\your_model"
+    )
     print("   • macOS/Linux: cp -r submissions/template submissions/your_model")
     print("3. Run benchmark: python run_benchmark.py --model your_model")
-    
+
     note_icon = "📝" if not safe_mode else "[NOTE]"
     print(f"\n{note_icon} The AI prompt is saved in 'ai_prompt.txt' for future reference.")
 

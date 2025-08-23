@@ -1,0 +1,65 @@
+[project]
+name = "aibugbench"
+version = "0.7.0"
+description = "AI code generation benchmarking tool"
+authors = [{ name = "AIBugBench Maintainers" }]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "PyYAML==6.0.2",
+    "requests==2.32.3"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+exclude = [
+    "test_data/",
+    "submissions/template/",
+    "submissions/example_model/",
+]
+
+[tool.ruff.lint]
+# Strict set; expect noise, then burn it down with autofix + small PRs.
+select = [
+    "E",   # pycodestyle errors (correctness)
+    "F",   # pyflakes (unused vars, etc.)
+    "W",   # pycodestyle warnings (whitespace, etc.)
+    "I",   # import sorting (isort)
+    "UP",  # pyupgrade (modernize to 3.13 styles where safe)
+    "B",   # flake8-bugbear (common footguns)
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "N",   # pep8-naming
+    "RUF", # Ruff-specific improvements
+    "S"    # bandit (security; see per-file ignore below)
+]
+ignore = [
+    "S105",  # hardcoded password - false positives in test code
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["aibugbench"]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+strict_optional = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+# Uncomment when ready to crank type strictness further:
+# disallow_untyped_defs = true
+# no_implicit_optional = true
+
+# Tests can use bare `assert` without tripping bandit S101.
+# Benchmark core functionality requires subprocess calls and intentional YAML loader usage.
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+"benchmark/runner.py" = ["S603"]  # subprocess calls required for test execution
+"benchmark/validators.py" = ["S603", "S506"]  # subprocess calls + UniqueKeyLoader for duplicate detection

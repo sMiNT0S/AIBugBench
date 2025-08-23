@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 #!/usr/bin/env python3
 """
 CRM Synchronization Module

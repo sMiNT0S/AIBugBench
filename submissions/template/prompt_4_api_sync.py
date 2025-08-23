@@ -1,27 +1,24 @@
-# ==============================================================================
-# TEMPLATE FILE - REPLACE THIS ENTIRE FILE WITH YOUR AI'S COMPLETE SOLUTION
-# ==============================================================================
-#
-# INSTRUCTIONS FOR USE:
-# 1. Copy your AI's COMPLETE solution for prompt 4 (API integration challenge)
-# 2. REPLACE this entire file content with your AI's solution
-# 3. Do NOT keep any of this template structure
-# 4. Do NOT try to fill in parts - replace everything with AI's full code
-#
-# WHAT TO DO:
-# - Ask your AI to implement the sync_users_to_crm function
-# - The function should handle API requests with proper error handling
-# - Copy the AI's complete solution
-# - Paste it here, replacing ALL content in this file
-# - Save the file
-#
-# Your AI's solution should include:
-# - Complete function implementation (not just a stub)
-# - All necessary imports (requests, etc.)
-# - Proper HTTP request handling
-# - Error handling for network issues, auth, etc.
-# - Working Python code ready to execute
-#
-# ==============================================================================
+# ruff: noqa
+# fmt: off
+# Your sync_users_to_crm function
+# TODO: Implement API synchronization with error handling
 
-# REPLACE EVERYTHING ABOVE AND BELOW WITH YOUR AI'S COMPLETE SOLUTION
+import requests
+
+def sync_users_to_crm(user_data, api_token):
+    """
+    Synchronize users with CRM system.
+    Requirements:
+    1. POST to https://api.crm-system.com/v2/users/sync
+    2. Include proper headers (Content-Type, Authorization)
+    3. Send users in {"users": [...]} format
+    4. Handle all specified error cases
+    5. Return job_id on success
+    Args:
+        user_data: List of user records
+        api_token: Bearer token for authentication
+    Returns:
+        job_id on success, None on failure
+    """
+    # Your implementation here
+    pass

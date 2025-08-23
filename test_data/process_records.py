@@ -1,4 +1,7 @@
-# process_records.py: A script for processing user records from various sources
+# ruff: noqa
+# fmt: off
+# process_records.py: A script for processing user records from
+# various sources
 # Author: A. Novice Developer
 
 import json, yaml, sys, os

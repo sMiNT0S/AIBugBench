@@ -4,35 +4,35 @@ Utility functions for AI Code Benchmark
 
 import json
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
 
-def load_test_data(test_data_dir: Path) -> Dict[str, Any]:
+def load_test_data(test_data_dir: Path) -> dict[str, Any]:
     """Load all test data files."""
     data = {}
 
     # Load user data
     user_data_file = test_data_dir / "user_data.json"
     if user_data_file.exists():
-        with open(user_data_file, "r") as f:
+        with open(user_data_file) as f:
             data["user_data"] = json.load(f)
 
     # Load original broken config
     config_file = test_data_dir / "config.yaml"
     if config_file.exists():
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             data["original_config"] = f.read()
 
     # Load original broken script
     script_file = test_data_dir / "process_records.py"
     if script_file.exists():
-        with open(script_file, "r") as f:
+        with open(script_file) as f:
             data["original_script"] = f.read()
 
     return data
 
 
-def ensure_directories(dirs: List[Path]) -> None:
+def ensure_directories(dirs: list[Path]) -> None:
     """Ensure all specified directories exist."""
     for directory in dirs:
         directory.mkdir(parents=True, exist_ok=True)
@@ -47,23 +47,28 @@ def create_submission_template(submissions_dir: Path) -> None:
     files_to_create = [
         (
             "prompt_1_solution.py",
-            "# Your refactored version of process_records.py\n# TODO: Implement your solution here\n",
+            "# Your refactored version of process_records.py\n"
+            "# TODO: Implement your solution here\n",
         ),
         (
             "prompt_2_config_fixed.yaml",
-            "# Your corrected version of config.yaml\n# TODO: Fix all YAML syntax and structure issues\n",
+            "# Your corrected version of config.yaml\n"
+            "# TODO: Fix all YAML syntax and structure issues\n",
         ),
         (
             "prompt_2_config.json",
-            "# JSON conversion of the corrected config\n# TODO: Convert YAML to JSON with proper data types\n",
+            "# JSON conversion of the corrected config\n"
+            "# TODO: Convert YAML to JSON with proper data types\n",
         ),
         (
             "prompt_3_transform.py",
-            "# Your transform_and_enrich_users function\n# TODO: Implement data transformation logic\n",
+            "# Your transform_and_enrich_users function\n"
+            "# TODO: Implement data transformation logic\n",
         ),
         (
             "prompt_4_api_sync.py",
-            "# Your sync_users_to_crm function\n# TODO: Implement API synchronization with error handling\n",
+            "# Your sync_users_to_crm function\n"
+            "# TODO: Implement API synchronization with error handling\n",
         ),
     ]
 
@@ -78,7 +83,8 @@ def create_submission_template(submissions_dir: Path) -> None:
     if not readme_path.exists():
         readme_content = """# Model Submission Template
 
-Copy this template directory and rename it to your model name (e.g., `gpt4`, `claude_sonnet_4`, `copilot`).
+Copy this template directory and rename it to your model name (e.g., `gpt4`,
+`claude_sonnet_4`, `copilot`).
 
 ## Files to Complete
 
@@ -107,7 +113,7 @@ Good luck!
             f.write(readme_content)
 
 
-def generate_comparison_chart(results: Dict[str, Any], output_file: Path) -> None:
+def generate_comparison_chart(results: dict[str, Any], output_file: Path) -> None:
     """Generate a simple text-based comparison chart."""
     if "comparison" not in results or "ranking" not in results["comparison"]:
         return
@@ -128,8 +134,7 @@ def generate_comparison_chart(results: Dict[str, Any], output_file: Path) -> Non
         percentage = model["percentage"]
         bar_length = int(percentage / 2)  # Scale to 50 chars max
         bar = "█" * bar_length + "░" * (50 - bar_length)
-        chart_content.append(
-            f"{i:2d}. {model['model']:<20} {bar} {percentage:5.1f}%")
+        chart_content.append(f"{i:2d}. {model['model']:<20} {bar} {percentage:5.1f}%")
 
     chart_content.append("")
 
@@ -157,7 +162,7 @@ def generate_comparison_chart(results: Dict[str, Any], output_file: Path) -> Non
         f.write("\n".join(chart_content))
 
 
-def validate_submission_structure(model_dir: Path) -> Dict[str, bool]:
+def validate_submission_structure(model_dir: Path) -> dict[str, bool]:
     """Validate that a model submission has the correct file structure."""
     required_files = [
         "prompt_1_solution.py",
@@ -170,13 +175,12 @@ def validate_submission_structure(model_dir: Path) -> Dict[str, bool]:
     validation = {}
     for filename in required_files:
         file_path = model_dir / filename
-        validation[filename] = file_path.exists(
-        ) and file_path.stat().st_size > 0
+        validation[filename] = file_path.exists() and file_path.stat().st_size > 0
 
     return validation
 
 
-def get_model_statistics(results: Dict[str, Any]) -> Dict[str, Any]:
+def get_model_statistics(results: dict[str, Any]) -> dict[str, Any]:
     """Extract key statistics from benchmark results."""
     if "models" not in results:
         return {}
@@ -193,7 +197,7 @@ def get_model_statistics(results: Dict[str, Any]) -> Dict[str, Any]:
 
     valid_scores = []
 
-    for model_name, model_result in results["models"].items():
+    for _model_name, model_result in results["models"].items():
         if "error" in model_result:
             stats["failed_runs"] += 1
             continue
@@ -208,8 +212,7 @@ def get_model_statistics(results: Dict[str, Any]) -> Dict[str, Any]:
             stats["lowest_score"] = percentage
 
     if valid_scores:
-        stats["average_score"] = round(
-            sum(valid_scores) / len(valid_scores), 1)
+        stats["average_score"] = round(sum(valid_scores) / len(valid_scores), 1)
 
     # Prompt-specific statistics
     for prompt_id in ["prompt_1", "prompt_2", "prompt_3", "prompt_4"]:
@@ -217,9 +220,7 @@ def get_model_statistics(results: Dict[str, Any]) -> Dict[str, Any]:
         prompt_passes = 0
 
         for model_result in results["models"].values():
-            if "error" not in model_result and prompt_id in model_result.get(
-                "prompts", {}
-            ):
+            if "error" not in model_result and prompt_id in model_result.get("prompts", {}):
                 prompt_result = model_result["prompts"][prompt_id]
                 if "score" in prompt_result:
                     prompt_scores.append(prompt_result["score"])

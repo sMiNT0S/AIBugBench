@@ -1,0 +1,14 @@
+---
+extends: default
+
+ignore: |
+  test_data/
+  submissions/template/
+  submissions/example_model/
+
+rules:
+  line-length:
+    max: 120
+  document-start: disable
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']

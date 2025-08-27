@@ -14,15 +14,13 @@ search:
 The `validation/` package contains refactored core validation logic extracted from legacy scripts in `scripts/` to enable unit testing and modular imports. CLI wrappers remain in `scripts/` for backwards compatibility.
 
 ## Architecture
-
-```
+<!-- markdownlint-disable MD050 -->
 validation/
 ├── __init__.py          # Package exports and public API
 ├── docs_core.py         # Documentation validation primitives
 ├── security_core.py     # Security validation helpers
 └── repo_audit_enhanced.py  # Enhanced repository audit implementation
-```
-
+<!-- markdownlint-enable MD050 -->
 ## Core Modules
 
 ### `docs_core.py`

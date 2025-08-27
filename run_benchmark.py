@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RealityCheckBench - AI Code Evaluation Tool
+AIBugBench - AI Code Evaluation Tool
 Main entry point for running comprehensive AI code evaluation tests.
 
 Usage: python run_benchmark.py [options]
@@ -32,6 +32,8 @@ from benchmark.validators import PromptValidators
 
 # Add the benchmark package to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "benchmark"))
+
+# (Legacy fallback removed pre-public release; single tiered discovery path only.)
 
 
 def use_safe_unicode_standalone() -> bool:
@@ -146,30 +148,83 @@ class AICodeBenchmark:
         return "\n".join(lines)
 
     def discover_models(self) -> list[str]:
-        """Discover all model submissions in the submissions directory."""
-        models = []
+        """Discover model submissions across tiered structure with fallback.
+
+        Tiers:
+          - reference_implementations/* (fully linted + covered)
+          - user_submissions/* (excluded by default, still runnable)
+          - templates/template (not a model; skip)
+    Legacy layout support has been removed prior to public release to simplify
+    maintenance. A clear error is emitted if legacy directories are detected.
+        """
         if not self.submissions_dir.exists():
             safe_unicode = self.use_safe_unicode()
             error_icon = "ERROR:" if safe_unicode else "❌"
             self.safe_print(
                 f"{error_icon} Submissions directory '{self.submissions_dir}' not found!"
             )
-            return models
+            return []
+        ref_dir = self.submissions_dir / "reference_implementations"
+        user_dir = self.submissions_dir / "user_submissions"
+        tmpl_dir = self.submissions_dir / "templates"
 
-        for item in self.submissions_dir.iterdir():
-            if item.is_dir() and not item.name.startswith(".") and item.name != "template":
-                models.append(item.name)
+        reference_models: list[str] = []
+        user_models: list[str] = []
 
-        return sorted(models)
+        # New tiered layout
+        if ref_dir.exists():
+            for item in ref_dir.iterdir():
+                if item.is_dir() and not item.name.startswith("."):
+                    reference_models.append(item.name)
+        if user_dir.exists():
+            for item in user_dir.iterdir():
+                if item.is_dir() and not item.name.startswith("."):
+                    user_models.append(item.name)
+
+        # Detect legacy structure presence and abort with guidance
+        legacy_example = (self.submissions_dir / "example_model").exists()
+        legacy_template = (self.submissions_dir / "template").exists()
+        tiered_detected = ref_dir.exists() or tmpl_dir.exists() or user_dir.exists()
+        if (legacy_example or legacy_template) and not tiered_detected:
+            raise SystemExit(
+                "Legacy submissions layout detected (e.g. submissions/example_model). "
+                "Legacy support was removed before public release. Please migrate to:\n"
+                "submissions/\n  reference_implementations/example_model/\n  "
+                "templates/template/\n  user_submissions/\n"
+            )
+
+        # Emit discovery summary
+        summary = (
+            f"Discovered models: reference={len(reference_models)} user={len(user_models)} "
+            f"templates={'OK' if (tmpl_dir / 'template').exists() else 'MISSING'}"
+        )
+        self.safe_print(summary)
+        return sorted(reference_models + user_models)
+
+    def _resolve_model_path(self, model_name: str) -> Path | None:
+        """Resolve model path within tiered structure."""
+        ref_path = self.submissions_dir / "reference_implementations" / model_name
+        if ref_path.exists():
+            return ref_path
+        user_path = self.submissions_dir / "user_submissions" / model_name
+        if user_path.exists():
+            return user_path
+        return None
+
 
     def run_single_model(self, model_name: str) -> dict[str, Any]:
         """Run all benchmark tests for a single model."""
         print(f"\nTesting model: {model_name}")
         print("=" * 50)
 
-        model_dir = self.submissions_dir / model_name
-        if not model_dir.exists():
-            return {"error": f"Model directory '{model_dir}' not found"}
+        model_dir = self._resolve_model_path(model_name)
+        if model_dir is None:
+            return {
+                "error": (
+                    f"Model '{model_name}' not found in any tier "
+                    "(reference_implementations/, user_submissions/, or legacy root)"
+                )
+            }
 
         # Validate submission structure first
         structure_validation = validate_submission_structure(model_dir)
@@ -365,12 +420,19 @@ class AICodeBenchmark:
         """Save results to files with robust error handling."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        # Save main results with error handling
+        # Ensure proper folder structure exists
+        detailed_dir = self.results_dir / "detailed"
+        charts_dir = self.results_dir / "comparison_charts"
+        ensure_directories([detailed_dir, charts_dir])
+
+        # Save main results (in main results dir)
         results_file = self.results_dir / "latest_results.json"
-        timestamped_file = self.results_dir / f"results_{timestamp}.json"
+
+        # Save detailed results (in detailed/ subdirectory)
+        detailed_results_file = detailed_dir / f"detailed_results_{timestamp}.json"
 
         saved_files = []
-        for file_path in [results_file, timestamped_file]:
+        for file_path in [results_file, detailed_results_file]:
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(results, f, indent=2, ensure_ascii=False)
@@ -386,34 +448,32 @@ class AICodeBenchmark:
                     self.safe_print(f"CRITICAL: Failed to save {file_path}: {e2}")
 
         # Report saved files with safe Unicode handling
-        safe_unicode = self.use_safe_unicode()
-        save_icon = "" if safe_unicode else "💾 "
-
-        if saved_files:
-            self.safe_print(f"\n{save_icon}Results saved to:")
-            for file_path in saved_files:
-                self.safe_print(f"  - {file_path}")
-        else:
+        if not saved_files:
             self.safe_print("\nERROR: Failed to save any results files!")
 
-        # Generate summary report
+        # Generate summary report (in detailed/ subdirectory)
         try:
-            self._generate_summary_report(results, timestamp)
+            self._generate_summary_report(results, timestamp, detailed_dir)
         except Exception as e:
             self.safe_print(f"Warning: Failed to generate summary report: {e}")
 
-        # Generate comparison chart
+        # Generate comparison chart (in comparison_charts/ subdirectory)
         try:
-            chart_file = self.results_dir / f"comparison_chart_{timestamp}.txt"
+            chart_file = charts_dir / f"comparison_chart_{timestamp}.txt"
             generate_comparison_chart(results, chart_file)
+            safe_unicode = self.use_safe_unicode()
             chart_icon = "" if safe_unicode else "📊 "
             self.safe_print(f"{chart_icon}Comparison chart: {chart_file}")
         except Exception as e:
             self.safe_print(f"Warning: Failed to generate comparison chart: {e}")
 
-    def _generate_summary_report(self, results: dict[str, Any], timestamp: str) -> None:
+    def _generate_summary_report(
+        self, results: dict[str, Any], timestamp: str, output_dir: Path | None = None
+    ) -> None:
         """Generate a human-readable summary report."""
-        report_file = self.results_dir / f"summary_report_{timestamp}.txt"
+        if output_dir is None:
+            output_dir = self.results_dir
+        report_file = output_dir / f"summary_report_{timestamp}.txt"
 
         with open(report_file, "w", encoding="utf-8") as f:
             f.write("AI CODE BENCHMARK RESULTS\n")
@@ -463,7 +523,10 @@ class AICodeBenchmark:
         self.safe_print(f"{report_icon}Summary report: {report_file}")
 
 
-def main():
+# Removed alternate discover_models implementation (pre-release simplification)
+
+
+def main(argv=None) -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="AI Code Benchmark Tool")
     parser.add_argument("--model", help="Test specific model only")
@@ -475,7 +538,7 @@ def main():
     parser.add_argument("--results-dir", default="results", help="Directory to save results")
     parser.add_argument("--quiet", "-q", action="store_true", help="Suppress detailed output")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Create benchmark instance
     benchmark = AICodeBenchmark(args.submissions_dir, args.results_dir)
@@ -495,6 +558,11 @@ def main():
                 "models": {args.model: single_result},
             }
 
+            # Generate comparison data for single model runs
+            results_for_save["comparison"] = benchmark._generate_comparison(
+                results_for_save["models"]
+            )
+
             # Save results for single model runs
             benchmark._save_results(results_for_save)
 
@@ -510,11 +578,13 @@ def main():
                     f"with detailed scoring"
                 )
                 print(
-                    f"  • {benchmark.results_dir}/summary_report_*.txt - Human-readable summary "
+                    f"  • {benchmark.results_dir}/detailed/summary_report_*.txt "
+                    f"- Human-readable summary "
                     f"with enhanced feedback"
                 )
                 print(
-                    f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison "
+                    f"  • {benchmark.results_dir}/comparison_charts/comparison_chart_*.txt "
+                    f"- Visual comparison "
                     f"with progress bars"
                 )
                 print(
@@ -562,11 +632,12 @@ def main():
                         f"with detailed scoring"
                     )
                     print(
-                        f"  • {benchmark.results_dir}/summary_report_*.txt - Summary "
+                        f"  • {benchmark.results_dir}/detailed/summary_report_*.txt - Summary "
                         f"with enhanced feedback"
                     )
                     print(
-                        f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison "
+                        f"  • {benchmark.results_dir}/comparison_charts/comparison_chart_*.txt "
+                        f"- Visual comparison "
                         f"with progress bars"
                     )
                     print(
@@ -579,17 +650,19 @@ def main():
                         f"with detailed scoring"
                     )
                     print(
-                        f"  • {benchmark.results_dir}/summary_report_*.txt - Summary "
+                        f"  • {benchmark.results_dir}/detailed/summary_report_*.txt - Summary "
                         f"with enhanced feedback"
                     )
                     print(
-                        f"  • {benchmark.results_dir}/comparison_chart_*.txt - Visual comparison "
+                        f"  • {benchmark.results_dir}/comparison_charts/comparison_chart_*.txt "
+                        f"- Visual comparison "
                         f"with progress bars"
                     )
                     print(
                         "\nFor complete scoring breakdowns and analysis, check these files "
                         "in the /results directory."
                     )
+        return 0
 
     except KeyboardInterrupt:
         safe_unicode = use_safe_unicode_standalone()
@@ -598,7 +671,7 @@ def main():
             print(f"\n\n{interrupt_icon}Benchmark interrupted by user")
         except UnicodeEncodeError:
             print("\n\nBenchmark interrupted by user")
-        sys.exit(1)
+        return 1
     except Exception as e:
         safe_unicode = use_safe_unicode_standalone()
         error_icon = "" if safe_unicode else "❌ "
@@ -608,8 +681,8 @@ def main():
             print(f"\nBenchmark failed: {e!s}")
         if not args.quiet:
             traceback.print_exc()
-        sys.exit(1)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

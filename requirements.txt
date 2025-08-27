@@ -1,3 +1,4 @@
-# AI Code Benchmark Requirements
-pyyaml>=6.0
-requests>=2.31.0
+## AI Code Benchmark Requirements
+## Pinned to match pyproject.toml (single source of truth). Update both together.
+PyYAML==6.0.2
+requests==2.32.4

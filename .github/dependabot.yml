@@ -1,0 +1,64 @@
+# Dependabot configuration for AIBugBench
+# Automated dependency vulnerability scanning and updates
+
+version: 2
+updates:
+  # Python dependencies in pyproject.toml
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    assignees:
+      - "sMiNT0S"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security"
+    # Focus on security updates with higher priority
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Group related updates together
+    groups:
+      requests-group:
+        patterns:
+          - "requests*"
+          - "urllib3"
+          - "certifi"
+      yaml-group:
+        patterns:
+          - "pyyaml"
+          - "yaml*"
+      dev-tools:
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "pytest*"
+
+  # GitHub Actions security updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    assignees:
+      - "sMiNT0S"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "security"
+    # Only allow security and patch updates for actions
+    allow:
+      - dependency-type: "direct"

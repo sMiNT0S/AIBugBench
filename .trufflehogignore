@@ -1,0 +1,72 @@
+# TruffleHog ignore patterns for AIBugBench
+# Excludes known false positives in test data and examples
+
+# Test data directories - contain intentional dummy values
+test_data/
+test_data/**
+submissions/template/
+submissions/template/**
+submissions/example_model/
+submissions/example_model/**
+
+# Documentation with example patterns (narrowed: allow scanning except explicit example file)
+EXAMPLE_SUBMISSION.md
+# Removed broad docs/ exclusion to improve secret visibility
+README.md
+QUICKSTART.md
+
+# Common test token patterns that are intentional
+dummy_token
+test_token
+Bearer test_token_12345
+sk-test-key-dummy-value
+test-api-key-12345
+dummy-secret-value
+
+# Test credential patterns in specific contexts
+"password": "test123"
+"api_key": "dummy"
+"token": "test_"
+"secret": "dummy_"
+
+# Git metadata and CI configurations
+.github/
+.github/**
+.git/
+.git/**
+
+# Build and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Results and generated files (narrow, no global wildcards hiding unrelated secrets)
+results/
+reports/
+htmlcov/
+site/

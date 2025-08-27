@@ -1263,7 +1263,7 @@ validation_rules:
         if yaml_file.exists():
             try:
                 with open(yaml_file, encoding="utf-8") as f:
-                    yaml.load(f, Loader=UniqueKeyLoader)
+                    yaml.load(f, Loader=UniqueKeyLoader)  # nosec B506 - deliberate for testing
                 # If load succeeds, no duplicates
             except ConstructorError as e:
                 yaml_has_duplicates = True
@@ -1290,7 +1290,7 @@ validation_rules:
         if yaml_has_duplicates and yaml_file.exists():
             try:
                 with open(yaml_file, encoding="utf-8") as f:
-                    yaml.load(f, Loader=UniqueKeyLoader)
+                    yaml.load(f, Loader=UniqueKeyLoader)  # nosec B506 - deliberate for testing
             except ConstructorError as e:
                 # Use the exception to enrich details so Ruff is happy and users see why it failed
                 quality_checks["no_duplication"]["details"].append(str(e))
@@ -2138,7 +2138,7 @@ validation_rules:
 
         # Category 3: Execution - REVOLUTIONARY: Actual behavioral testing with mocks
         test_user_data = [{"id": 1, "name": "Test User"}]  # Simple test data
-        test_token = "test_token_12345"
+        test_token = "test_token_12345" # nosec B105 - deliberate for testing
 
         # Monkeypatch requests.post for behavioral testing
         with patch("requests.post") as mock_post:

@@ -1,0 +1,18 @@
+# Development and Security Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Testing framework and coverage
+pytest>=8.0.0          # Testing framework with Python 3.13 support
+pytest-cov>=4.0.0      # Code coverage reporting
+pytest-mock>=3.10.0    # Mock fixtures for pytest
+coverage>=7.0.0        # Code coverage measurement
+
+# Security tools
+bandit>=1.8.0          # Static security analysis
+safety>=3.0.0          # Known vulnerability scanning  
+pip-audit>=2.0.0       # Dependency vulnerability checking
+
+# Code quality and linting
+ruff>=0.1.0            # Fast Python linter
+mypy>=1.0.0            # Type checking
+yamllint>=1.35.0       # YAML style and schema linting

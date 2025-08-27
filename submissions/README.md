@@ -1,4 +1,13 @@
-# How to Submit AI Model Results
+---
+title: Model Submission Workflow
+description: Detailed workflow for preparing AI model prompt solutions, directory layout, and benchmarking your submission in AIBugBench.
+search:
+  boost: 0.8
+---
+
+## How to Submit AI Model Results
+
+> Quick-start model submission instructions appear in [`docs/getting-started.md`](../docs/getting-started.md) and developer workflow details in [`docs/developer-guide.md`](../docs/developer-guide.md). This README expands on the directory layout and per‑prompt expectations.
 
 This directory contains AI model submissions for benchmarking. Each model gets its own subdirectory with standardized file names.
 
@@ -6,14 +15,12 @@ This directory contains AI model submissions for benchmarking. Each model gets i
 
 Each model submission should follow this structure:
 
-```
 submissions/your_model_name/
 ├── prompt_1_solution.py          # Refactored process_records.py
 ├── prompt_2_config_fixed.yaml    # Corrected config.yaml
 ├── prompt_2_config.json          # JSON version of corrected config
 ├── prompt_3_transform.py         # transform_and_enrich_users function
 └── prompt_4_api_sync.py          # sync_users_to_crm function
-```
 
 ## Step-by-Step Guide
 
@@ -65,7 +72,7 @@ Need help? Check the documentation in `docs/` or open an issue!
 
 ## prompts/prompt_1_refactoring.md
 
-# Prompt 1: Code Understanding and Refactoring
+## Prompt 1: Code Understanding and Refactoring
 
 ## Instructions for AI model
 
@@ -104,7 +111,7 @@ A complete Python script that can be executed and produces the same functional o
 
 ## prompts/prompt_2_yaml_json.md
 
-# Prompt 2: Error Explanation and Multi-Format Conversion
+## Prompt 2: Error Explanation and Multi-Format Conversion
 
 ## Instructions for AI model
 
@@ -140,7 +147,7 @@ Convert the corrected YAML content into a properly formatted JSON object. Ensure
 
 ## prompts/prompt_3_transformation.md
 
-# Prompt 3: Large File Reasoning and Bulk Transformation
+## Prompt 3: Large File Reasoning and Bulk Transformation
 
 ## Instructions for AI model
 
@@ -187,7 +194,7 @@ A complete Python function that returns the list of fully transformed and enrich
 
 ## prompts/prompt_4_api_simulation.md
 
-# Prompt 4: API Interaction Simulation
+## Prompt 4: API Interaction Simulation
 
 ## Instructions for AI model
 

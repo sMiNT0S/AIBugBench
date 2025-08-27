@@ -4,9 +4,11 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Build and distribution
 build/
 develop-eggs/
 dist/
@@ -19,98 +21,104 @@ parts/
 sdist/
 var/
 wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+.results/
+
+# Virtual Environments
+env/
+venv/
+ENV/
 .venv/
 site-packages/
-__pycache__/
-dist/
-*.egg-info/
-.results/
-AIBugBench-Showcase.spec
-repo_audit.py
-run_showcase.py
-showcase_cl1i.py
-showcase_cli.py
 
-
-
-# Virtual Environment
-venv/
-env/
-ENV/
-
-# IDE
+# IDE and Editors
 .vscode/
 .vscode/settings.json
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Test Coverage
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development Tools Cache
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.cache
 htmlcov/
 .tox/
+
+# Test Coverage
 .coverage
 .coverage.*
-.cache
 nosetests.xml
+# coverage.xml (generated) – keep ignored; ensure not tracked
 coverage.xml
 *.cover
 .hypothesis/
-.pytest_cache/
 
+# Security and Audit Reports
+bandit_report.json
+audit_report*.json
+*_audit_report.json
+.bandit
+# Keep security/audit config files versioned (.safety-project.ini, .semgrepignore, .trufflehogignore)
+reports/
 
-# Results (keep directory but not contents)
+# CI Results and Build Artifacts
+ci_results/
+platform_validation_*.json
+build/*.txt
+warn-*.txt
+
+# Generated Files and Executables
+*.spec
+repo_audit_new.py
+
+# Results (keep directory structure but not contents)
 results/*.json
 results/*.txt
 !results/.gitkeep
-ai_prompt.txt
-repo_audit.py
-audit_report.json
-showcase_results.json
+results/comparison_charts/
+results/detailed/
 
-# Temporary files
+# Development Artifacts and Temporary Files
+showcase_results.json
+fixes.txt
+commit_message.txt
+*_results.json
 *.tmp
 *.bak
 .temp/
-
-# OS files
-Thumbs.db
-.DS_Store
+temp_test.py
+nul
+scan_status.ps1
+setup-security.ps1
+showcase_cli.py
+status/
+nul
 
 # Keep template directory
 !submissions/template/
 
 # Claude Code documentation (exclude from commits)
-CLAUDE.md
-.claude
+.claude/
 .mcp.json
 test_new_user_experience.ps1
 validation_report.txt
-scripts/
+# scripts/ - now tracked for transparency
 BEFORE_RELEASE.md
+PRIMER.md
+RELEASE_NOTES.md
+2025-*.txt
 
 # Claude Code documentation artifacts (exclude planning docs)
-docs/implementation-*.md
-docs/critical-ux-fixes-file-changes.md
-docs/task-*.md  
-docs/file-*.md
-docs/fixes-*.md
-docs/changes-*.md
-docs/fix-*.md
-docs/fixed-*.md
-docs/*-plan*.md
-docs/*-breakdown*.md
-docs/showcase-file-changes.md
+docs_private/
 
-# Implementation documentation archive
-Implementation fixes over time/
-
-# Markdown pdf and related files
-compact-pdf.css 
-AIBugBench_Project_Summary2.md
-AIBugBench_Project_Summary2.pdf
+# Documentation Build Artifacts
 SHOWCASE_README.md
+showcase/
+.bandit.disabled
+site/

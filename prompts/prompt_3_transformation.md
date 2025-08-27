@@ -1,50 +1,71 @@
-# Prompt 3: Data Transformation & Business Logic
+# Prompt 3: Deterministic Single-File Transformer (Import-Safe)
 
-**IMPORTANT: Provide ONE COMPLETE PYTHON SCRIPT that can be saved as a single .py file and executed directly.**
+Provide ONE Python file (`prompt_3_transform.py`) that defines the required transformation function and (optionally) a demo block. The benchmark will import your module and call the function directly; stdout from the demo block is ignored for scoring.
 
-## Task Overview
+## Fairness note
 
-Using the refactored Python script from Prompt 1 as a base, you need to create a complete Python script that includes a data transformation function. This script will process the list of users from `user_data.json`.
+* Deterministic: No randomness, no network/file writes.
+* Import-safe: No side effects (no prints / top-level execution) on import.
+* UTF-8 / UTF-8-SIG: Input JSON may include a BOM; no need to support comments or trailing commas.
+* Stdlib only: No third-party dependencies.
 
-## Function Requirements
+## Required Function
 
-Your complete script must include a Python function called `transform_and_enrich_users(user_list)` that takes the list of user dictionaries and performs the following operations on each user record:
+Define exactly:
 
-1. **Standardize IDs**: Ensure every user id is an integer.
-
-2. **Graceful Error Handling**: The function must not crash. If a user record is missing a required key for an operation (e.g., contact or email), it should skip that specific transformation for that user and, if possible, log a warning. For example, if email is null, the email_provider field cannot be created.
-
-3. **Input Validation**: Validate incoming data to ensure data integrity before transformation.
-
-4. **Enrich Data**: Add a new key, `email_provider`, to the contact dictionary. Its value should be the domain part of the email address (e.g., for jane.d@example.com, the provider is example.com).
-
-5. **Complex Conditional Logic**: Add a new top-level key, `account_tier`. The logic is as follows:
-   - If total_posts > 100 and total_comments > 300, the tier is "Gold".
-   - If total_posts > 50, the tier is "Silver".
-   - Otherwise, the tier is "Bronze".
-
-6. **Type Correction**: Ensure the age value in the stats dictionary is always an integer.
-
-7. **Return Value**: The function should return the list of fully transformed and enriched user records.
-
-## Implementation Requirements
-
-**Submit as a single, complete Python script** that can be saved as `prompt_3_transform.py` and executed directly. Include:
-
-- All necessary imports
-- The `transform_and_enrich_users()` function with complete logic
-- Example usage code that loads `user_data.json`, calls your function, and displays results
-
-**Example structure:**
 ```python
-import json
-# ... other imports
+def transform_and_enrich_users(user_list):
+    ...
+```
+
+It must return a list the same length as the input (the benchmark supplies a Python list in memory).
+
+### Per-Record Requirements
+
+1. IDs to int where coercible (leave as-is if conversion fails gracefully).
+2. Add contact.email_provider: domain portion after '@' if `contact.email` present and parseable.
+3. Account tier rules:
+   * Gold: total_posts > 100 AND total_comments > 300
+   * Silver: total_posts > 50 (when Gold not met)
+   * Else Bronze
+4. stats.age -> int where coercible (leave untouched if not parsable).
+5. Graceful handling: Skip only the failing sub-transform; never raise for missing keys / malformed records.
+
+### Error Handling
+
+Avoid crashing. Optionally emit warnings to stderr in the demo block (not required).
+
+## Optional Demo Block (Human Run Only)
+
+Under a main guard you may load `user_data.json`, invoke the function, and print minified JSON. This does not affect scoring.
+
+### Standard Loader Template (Optional – You May Use Verbatim)
+
+```python
+import json, sys
+from pathlib import Path
+
+__all__ = ["transform_and_enrich_users"]
 
 def transform_and_enrich_users(user_list):
-    # Your transformation logic here
-    pass
+    # Implement: IDs->int, email_provider, account_tier, stats.age->int, graceful skips
+    return user_list
 
 if __name__ == "__main__":
-    # Load data, call function, print results
-    pass
+    with open(Path("user_data.json"), "r", encoding="utf-8-sig") as f:
+        data = json.load(f)
+    result = transform_and_enrich_users(data)
+    json.dump(result, sys.stdout, separators=(",", ":"))
 ```
+
+## What NOT To Do
+
+* No network / API calls
+* No global prints at import
+* No mutation of global state outside the function (other than pure helpers)
+
+## Scoring Alignment (Informational)
+
+The benchmark checks: function existence & signature, ID standardization, email provider extraction, age normalization, account tier correctness, graceful handling of a malformed record, and basic quality/maintainability heuristics. This prompt simply makes those expectations explicit.
+
+Deliver exactly one file; do not zip or split into packages.

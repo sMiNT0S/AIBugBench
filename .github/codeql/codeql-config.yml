@@ -1,0 +1,66 @@
+# CodeQL Configuration for AIBugBench
+# Custom configuration for Python security analysis with context-aware filtering
+
+name: "AIBugBench CodeQL Configuration"
+
+# Disable default queries and use custom query suites
+disable-default-queries: false
+
+# Include security-focused query packs
+queries:
+  - uses: security-and-quality
+  - uses: security-experimental
+
+# Specify paths to analyze
+paths:
+  - "benchmark/"
+  - "run_benchmark.py"
+  - "setup.py"
+
+# Exclude paths that contain intentional test patterns
+paths-ignore:
+  - "test_data/**"
+  - "submissions/template/**"
+  - "submissions/example_model/**"
+  - "results/**"
+  - "docs/**"
+  - ".github/**"
+
+# Custom query filters for AIBugBench context
+query-filters:
+  # Allow subprocess usage in benchmark validation code
+  - exclude:
+      id: py/subprocess-without-shell-equals-true
+      paths:
+        - "benchmark/validators.py"
+        - "benchmark/runner.py"
+    reason: "Subprocess usage is intentional for test execution validation"
+  
+  # Allow custom YAML loader for duplicate detection
+  - exclude:
+      id: py/unsafe-deserialization
+      paths:
+        - "benchmark/validators.py"
+    reason: "UniqueKeyLoader is custom implementation for YAML duplicate detection"
+  
+  # Allow hardcoded credentials in test context
+  - exclude:
+      id: py/hardcoded-credentials
+      paths:
+        - "benchmark/validators.py"
+    reason: "Test tokens are intentional for API simulation testing"
+
+# Enable additional security checks
+build-mode: none
+
+# Database configuration for optimal analysis
+database:
+  # Use additional queries for comprehensive security analysis
+  finalize-database: true
+  
+  # Custom query selection for Python security analysis
+  query-selection:
+    - "Security"
+    - "Correctness"
+    - "Performance" 
+    - "Maintainability"

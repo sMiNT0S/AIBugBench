@@ -1,4 +1,10 @@
-# Prompt 4: API Interaction & Robustness Testing <
+# Prompt 4: API Interaction & Robustness Testing
+
+## Fairness note
+
+• Expect non-strict inputs (minor format deviations, mixed encodings, platform-specific paths).
+• Normalize types and handle missing/variant fields gracefully.  
+• Avoid network access; keep solutions deterministic and testable.
 
 The business wants to synchronize processed user data with an external CRM system via REST API.
 
@@ -13,6 +19,7 @@ Write a complete, standalone Python function `sync_users_to_crm(user_data, api_t
 **HTTP Method**: POST
 
 **Headers**:
+
 - `Content-Type: application/json`
 - `Authorization: Bearer <api_token>`
 

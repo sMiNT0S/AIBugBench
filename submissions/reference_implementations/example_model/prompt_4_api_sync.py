@@ -128,8 +128,8 @@ def sync_users_to_crm(user_data: List[Dict[str, Any]], api_token: str) -> Option
                 error_details = response.json()
                 if 'errors' in error_details:
                     print(f"   Details: {error_details['errors']}")
-            except:
-                pass
+            except (ValueError, KeyError) as parse_error:
+                logger.error(f"Failed to parse error details from response: {parse_error}")
                 
         elif status_code == 503:
             # Service Unavailable
@@ -202,13 +202,13 @@ def demo_sync():
     
     # Scenario 1: Successful sync
     print("\n1. Testing successful sync:")
-    api_token = "valid-token-abc123"
+    api_token = "demo-token-12345-fake" # nosec B105 - deliberate for testing
     job_id = sync_users_to_crm(sample_users, api_token)
     print(f"   Returned job_id: {job_id}")
     
     # Scenario 2: Invalid token
     print("\n2. Testing with invalid token:")
-    invalid_token = "invalid-token-xyz789"
+    invalid_token = "fake-invalid-token" # nosec B105 - deliberate for testing
     job_id = sync_users_to_crm(sample_users, invalid_token)
     print(f"   Returned job_id: {job_id}")
     

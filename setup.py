@@ -28,11 +28,24 @@ def use_safe_unicode() -> bool:
 
 
 def create_ai_prompt_file():
-    """Create the AI prompt message file for easy reference."""
-    safe_mode = use_safe_unicode()
+    """Create the AI prompt message markdown file for easy reference.
 
-    if safe_mode:
-        ai_prompt_content = """Welcome to AIBugBench!
+    Canonical file name: prompts/ai_prompt.md (versioned).
+    """
+    prompts_dir = Path("prompts")
+    prompt_file_path = prompts_dir / "ai_prompt.md"
+    safe_mode = use_safe_unicode()
+    checkmark = "✅" if not safe_mode else "[OK]"
+
+    # Check if file already exists
+    if prompt_file_path.exists():
+        print(f"{checkmark} prompts/ai_prompt.md exists")
+        # Read and return existing content
+        with open(prompt_file_path, encoding="utf-8") as f:
+            return f.read()
+
+    # Canonical content written to ai_prompt.md (safe mode version shown if emojis unsafe)
+    ai_prompt_content = """Welcome to AIBugBench!
 
 I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
 that evaluates AI code generation across 4 different programming challenges.
@@ -74,55 +87,11 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
 ---
 Copy this message to your AI/LLM, then proceed with the benchmark prompts.
 """
-    else:
-        ai_prompt_content = """Welcome to AIBugBench!
 
-I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
-that evaluates AI code generation across 4 different programming challenges.
-
-Here's what you need to know:
-
-🎯 WHAT IS AIBUGBENCH?
-AIBugBench is a scoring system that tests your ability to:
-- Fix and refactor broken Python code
-- Convert between YAML and JSON formats correctly
-- Transform and enrich data structures
-- Implement secure API integrations with proper error handling
-
-📊 SCORING SYSTEM:
-You'll be scored across 7 categories (100 points total):
-- Syntax correctness
-- Code structure and organization
-- Execution and functionality
-- Code quality and best practices
-- Security considerations
-- Performance optimization
-- Code maintainability
-
-🔧 THE CHALLENGES:
-1. **Code Refactoring**: Fix a broken Python script with style, logic, and efficiency issues
-2. **Data Format Conversion**: Correct malformed YAML and convert it to proper JSON
-3. **Data Transformation**: Implement complex data processing with business rules
-4. **API Integration**: Build secure API synchronization with comprehensive error handling
-
-💡 SUCCESS TIPS:
-- Read requirements carefully - each challenge has specific criteria
-- Focus on clean, secure, and efficient code
-- Handle edge cases and errors properly
-- Follow Python best practices (PEP 8)
-- Test your solutions mentally before submitting
-
-Ready to showcase your coding skills? Let's begin with the AIBugBench challenges!
-
----
-Copy this message to your AI/LLM, then proceed with the benchmark prompts.
-"""
-
-    with open("ai_prompt.txt", "w", encoding="utf-8") as f:
+    with open(prompt_file_path, "w", encoding="utf-8") as f:
         f.write(ai_prompt_content)
 
-    checkmark = "✅" if not safe_mode else "[OK]"
-    print(f"{checkmark} Created ai_prompt.txt")
+    print(f"{checkmark} Created prompts/ai_prompt.md")
     return ai_prompt_content
 
 
@@ -222,7 +191,7 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
     print("-" * 60)
     file_icon = "📝" if not safe_mode else "[FILE]"
     timer_icon = "⏳" if not safe_mode else "[WAIT]"
-    print(f"\n{file_icon} This prompt has been saved to 'ai_prompt.txt' for easy access.")
+    print(f"\n{file_icon} This prompt has been saved to 'prompts/ai_prompt.md' for easy access.")
     print(f"\n{timer_icon} Please copy this message to your AI/LLM before proceeding...")
     print("Press Enter when you've prepared your AI and are ready to continue...")
     input()
@@ -230,11 +199,20 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
 
 def create_directory_structure():
     """Create the required directory structure."""
+    # Preferred tiered layout (Phase 1). We still create legacy 'submissions/template'
+    # for backward compatibility during deprecation window, but primary location
+    # is submissions/templates/template.
     directories = [
         "benchmark",
         "test_data",
+        "prompts",
         "submissions",
-        "submissions/template",
+        # Tiered structure
+        "submissions/reference_implementations",
+        "submissions/templates",
+        "submissions/templates/template",
+        "submissions/user_submissions",
+        # Legacy (to be removed in 0.9.0) - only create if missing
         "results",
     ]
 
@@ -244,6 +222,14 @@ def create_directory_structure():
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
         print(f"{checkmark} Created directory: {directory}")
+
+    legacy_template = Path("submissions/template")
+    if not legacy_template.exists():  # Do not overwrite existing legacy template
+        legacy_template.mkdir(parents=True, exist_ok=True)
+        print(
+            f"{checkmark} Created directory: submissions/template (legacy compatibility - "
+            "deprecated, migrate to submissions/templates/template)"
+        )
 
 
 def create_test_data():
@@ -454,8 +440,10 @@ server_settings:
 
 
 def create_template_files():
-    """Create template submission files."""
-    template_dir = Path("submissions/template")
+    """Create template submission files (tier-aware)."""
+    # Prefer new tiered path
+    template_dir = Path("submissions/templates/template")
+    template_dir.mkdir(parents=True, exist_ok=True)
 
     # Template files with helpful comments
     templates = {
@@ -596,6 +584,13 @@ def main():
     check_icon = "✅" if not safe_mode else "[DONE]"
     print(f"\n{check_icon} Setup complete!")
 
+    # Sabotage notice
+    warning_icon = "⚠️" if not safe_mode else "[INFO]"
+    print(
+        f"{warning_icon} Test fixtures contain intentional bugs for validation "
+        f"- see SABOTAGE_NOTES.md for details"
+    )
+
     # Display AI prompt for user to copy to their AI/LLM
     display_ai_prompt()
 
@@ -612,7 +607,7 @@ def main():
     print("3. Run benchmark: python run_benchmark.py --model your_model")
 
     note_icon = "📝" if not safe_mode else "[NOTE]"
-    print(f"\n{note_icon} The AI prompt is saved in 'ai_prompt.txt' for future reference.")
+    print(f"\n{note_icon} The AI prompt is saved in 'prompts/ai_prompt.md' for future reference.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,414 @@
+# Comprehensive Security Scanning Workflow for AIBugBench
+# Implements multi-layer security validation with proper handling of intentional security patterns
+
+name: Security Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security scans weekly on Mondays at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      scan_depth:
+        description: 'Security scan depth'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+        - standard
+        - deep
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # Secret Scanning for Git History and Current Code
+  secret-scan:
+    name: Git History Secret Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for comprehensive secret scanning
+          fetch-depth: 0
+
+      - name: Setup Python for secret scanning
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install TruffleHog for secret scanning
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run TruffleHog Git History Scan
+        run: |
+          trufflehog git file://. \
+            --json \
+            --no-update \
+            --fail \
+            --exclude-paths=.trufflehogignore \
+            --max-depth=50 \
+            > trufflehog-results.json || echo "Potential secrets found"
+
+      - name: Install semgrep for pattern-based secret detection
+        run: |
+          pip install semgrep
+
+      - name: Run Semgrep Secret Patterns
+        run: |
+          semgrep \
+            --config=p/secrets \
+            --config=p/security-audit \
+            --json \
+            --output=semgrep-secrets.json \
+            . || echo "Semgrep analysis completed"
+
+      - name: Process and validate secret scan results
+        run: |
+          python << 'EOF'
+          import json
+          import os
+          
+          def analyze_trufflehog_results():
+              """Analyze TruffleHog results and filter false positives."""
+              try:
+                  with open('trufflehog-results.json', 'r') as f:
+                      results = [json.loads(line) for line in f if line.strip()]
+              except FileNotFoundError:
+                  print("No TruffleHog results file found")
+                  return []
+          
+              # Known false positives in AIBugBench
+              false_positive_patterns = [
+                  'test_data/',
+                  'example_model/',
+                  'template/',
+                  'EXAMPLE_SUBMISSION.md',
+                  'dummy_token',
+                  'test_token',
+                  'Bearer test_token_12345'
+              ]
+              
+              real_secrets = []
+              for result in results:
+                  source_metadata = result.get('SourceMetadata', {})
+                  filename = source_metadata.get('Data', {}).get('Filesystem', {}).get('file', '')
+                  
+                  is_false_positive = any(pattern in filename for pattern in false_positive_patterns)
+                  
+                  if not is_false_positive:
+                      real_secrets.append(result)
+              
+              return real_secrets
+          
+          def analyze_semgrep_results():
+              """Analyze Semgrep results and filter known security patterns."""
+              try:
+                  with open('semgrep-secrets.json', 'r') as f:
+                      data = json.load(f)
+              except FileNotFoundError:
+                  print("No Semgrep results file found")
+                  return []
+          
+              results = data.get('results', [])
+              
+              # Filter out intentional patterns in test/validation code
+              filtered_results = []
+              for result in results:
+                  path = result.get('path', '')
+                  rule_id = result.get('check_id', '')
+                  
+                  # Known intentional security patterns
+                  if 'subprocess' in rule_id and ('benchmark/validators.py' in path or 'benchmark/runner.py' in path):
+                      continue  # Subprocess usage is intentional for test execution
+                  if 'yaml' in rule_id and 'benchmark/validators.py' in path:
+                      continue  # Custom YAML loader is intentional for duplicate detection
+                  if 'test_data/' in path or 'template/' in path or 'example_model/' in path:
+                      continue  # Test data contains intentional patterns
+                  
+                  filtered_results.append(result)
+              
+              return filtered_results
+          
+          # Analyze results
+          trufflehog_secrets = analyze_trufflehog_results()
+          semgrep_secrets = analyze_semgrep_results()
+          
+          print(f"TruffleHog found {len(trufflehog_secrets)} potential real secrets")
+          print(f"Semgrep found {len(semgrep_secrets)} security issues after filtering")
+          
+          # Create summary report
+          with open('security-scan-summary.json', 'w') as f:
+              json.dump({
+                  'trufflehog_results': len(trufflehog_secrets),
+                  'semgrep_results': len(semgrep_secrets),
+                  'critical_findings': trufflehog_secrets + semgrep_secrets
+              }, f, indent=2)
+          
+          # Fail the job if real secrets are found
+          if trufflehog_secrets:
+              print("❌ Real secrets detected in repository!")
+              for secret in trufflehog_secrets:
+                  print(f"  - {secret.get('DetectorName', 'Unknown')}: {secret.get('Raw', 'Details redacted')}")
+              exit(1)
+          elif semgrep_secrets:
+              print("⚠️  Security issues found that need review")
+              exit(1)
+          else:
+              print("✅ No critical security issues found")
+          EOF
+
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: |
+            trufflehog-results.json
+            semgrep-secrets.json
+            security-scan-summary.json
+          retention-days: 30
+
+  # CodeQL Security Analysis
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-and-quality
+          config: |
+            name: AIBugBench CodeQL Config
+            queries:
+              - uses: security-and-quality
+              - uses: security-experimental
+            paths-ignore:
+              - test_data/**
+              - submissions/template/**
+              - submissions/example_model/**
+
+      - name: Setup Python for CodeQL
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies for CodeQL analysis
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+          upload: true
+
+  # Dependency Vulnerability Scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Safety for dependency scanning
+        run: |
+          pip install safety pip-audit
+
+      - name: Run Safety check on dependencies
+        run: |
+          pip install -r requirements.txt
+          safety check --json --output safety-report.json || echo "Safety scan completed"
+          cat safety-report.json
+
+      - name: Run pip-audit for comprehensive dependency analysis
+        run: |
+          pip-audit --format=json --output=pip-audit-report.json || echo "pip-audit completed"
+          cat pip-audit-report.json
+
+      - name: Analyze dependency scan results
+        run: |
+          python << 'EOF'
+          import json
+          import os
+          
+          def analyze_safety_results():
+              """Analyze Safety scan results."""
+              try:
+                  with open('safety-report.json', 'r') as f:
+                      data = json.load(f)
+              except (FileNotFoundError, json.JSONDecodeError):
+                  print("No valid Safety results found")
+                  return []
+          
+              vulnerabilities = data.get('vulnerabilities', [])
+              return vulnerabilities
+          
+          def analyze_pip_audit_results():
+              """Analyze pip-audit results."""
+              try:
+                  with open('pip-audit-report.json', 'r') as f:
+                      data = json.load(f)
+              except (FileNotFoundError, json.JSONDecodeError):
+                  print("No valid pip-audit results found")
+                  return []
+          
+              vulnerabilities = data.get('vulnerabilities', [])
+              return vulnerabilities
+          
+          safety_vulns = analyze_safety_results()
+          audit_vulns = analyze_pip_audit_results()
+          
+          total_vulns = len(safety_vulns) + len(audit_vulns)
+          print(f"Safety found {len(safety_vulns)} vulnerabilities")
+          print(f"pip-audit found {len(audit_vulns)} vulnerabilities")
+          
+          # Create summary
+          with open('dependency-scan-summary.json', 'w') as f:
+              json.dump({
+                  'safety_vulnerabilities': len(safety_vulns),
+                  'pip_audit_vulnerabilities': len(audit_vulns),
+                  'total_vulnerabilities': total_vulns,
+                  'details': {
+                      'safety': safety_vulns,
+                      'pip_audit': audit_vulns
+                  }
+              }, f, indent=2)
+          
+          if total_vulns > 0:
+              print(f"⚠️  Found {total_vulns} dependency vulnerabilities that need review")
+              exit(1)
+          else:
+              print("✅ No dependency vulnerabilities found")
+          EOF
+
+      - name: Upload dependency scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-scan-results
+          path: |
+            safety-report.json
+            pip-audit-report.json
+            dependency-scan-summary.json
+          retention-days: 30
+
+  # Security Summary Report
+  security-summary:
+    name: Security Summary Report
+    runs-on: ubuntu-latest
+    needs: [secret-scan, codeql-analysis, dependency-scan]
+    if: always()
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Download all security scan results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-scan-results"
+          merge-multiple: true
+
+      - name: Generate comprehensive security report
+        run: |
+          python << 'EOF'
+          import json
+          import os
+          from datetime import datetime
+          
+          def safe_load_json(filepath):
+              """Safely load JSON file."""
+              try:
+                  with open(filepath, 'r') as f:
+                      return json.load(f)
+              except (FileNotFoundError, json.JSONDecodeError):
+                  return {}
+          
+          # Load all scan results
+          security_summary = safe_load_json('security-scan-summary.json')
+          dependency_summary = safe_load_json('dependency-scan-summary.json')
+          
+          # Generate comprehensive report
+          report = {
+              'scan_timestamp': datetime.utcnow().isoformat() + 'Z',
+              'repository': 'AIBugBench',
+              'scan_type': 'comprehensive_security_analysis',
+              'results': {
+                  'secret_scanning': {
+                      'trufflehog_findings': security_summary.get('trufflehog_results', 0),
+                      'semgrep_findings': security_summary.get('semgrep_results', 0),
+                      'status': 'pass' if security_summary.get('trufflehog_results', 0) == 0 else 'fail'
+                  },
+                  'dependency_scanning': {
+                      'safety_vulnerabilities': dependency_summary.get('safety_vulnerabilities', 0),
+                      'pip_audit_vulnerabilities': dependency_summary.get('pip_audit_vulnerabilities', 0),
+                      'total_vulnerabilities': dependency_summary.get('total_vulnerabilities', 0),
+                      'status': 'pass' if dependency_summary.get('total_vulnerabilities', 0) == 0 else 'warning'
+                  },
+                  'codeql_analysis': {
+                      'status': 'completed',
+                      'note': 'Results available in Security tab'
+                  }
+              },
+              'overall_status': 'pass',
+              'recommendations': [
+                  'Review CodeQL results in the Security tab',
+                  'Monitor Dependabot PRs for dependency updates',
+                  'Review any flagged security issues in context of testing infrastructure'
+              ]
+          }
+          
+          # Determine overall status
+          if (security_summary.get('trufflehog_results', 0) > 0 or 
+              dependency_summary.get('total_vulnerabilities', 0) > 0):
+              report['overall_status'] = 'needs_review'
+          
+          with open('security-comprehensive-report.json', 'w') as f:
+              json.dump(report, f, indent=2)
+          
+          print("📊 Security Analysis Summary:")
+          print(f"  Secret Scanning: {report['results']['secret_scanning']['status']}")
+          print(f"  Dependency Scanning: {report['results']['dependency_scanning']['status']}")
+          print(f"  CodeQL Analysis: {report['results']['codeql_analysis']['status']}")
+          print(f"  Overall Status: {report['overall_status']}")
+          EOF
+
+      - name: Upload comprehensive security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-comprehensive-report
+          path: security-comprehensive-report.json
+          retention-days: 90

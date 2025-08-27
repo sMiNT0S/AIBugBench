@@ -39,8 +39,11 @@ def ensure_directories(dirs: list[Path]) -> None:
 
 
 def create_submission_template(submissions_dir: Path) -> None:
-    """Create a template directory for new model submissions."""
-    template_dir = submissions_dir / "template"
+    """Create template directory in tiered structure.
+
+    Legacy fallback removed: always uses submissions/templates/template.
+    """
+    template_dir = submissions_dir / "templates" / "template"
     template_dir.mkdir(parents=True, exist_ok=True)
 
     # Create template files

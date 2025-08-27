@@ -1,4 +1,13 @@
-# Model Submission Template
+---
+title: Model Submission Template
+description: Instructions for replacing template prompt files with full AI-generated solutions for benchmarking.
+search:
+	boost: 0.5
+---
+
+## Model Submission Template
+
+> For broader context on submission workflows see [`docs/developer-guide.md`](../../docs/developer-guide.md) and scoring in [`docs/scoring-methodology.md`](../../docs/scoring-methodology.md). This template README strictly describes how to replace each prompt file.
 
 Copy this template directory and rename it to your model name (e.g., `gpt4`, `claude_sonnet_4`, `copilot`).
 
@@ -26,6 +35,7 @@ Copy this template directory and rename it to your model name (e.g., `gpt4`, `cl
 After completing your files, run:
 
 **All Platforms:**
+
 ```bash
 python run_benchmark.py --model your_model_name
 ```
@@ -43,6 +53,7 @@ Each prompt uses a comprehensive **7-category scoring system** (25 points total)
 - **Maintainability**: Code complexity and long-term maintenance
 
 **Grading threshold**:
+
 - 60% or higher (15+ points per prompt) = PASS
 - Below 60% = FAIL
 

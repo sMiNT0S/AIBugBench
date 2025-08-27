@@ -4,6 +4,12 @@
 
 Prompt 1: Code Understanding and Refactoring 🧐
 
+## Fairness note
+
+• Expect non-strict inputs (minor format deviations, mixed encodings, platform-specific paths).
+• Normalize types and handle missing/variant fields gracefully.  
+• Avoid network access; keep solutions deterministic and testable.
+
 Analyze the provided Python script, process_records.py.
 
 Identify Problems: List and explain at least five distinct problems with the script. Cover issues related to style (PEP 8), efficiency, error handling, and logical correctness.

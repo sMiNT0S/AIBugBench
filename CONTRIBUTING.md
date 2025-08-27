@@ -5,18 +5,21 @@ Thank you for your interest in contributing to AIBugBench! This document provide
 ## Development Setup
 
 ### Prerequisites
-- Python 3.11 or higher
+
+- Python 3.13+
 - Git
 
 ### Local Development
 
 1. **Clone the repository** (when public):
+
    ```bash
    git clone https://github.com/sMiNT0S/AIBugBench.git
    cd AIBugBench
    ```
 
 2. **Set up virtual environment**:
+
    ```bash
    # Windows PowerShell
    python -m venv .venv
@@ -28,6 +31,7 @@ Thank you for your interest in contributing to AIBugBench! This document provide
    ```
 
 3. **Install dependencies**:
+
    ```bash
    pip install --upgrade pip
    pip install -r requirements.txt
@@ -45,8 +49,8 @@ ruff check .
 # Run tests
 pytest -q
 
-# Run repository audit
-python repo_audit.py --path . --json audit_report.json
+# Run repository audit (enhanced)
+python validation/repo_audit_enhanced.py --path . --json audit_report.json
 ```
 
 ## Pull Request Process
@@ -59,6 +63,7 @@ python repo_audit.py --path . --json audit_report.json
 6. **Submit a pull request** with a clear description of changes
 
 ### PR Requirements
+
 - [ ] Tests pass (`pytest -q`)
 - [ ] Linting passes (`ruff check .`)
 - [ ] Repository audit passes

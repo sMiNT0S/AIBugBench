@@ -1,7 +1,9 @@
-## Summary
+# Summary
+
 Concise description of the change.
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Documentation
@@ -9,6 +11,7 @@ Concise description of the change.
 - [ ] Other
 
 ## Checklist
+
 - [ ] Tests added/updated (or not needed)
 - [ ] Docs updated (README / QUICKSTART / docs/* as applicable)
 - [ ] Lint passes (ruff)
@@ -18,13 +21,16 @@ Concise description of the change.
 ## Screenshots / Logs (if UI or output changes)
 
 ## Additional Notes
+
 Anything reviewers should focus on.## Summary
 Brief description of the changes.
 
 ## Changes
-- 
+
+-
 
 ## Checklist
+
 - [ ] Tests passing (`pytest -q`)
 - [ ] Lint clean (`ruff check .`)
 - [ ] Updated docs (if needed)
@@ -32,4 +38,5 @@ Brief description of the changes.
 - [ ] No core scoring logic altered
 
 ## Related Issues
+
 Closes #

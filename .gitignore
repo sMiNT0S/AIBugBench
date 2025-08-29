@@ -124,4 +124,6 @@ showcase/
 site/
 scripts/cleanpycache.ps1
 securityaudit.txt
-mailmap.txt
+.github/chatmodes/.chatmode.md
+tags-backup.bundle
+.mailmap

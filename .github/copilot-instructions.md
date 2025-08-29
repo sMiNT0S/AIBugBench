@@ -170,3 +170,5 @@ When tooling changes (e.g., replacing bandit, altering Ruff config), update this
 ---
 ## 20. Summary for Copilot
 Provide targeted, non-blocking, context-aware, deduplicated review comments focused on correctness, security, and maintainability. Defer to existing automated tooling for stylistic enforcement. Remain advisory.
+---
+End of file.

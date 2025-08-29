@@ -355,10 +355,12 @@ def test_models_parallel(model_names: List[str]):
                             │
 5. Generate grade and feedback
                             │
-6. Save results to multiple formats:
-   - JSON (latest_results.json)
-   - Text summary (summary_report_*.txt)
-   - Comparison chart (comparison_chart_*.txt)
+6. Save results (atomic) to timestamped run directory:
+    - JSON pointer: results/latest_results.json (most recent)
+    - Run JSON: results/<RUN_TS>/latest_results.json
+    - Text summary: results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt
+    - Comparison chart: results/<RUN_TS>/comparison_charts/comparison_chart.txt
+    (Historical run directories preserved for reproducibility.)
 
 ### Error Handling Flow
 

@@ -52,10 +52,10 @@ nav:
     - Changelog: https://github.com/sMiNT0S/AIBugBench/blob/main/CHANGELOG.md
   - Internal:
     - Overview: INTERNALS.md
-    - Validation Package README: ../validation/README.md
-    - Scripts README: ../scripts/README.md
-    - Submissions README: ../submissions/README.md
-    - Template README: ../submissions/template/README.md
+  - Validation Package README: internal/validation-readme.md
+  - Scripts README: internal/scripts-readme.md
+  - Submissions README: internal/submissions-readme.md
+  - Template README: internal/submission-template-readme.md
 
 markdown_extensions:
   - admonition

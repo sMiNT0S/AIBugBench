@@ -19,10 +19,12 @@ Comprehensive guide for running benchmarks and understanding AIBugBench results.
    python run_benchmark.py --model example_model
    ```
 
-3. **Review results**:
-   - Check console output for immediate feedback
-   - Open `results/latest_results.json` for detailed scores
-   - Review `results/summary_report_*.txt` for analysis
+3. **Review results** (v0.8.1+ layout):
+
+- Check console output for immediate feedback
+- Open `results/latest_results.json` (pointer to most recent)
+- Inspect `results/<RUN_TS>/latest_results.json` for full run data
+- Review `results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt` for analysis
 
 ## Understanding the Benchmark Process
 
@@ -88,7 +90,7 @@ Testing Refactoring & Analysis...
 
 ### Results Files
 
-#### latest_results.json
+#### latest_results.json (root pointer)
 
 Complete scoring data with detailed breakdowns:
 
@@ -97,7 +99,7 @@ Complete scoring data with detailed breakdowns:
 - Performance metrics
 - Security vulnerabilities
 
-#### summary_report_*.txt
+#### detailed/summary_report_<RUN_TS>.txt
 
 Human-readable analysis including:
 
@@ -106,7 +108,7 @@ Human-readable analysis including:
 - Comparison to benchmark standards
 - Recommendations for fixes
 
-#### comparison_chart_*.txt
+#### comparison_charts/comparison_chart.txt
 
 Visual representation of scores:
 
@@ -158,20 +160,24 @@ Visual representation of scores:
 
 ## Comparing Multiple Models
 
-### Running Comparisons
+### Running Comparisons & Concurrency
 
-Test multiple models sequentially:
+Run all discovered models sequentially (default):
 
 ```bash
-python run_benchmark.py --model gpt4
-python run_benchmark.py --model claude
-python run_benchmark.py --model llama
+python run_benchmark.py
 ```
 
-Or test all at once:
+Enable concurrent evaluation (thread pool):
 
 ```bash
-python run_benchmark.py --all-models
+python run_benchmark.py --workers 4
+```
+
+Run only specific model:
+
+```bash
+python run_benchmark.py --model your_model
 ```
 
 ### Analyzing Differences

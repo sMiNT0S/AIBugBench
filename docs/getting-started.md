@@ -119,11 +119,14 @@ cp -r submissions/templates/template submissions/user_submissions/your_model_nam
 python run_benchmark.py --model your_model_name
 ```
 
-**Results Location:**
+**Results Location (v0.8.1+):**
 
-- `results/latest_results.json` - Complete scoring breakdown
-- `results/summary_report_TIMESTAMP.txt` - Human-readable analysis
-- `results/comparison_chart_TIMESTAMP.txt` - Visual progress bars
+- `results/latest_results.json` – Most recent run (pointer)
+- `results/<RUN_TS>/latest_results.json` – Full run JSON (stable within timestamped folder)
+- `results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt` – Human-readable analysis
+- `results/<RUN_TS>/comparison_charts/comparison_chart.txt` – Visual progress bars
+
+Historical runs accumulate; each benchmark invocation creates a new `<RUN_TS>` directory.
 
 **Grade Scale:**
 

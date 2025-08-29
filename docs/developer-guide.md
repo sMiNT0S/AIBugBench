@@ -422,7 +422,7 @@ To add custom challenges:
 
 ## Next Steps
 
-- **Review detailed scores**: Check `results/summary_report_TIMESTAMP.txt`
+- **Review detailed scores**: Check `results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt` (root `latest_results.json` points to most recent run)
 - **Analyze weak areas**: Focus on categories with lowest scores
 - **Iterate and improve**: Refine prompting strategies
 - **Compare models**: Use comparison charts to evaluate different approaches

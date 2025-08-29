@@ -19,14 +19,11 @@ updates:
       prefix-development: "deps-dev"
       include: "scope"
     labels:
-      - "dependencies"
-      - "security"
-    # Focus on security updates with higher priority
-    allow:
+      - "dependencies"  # Removed 'security' label (label not present in repo)
+    allow:  # Focus on both direct & indirect updates
       - dependency-type: "direct"
       - dependency-type: "indirect"
-    # Group related updates together
-    groups:
+    groups:  # Group related updates together
       requests-group:
         patterns:
           - "requests*"
@@ -42,7 +39,7 @@ updates:
           - "mypy"
           - "pytest*"
 
-  # GitHub Actions security updates
+  # GitHub Actions dependency updates
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -57,8 +54,6 @@ updates:
       prefix: "ci"
       include: "scope"
     labels:
-      - "github-actions"
-      - "security"
-    # Only allow security and patch updates for actions
+      - "dependencies"
     allow:
       - dependency-type: "direct"

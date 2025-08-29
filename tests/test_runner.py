@@ -6,7 +6,6 @@ Tests the main CLI entry point, argument parsing, and full benchmark execution.
 
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 from unittest.mock import Mock, patch
@@ -173,33 +172,22 @@ def process_records(filename):
 
         results_dir = temp_dir / "results"
 
-        # Change to temp directory and set up the environment
-        original_cwd = Path.cwd()
-        try:
-            import os
-            os.chdir(str(temp_dir))
+        # Load run_benchmark directly from source without copying or chdir
+        run_path = Path.cwd() / "run_benchmark.py"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("run_benchmark", run_path)
+        module = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+        assert spec and spec.loader
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
 
-            # Copy run_benchmark.py to temp directory for testing
-            shutil.copy(original_cwd / "run_benchmark.py", temp_dir / "run_benchmark.py")
-
-            # Mock sys.argv
-            with patch('sys.argv', ['run_benchmark.py', '--model', 'example_model',
-                                  '--submissions-dir', str(mock_submissions_dir),
-                                  '--results-dir', str(results_dir), '--quiet']):
-
-                # Import and run main function
-                import run_benchmark
-
-                # Should not raise any exceptions
-                try:
-                    run_benchmark.main()
-                except SystemExit as e:
-                    # SystemExit(0) is acceptable for successful completion
-                    if e.code != 0:
-                        raise
-
-        finally:
-            os.chdir(str(original_cwd))
+        with patch('sys.argv', ['run_benchmark.py', '--model', 'example_model',
+                                '--submissions-dir', str(mock_submissions_dir),
+                                '--results-dir', str(results_dir), '--quiet']):
+            try:
+                module.main()
+            except SystemExit as e:
+                if e.code != 0:
+                    raise
 
     @pytest.mark.integration
     def test_cli_invalid_model(self, temp_dir):
@@ -216,29 +204,12 @@ def process_records(filename):
 
     @pytest.mark.integration
     def test_cli_argument_parsing(self):
-        """Test CLI argument parsing without execution."""
-        # Test that arguments are parsed correctly by importing the module
-        with patch('sys.argv', ['run_benchmark.py', '--model', 'test_model',
-                               '--quiet', '--results-dir', 'custom_results']):
-
-            # Import the module to test argument parsing
-            import importlib
-
-            import run_benchmark
-            importlib.reload(run_benchmark)  # Ensure fresh import
-
-            # Create argument parser and parse test arguments
-            import argparse
-            parser = argparse.ArgumentParser()
-            parser.add_argument("--model")
-            parser.add_argument("--submissions-dir", default="submissions")
-            parser.add_argument("--results-dir", default="results")
-            parser.add_argument("--quiet", "-q", action="store_true")
-
-            args = parser.parse_args(['--model', 'test_model', '--quiet'])
-
-            assert args.model == 'test_model'
-            assert args.quiet is True
+        """Test CLI argument parsing using real parse_args."""
+        import run_benchmark
+        args = run_benchmark.parse_args(['--model', 'test_model', '--quiet', '--results-dir', 'custom_results'])
+        assert args.model == 'test_model'
+        assert args.quiet is True
+        assert args.results_dir == 'custom_results'
 
     @pytest.mark.integration
     @pytest.mark.slow
@@ -394,7 +365,8 @@ class TestBenchmarkUtilities:
             result = validators.validate_prompt_1_refactoring(prompt1_file)
 
             # Should get reasonable results
-            assert isinstance(result["score"], int | float)
+            # Using tuple form for broader Python compatibility per test requirements
+            assert isinstance(result["score"], (int, float))  # noqa: UP038
             assert result["score"] >= 0
             assert "detailed_scoring" in result
 
@@ -404,7 +376,8 @@ class TestBenchmarkUtilities:
             result = validators.validate_prompt_4_api(prompt4_file)
 
             # Should get reasonable results
-            assert isinstance(result["score"], int | float)
+            # Using tuple form for broader Python compatibility per test requirements
+            assert isinstance(result["score"], (int, float))  # noqa: UP038
             assert result["score"] >= 0
 
 
@@ -414,14 +387,10 @@ class TestCLIErrorHandling:
     @pytest.mark.unit
     def test_cli_with_missing_dependencies(self):
         """Test CLI behavior when dependencies are missing."""
-        # Test importing with mocked missing dependencies
-        with patch('importlib.import_module', side_effect=ImportError("Module not found")):
-            # Should handle import errors gracefully
-            try:
-                __import__("run_benchmark")
-                assert True
-            except ImportError:
-                assert True
+        # Patch builtins.__import__ to simulate ImportError
+    with patch('builtins.__import__', side_effect=ImportError('Module not found')), \
+         pytest.raises(ImportError):
+        __import__('run_benchmark')
 
     @pytest.mark.integration
     def test_cli_keyboard_interrupt(self):

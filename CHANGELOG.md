@@ -7,25 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+_No unreleased additions yet._
+
 ### Planned
 
 - Post-0.8.0 documentation polish and diagram additions
 - Validation package migration (execution + reporting layers) completion
 - Public documentation deployment enablement (GitHub Pages)
 
+## [0.8.1-beta] - 2025-08-27
+
+### Added
+
+- Result metadata privacy controls: `--no-metadata` flag and `AIBUGBENCH_DISABLE_METADATA` env var to disable collection of git commit, platform, timestamp, and dependency fingerprint (retains `spec_version` only)
+- README section documenting minor metadata collection/provenance fields (spec_version, git_commit, python_version, platform, timestamp_utc, dependency_fingerprint) and opt-out guidance
+- Centralized secret detection regex registry (`SECRET_PATTERNS`) in `validation/security_core.py` replacing scattered inline docs listings
+- Internal documentation copies (validation, scripts, submissions, template READMEs) added under `docs/internal/` for MkDocs build compliance
+- Roadmap "Type Hygiene" section capturing first stricter mypy run action items
+- Concurrent model evaluation support via new `--workers` CLI flag (thread pool based, deterministic single-thread fallback)
+- Atomic result persistence helper ensuring JSON and summary report writes occur via temp file + `os.replace()` (prevents torn/corrupt artifacts)
+- Per-run timestamped results directories: `results/<YYYYMMDD_HHMMSS>/` with isolated `detailed/` & `comparison_charts/` subfolders plus backward-compatible root `latest_results.json`
+- Dynamic prompt ID discovery for comparison generation (removes hard‑coded prompt list; auto-adapts to future prompt additions)
+- Cached dependency fingerprint (single SHA-256 hash of `requirements.txt` per run) exposed in metadata when enabled
+- Cached Unicode capability detection (single evaluation) improving Windows TTY performance and reducing repetitive encoding probes
+
 ### Changed
 
-- Prompt 3 wording clarified for fairness: explicit deterministic, import-safe single-file requirement; removed ambiguous "non-strict inputs" / generic validation language (no scoring logic change)
-- Repository audit script fully migrated: root `repo_audit_enhanced.py` removed; canonical path is now `validation/repo_audit_enhanced.py`.
-- Completed migration of enhanced repository audit into `validation/repo_audit_enhanced.py`; root `repo_audit_enhanced.py` reduced to thin re-exporting compatibility wrapper (no functional changes, prepares future deprecation of root path)
+- `run_benchmark.py`: Added metadata opt-out logic, introduced environment/CLI toggle, refactored import ordering, added UTC-aware timestamping, and improved dependency fingerprint warning handling.
+- Docs workflow hardening: pinned `actions/checkout` to `v4.1.6` and removed redundant job-level `permissions` (single workflow-level scope retained) for reproducibility and least privilege.
+- Scoped security ignore S404: removed global Ruff ignore and restricted to audited files (`benchmark/runner.py`, `test_data/process_records.py`)
+- Mypy Stage 1 tightening: enabled `check_untyped_defs`, `warn_unused_ignores`, `warn_return_any`, `warn_unreachable`; removed `allow_redefinition`; trimmed disabled error codes; added exclusion for duplicate template scaffold
+- MkDocs navigation updated to reference internal copies instead of files outside `docs_dir`
+- Results persistence model restructured: atomic writes + per-run directories reduce race conditions and enable historical run retention without manual copying
+- Comparison & summary artifacts relocated under each run's directory (improves reproducibility and avoids cross-run overwrites)
+- Performance improvements: eliminated repeated hashing of dependencies, redundant Unicode safety checks, and sequential model evaluation delays (when `--workers > 1`)
+- Comparison generation logic simplified & future-proofed by deriving prompt IDs from actual run data
 
 ## [0.8.0-beta] - 2025-08-26
 
 ### Added
 
-- Repository audit consolidation: canonicalized to `validation/repo_audit_enhanced.py` and removed legacy duplicate
-- Developer Guide section: New "Repository Audit & Quality Gate" usage block with strict mode and minimum score examples
-- Narrowed secret scanning ignore scope: safer `.trufflehogignore` now targets only necessary paths (no global `*.json|*.txt|*.log` ignores)
+- **Repository audit consolidation**: canonicalized to `validation/repo_audit_enhanced.py` and removed legacy duplicate
+- **Developer Guide section**: New "Repository Audit & Quality Gate" usage block with strict mode and minimum score examples
+- **Narrowed secret scanning ignore scope**: safer `.trufflehogignore` now targets only necessary paths (no global `*.json|*.txt|*.log` ignores)
 - **MkDocs documentation site scaffolding**: Introduced `mkdocs.yml`, Material theme, and structured navigation (Home, Getting Started, Usage, Models, Results, Troubleshooting, Project).
 - **Documentation workflow (build-only)**: New `.github/workflows/docs.yml` builds docs and uploads artifact without deploying (no public Pages exposure while repo remains private).
 - **Project documentation stubs**: Added `docs/index.md`, `getting-started.md`, usage guides (`usage/cli.md`, `usage/config.md`), and project meta pages (quickstart, changelog, contributing, code_of_conduct, security, license, example_submission, sabotage_notes, issues).
@@ -83,6 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Troubleshooting location**: Moved from `docs/bug/troubleshooting.md` to `docs/troubleshooting.md`
 - **Sabotage notes location**: Moved from root to `docs/sabotage-notes.md` for better discoverability
 - **MkDocs integration**: Complete setup with include-markdown plugin, Material theme, and structured navigation
+- **Prompt 3 wording clarified for fairness**: explicit deterministic, import-safe single-file requirement; removed ambiguous "non-strict inputs" / generic validation language (no scoring logic change)
+- **Repository audit script fully migrated**: root `repo_audit_enhanced.py` removed; canonical path is now `validation/repo_audit_enhanced.py`.
 
 ### Removed
 

@@ -136,6 +136,10 @@ Recommended when running untrusted submissions (Yes, even from LLM/AI, explained
 
 - Dummy secrets intentionally appear in `test_data/` or templates; scanners tuned/filtered
 - If a real secret is ever committed, rotate immediately and purge history if needed
+- Specific known benign hits (documented for transparency):
+  - `tests/test_validators_parametric.py`: contains a hardcoded fake key string (`sk-ABCDEF0123456789TOKENXYZ`) used to exercise secret detection logic. It is not a real credential.
+  - `validation/security_core.py`: includes regex patterns (e.g. `AKIA[0-9A-Z]{16}`) for detecting AWS style keys; these pattern literals may appear in scans.
+  - These occurrences are safe; no live secrets are present. Any additional scan hit outside this list should be investigated.
 
 ## 10. Manual Security Validation (Cross-Platform Examples)
 
@@ -172,6 +176,7 @@ pip-audit
 - Semgrep ruleset integration (status: planned)
 - Optional network isolation helper script
 - Hash-based integrity verification for result JSON files
+- Consolidated safe subprocess wrapper (planned) – reduce scattered subprocess.run usage, enforce allow‑list + timeouts
 
 ## 13. Contact & Questions
 

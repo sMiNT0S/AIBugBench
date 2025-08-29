@@ -21,6 +21,14 @@ Highlights
 
 Environment
     AIBB_TIMEOUT=25   # seconds per external call
+
+Auto Root Detection
+    If --path is omitted (default ".") and the *current working directory* does not
+    look like the repository root (e.g. script invoked from a subdirectory such as
+    validation/), the tool will now automatically ascend parents until it finds a
+    directory containing a .git folder or a pyproject.toml file. This prevents the
+    accidental partial-audit issue reported after migration (scanning only the
+    validation/ subtree). Pass --path explicitly to override.
 """
 
 from __future__ import annotations
@@ -811,6 +819,25 @@ def print_summary(report: dict[str, Any]):
             print(f"  - {s}")
 
 
+def _find_repo_root(start: Path) -> Path:
+    """Ascend from 'start' looking for a directory that appears to be the repo root.
+
+    Heuristics: directory containing .git/ OR pyproject.toml OR requirements.txt.
+    Returns the first qualifying directory; falls back to the original start if none.
+    """
+    cur = start.resolve()
+    for _ in range(15):  # safety bound
+        if any(
+            (cur / marker).exists()
+            for marker in (".git", "pyproject.toml", "requirements.txt")
+        ):
+            return cur
+        if cur.parent == cur:
+            break
+        cur = cur.parent
+    return start
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Offline-first repo audit for public release readiness"
@@ -830,7 +857,19 @@ def main() -> int:
     )
     args = ap.parse_args()
     print("Running repo audit, this may take a while...")
-    root = Path(args.path).resolve()
+    # Determine scanning root.
+    root_arg = Path(args.path)
+    root = root_arg.resolve()
+    # If user did not explicitly override path (default "."), and we appear to be in a
+    # subdirectory (no .git / pyproject in resolved CWD) then auto-ascend to repo root.
+    if args.path == "." and not any(
+        (root / marker).exists() for marker in (".git", "pyproject.toml")
+    ):
+        # Use script location (Path(__file__).parent) as additional clue.
+        script_parent = Path(__file__).resolve().parent
+        candidate = _find_repo_root(script_parent)
+        # If candidate differs, adopt it; else attempt ascent from CWD.
+        root = candidate if candidate != script_parent else _find_repo_root(root)
     if not root.exists():
         print(f"ERROR: path not found: {root}", file=sys.stderr)
         return 2

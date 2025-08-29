@@ -1,72 +1,63 @@
 # TruffleHog ignore patterns for AIBugBench
-# Excludes known false positives in test data and examples
+# Lines are regular expressions matched against the normalized (forward-slash) path
+# relative to the repository root. If a line matches, that file is skipped.
+############################################################
+# DIRECTORY / PATH EXCLUSIONS
+############################################################
+^\.git/.*$
+^test_data/.*$                  # Intentional dummy test inputs
+^submissions/(?:template|example_model)/.*$
+^results/.*$                    # Generated benchmark outputs
+^reports/.*$
+^htmlcov/.*$                    # Coverage HTML output
+^site/.*$
+^build/.*$                      # Build artifacts
+^dist/.*$
+^var/.*$
+^wheels/.*$
+^parts/.*$
+^sdist/.*$
+^develop-eggs/.*$
+^eggs/.*$
+^\.eggs/.*$
+^__pycache__/.*$
+^lib64?/.*$                     # lib/ or lib64/
+^\.vscode/.*$
+^\.idea/.*$
 
-# Test data directories - contain intentional dummy values
-test_data/
-test_data/**
-submissions/template/
-submissions/template/**
-submissions/example_model/
-submissions/example_model/**
+# (Optional) If you really want to exclude CI/workflow files, leave the next line.
+# Recommended: COMMENT OUT to let trufflehog scan workflows for secrets.
+^\.github/.*$
 
-# Documentation with example patterns (narrowed: allow scanning except explicit example file)
-EXAMPLE_SUBMISSION.md
-# Removed broad docs/ exclusion to improve secret visibility
-README.md
-QUICKSTART.md
+############################################################
+# FILE EXTENSION EXCLUSIONS (binary / unlikely to contain secrets)
+############################################################
+^.*\.(?:png|pdf|gif|jpg|jpeg|bmp|ico)$
+^.*\.(?:min\.js)$
+^.*\.(?:pyc|pyo|pyd|egg)$
 
-# Common test token patterns that are intentional
-dummy_token
-test_token
-Bearer test_token_12345
-sk-test-key-dummy-value
-test-api-key-12345
-dummy-secret-value
+############################################################
+# CONTENT PATTERN (INLINE) FALSE POSITIVES
+# These are literal fragments that can appear in example code or docs; trufflehog path
+# ignore regex matches only file paths, NOT file contents. To suppress content-based
+# verified findings, prefer an allow list (--allow allow.yml). Listed here just
+# for documentation; they do not have effect on content scanning.
+############################################################
+# dummy_token
+# test_token
+# Bearer test_token_12345
+# sk-test-key-dummy-value
+# test-api-key-12345
+# dummy-secret-value
+# "password": "test123"
+# "api_key": "dummy"
+# "token": "test_"
+# "secret": "dummy_"
 
-# Test credential patterns in specific contexts
-"password": "test123"
-"api_key": "dummy"
-"token": "test_"
-"secret": "dummy_"
-
-# Git metadata and CI configurations
-.github/
-.github/**
-.git/
-.git/**
-
-# Build and temporary files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Results and generated files (narrow, no global wildcards hiding unrelated secrets)
-results/
-reports/
-htmlcov/
-site/
+############################################################
+# NOTE:
+# 1. Keep patterns as specific as possible to avoid masking real secrets.
+# 2. Remove or comment out exclusions if you later wish to re-scan those areas.
+# 3. For allowlisting actual secret-like strings (not paths), create allow.yml
+#    and pass: trufflehog git --allow allow.yml ...
+############################################################

@@ -1,6 +1,6 @@
 [project]
 name = "aibugbench"
-version = "0.8.0-beta"
+version = "0.8.1-beta"
 description = "AI code generation benchmarking tool"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: MIT License"]
@@ -43,7 +43,6 @@ ignore = [
     "S105",  # hardcoded password - false positives in test code
     "S101",  # use of assert detected
     "S108",  # hardcoded temporary directory
-    "S404",  # import of subprocess module
     "S603",  # subprocess call: check for execution of untrusted input
     "S506",  # use of yaml.load with unsafe loader - false positive in test code
 ]
@@ -63,6 +62,7 @@ ignore_missing_imports = true
 exclude = [
     "submissions/template/",
     "submissions/example_model/",
+    "submissions/templates/",  # duplicate nested template scaffold; excluded to avoid mypy duplicate modules
     "test_data/",
     "venv/",
     "htmlcov/",
@@ -70,20 +70,20 @@ exclude = [
 ]
 # Very lenient initial setup for legacy codebase
 allow_untyped_globals = true
-allow_redefinition = true
+allow_redefinition = false
 allow_untyped_defs = true
 allow_incomplete_defs = true
-check_untyped_defs = false
+check_untyped_defs = true
 # Disable strict checks initially
 no_implicit_optional = false
 strict_optional = false
 # Minimal warnings for now
-warn_unused_ignores = false
-warn_return_any = false
-warn_unreachable = false
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
 show_error_codes = true
 # Skip errors that would require major refactoring
-disable_error_code = ["var-annotated", "arg-type", "assignment", "operator", "index", "attr-defined", "call-overload"]
+disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-overload"]
 
 # Tests can use bare `assert` without tripping bandit S101.
 # Benchmark core functionality requires subprocess calls and intentional YAML loader usage.
@@ -92,9 +92,9 @@ disable_error_code = ["var-annotated", "arg-type", "assignment", "operator", "in
 # aren't relevant to production code quality. We still keep correctness (no F821) while relaxing
 # formatting / style noise. Security assert usage already ignored.
 "tests/**" = ["S101", "E501", "S102", "SIM102", "F841"]
-"benchmark/runner.py" = ["S603"]  # subprocess calls required for test execution
 "benchmark/validators.py" = ["S603", "S506"]  # subprocess calls + UniqueKeyLoader for duplicate detection
-"test_data/process_records.py" = ["S506"]  # deliberate yaml.load usage for test
+"benchmark/runner.py" = ["S603", "S404"]  # audited subprocess usage
+"test_data/process_records.py" = ["S506", "S404"]  # deliberate yaml.load + subprocess import for test fixture
 
 [tool.pytest.ini_options]
 minversion = "8.0"

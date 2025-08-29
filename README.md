@@ -53,3 +53,55 @@ Copy `scripts/pre_commit_template.sh` to `.git/hooks/pre-commit` and make it exe
 ---
 
 **Requirements:** Python 3.10+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
+
+## Scope & Limitations
+
+This beta focuses on deterministic scoring accuracy and reproducible results. It does NOT sandbox untrusted submission code yet—run only trusted code. Advanced isolation, fuzz stress, and provenance (SBOM/signing) are deferred and tracked in the roadmap.
+
+## Result Metadata & Privacy
+
+Benchmark results embed minimal provenance metadata to aid reproducibility:
+
+- spec_version: Benchmark scoring spec revision
+- git_commit: Short commit hash of the repository state (local only)
+- python_version: Interpreter version used to run the benchmark
+- platform: OS / release / architecture string
+- timestamp_utc: UTC run time (RFC 3339, Z suffix)
+- dependency_fingerprint: First 16 hex chars of SHA256 of `requirements.txt` (non-reversible drift indicator)
+
+No personal data is collected or transmitted; data is written only to local `results/` JSON & text files. If you publish results, you may reveal commit hashes or platform details.
+
+Opt-out:
+
+- CLI flag: `--no-metadata` (retains only `spec_version`)
+- Environment variable: `AIBUGBENCH_DISABLE_METADATA=1`
+
+Either mechanism suppresses git/platform/timestamp/dependency fingerprint fields. Use when sharing results from private repositories or sensitive environments.
+
+## Performance & Concurrency
+
+Run multiple models concurrently with the thread pool executor:
+
+```bash
+python run_benchmark.py --workers 4
+```
+
+Set `--workers` to the number of concurrent model evaluations you want (1 = sequential, default). The output remains deterministic per model; ordering of completion messages may vary.
+
+## Results Layout (v0.8.1+)
+
+Each run now writes to a timestamped directory preserving history:
+
+```text
+results/
+ latest_results.json                # Backward-compatible pointer to most recent run
+ 20250827_143215/                   # Run-specific directory (YYYYMMDD_HHMMSS)
+  latest_results.json              # Full JSON (models + comparison + _metadata)
+  detailed/
+   detailed_results.json          # Stable path for tooling
+   summary_report_20250827_143215.txt
+  comparison_charts/
+   comparison_chart.txt           # ASCII comparison bars
+```
+
+Key advantages: atomic writes (no partial files), historical retention, dynamic prompt support (new prompts auto appear in comparison data).

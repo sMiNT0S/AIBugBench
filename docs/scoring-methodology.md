@@ -16,11 +16,14 @@ AIBugBench uses a comprehensive 7-category scoring system to evaluate AI-generat
 
 ### Results File Structure
 
-After running a benchmark, you'll find three types of output files in the `results/` directory:
+After running a benchmark (v0.8.1+), outputs are written to a timestamped directory under `results/`:
 
-1. **`latest_results.json`** - Complete scoring breakdown with detailed metrics
-2. **`summary_report_TIMESTAMP.txt`** - Human-readable analysis and feedback
-3. **`comparison_chart_TIMESTAMP.txt`** - Visual progress bars for quick assessment
+1. **`latest_results.json` (root)** – Pointer to most recent run
+2. **`<RUN_TS>/latest_results.json`** – Complete scoring breakdown (models + comparison + metadata)
+3. **`<RUN_TS>/detailed/summary_report_<RUN_TS>.txt`** – Human-readable analysis and feedback
+4. **`<RUN_TS>/comparison_charts/comparison_chart.txt`** – Visual progress bars for quick assessment
+
+Historical runs persist; tooling can enumerate directories matching `YYYYMMDD_HHMMSS` for trend analysis.
 
 ### Enhanced Feedback Format
 

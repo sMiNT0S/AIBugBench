@@ -16,9 +16,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: read  # explicit job-level; top-level already restricts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5 # Updated to v5 (Node 24 runtime; requires runner >= 2.327.1)
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
@@ -34,4 +34,4 @@ jobs:
           name: site
           path: site
       # NOTE: Deploy job intentionally removed for safety while repository remains private.
-        # Note: environment block removed to silence editor schema warning.
+      # environment block removed to silence editor schema warning.

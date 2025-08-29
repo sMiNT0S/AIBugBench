@@ -2,14 +2,14 @@
 title: Validation Package Internals
 description: Internal modules supporting documentation validation, security checks, and repository audits in AIBugBench.
 search:
-    boost: 0.4
+	boost: 0.4
 ---
 
 ## Validation Package
 
 **Internal validation utilities for AIBugBench quality assurance and compliance.**
 
-> Overview documentation lives in the consolidated site under [`docs/architecture.md`](../docs/architecture.md) and [`docs/developer-guide.md`](../docs/developer-guide.md). This README focuses on the internal APIs surfaced by the validation package.
+> Overview documentation lives in the consolidated site under [`docs/architecture.md`](../architecture.md) and [`docs/developer-guide.md`](../developer-guide.md). This README focuses on the internal APIs surfaced by the validation package.
 
 The `validation/` package contains refactored core validation logic extracted from legacy scripts in `scripts/` to enable unit testing and modular imports. CLI wrappers remain in `scripts/` for backwards compatibility.
 
@@ -68,8 +68,8 @@ commands = validator.extract_commands_from_text(markdown_content, file_path)
 from validation.security_core import SECURITY_CHECKS
 
 for check_name, check_func in SECURITY_CHECKS.items():
-    passed, issues = check_func()
-    print(f"{check_name}: {'PASS' if passed else 'FAIL'} ({issues} issues)")
+ passed, issues = check_func()
+ print(f"{check_name}: {'PASS' if passed else 'FAIL'} ({issues} issues)")
 ```
 
 **Security Patterns**:

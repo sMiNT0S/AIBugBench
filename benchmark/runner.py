@@ -5,7 +5,7 @@ Test runner utilities for the AI Code Benchmark
 import contextlib
 import os
 from pathlib import Path
-import subprocess
+import subprocess  # Bandit B404/B603: controlled usage; fixed arg list [sys.executable, script]
 import sys
 import tempfile
 from typing import Any

@@ -19,6 +19,9 @@ import sys
 import time
 from typing import Any
 
+# subprocess rationale: controlled internal invocations (fixed arg lists, shell=False);
+# no user-supplied strings interpolated, so injection risk is minimal (Bandit B404/B603 noted).
+
 # Platform detection
 CURRENT_PLATFORM = platform.system().lower()
 PLATFORM_MAPPING = {

@@ -6,7 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 import re
-import subprocess
+import subprocess  # Bandit B404/B603: controlled python solution execution (shell=False)
 import sys
 import tempfile
 from typing import Any

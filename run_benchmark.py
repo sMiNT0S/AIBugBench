@@ -7,19 +7,21 @@ Usage: python run_benchmark.py [options]
 """
 
 # Ensure UTF-8 encoding for cross-platform compatibility
-import os
-
-if os.name == "nt":  # Windows
-    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
-
-import argparse
+import argparse  # noqa: I001
+import concurrent.futures
 import contextlib
-from datetime import datetime
+from datetime import UTC, datetime
+import hashlib
 import json
-from pathlib import Path
+import os
+import platform
+import subprocess  # Bandit B404/B603: git hash & internal runs (shell=False)
 import sys
 import traceback
+from pathlib import Path
+from shutil import which
 from typing import Any
+
 
 from benchmark.scoring import BenchmarkScorer
 from benchmark.utils import (
@@ -29,11 +31,6 @@ from benchmark.utils import (
     validate_submission_structure,
 )
 from benchmark.validators import PromptValidators
-
-# Add the benchmark package to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "benchmark"))
-
-# (Legacy fallback removed pre-public release; single tiered discovery path only.)
 
 
 def use_safe_unicode_standalone() -> bool:
@@ -54,6 +51,24 @@ def use_safe_unicode_standalone() -> bool:
         return True  # Use safe fallback
 
 
+def _resolve_git_commit() -> str:
+    """Best-effort short git commit hash for metadata embedding."""
+    try:
+        git_exe = which("git")
+        if not git_exe:
+            return "unknown"
+        result = subprocess.run(
+            [git_exe, "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        commit = result.stdout.strip()
+        return commit or "unknown"
+    except Exception:
+        return "unknown"
+
+
 class AICodeBenchmark:
     """Main benchmark runner class."""
 
@@ -61,11 +76,28 @@ class AICodeBenchmark:
     DEFAULT_MAX_SCORE = 25
     DEFAULT_PASS_THRESHOLD = 0.6  # 60%
     DEFAULT_TIMEOUT = 30  # seconds
+    SPEC_VERSION = "0.8.0"  # Benchmark spec version (update when scoring rules change)
 
-    def __init__(self, submissions_dir: str = "submissions", results_dir: str = "results"):
+    def __init__(
+        self,
+        submissions_dir: str = "submissions",
+        results_dir: str = "results",
+        disable_metadata: bool | None = None,
+    ):
         self.submissions_dir = Path(submissions_dir)
         self.results_dir = Path(results_dir)
         self.test_data_dir = Path("test_data")
+        # Cache run start timestamp (per-run directory)
+        self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Cache unicode capability once
+        self._unicode_safe = self._detect_unicode_safety()
+        # Determine metadata collection preference (env var overrides default if set)
+        env_disable = os.getenv("AIBUGBENCH_DISABLE_METADATA")
+        if disable_metadata is None:
+            self.disable_metadata = bool(env_disable and env_disable != "0")
+        else:
+            # Explicit flag passed; still allow env var to force disable if truthy
+            self.disable_metadata = disable_metadata or bool(env_disable and env_disable != "0")
 
         # Initialize components
         self.validators = PromptValidators(self.test_data_dir)
@@ -77,24 +109,29 @@ class AICodeBenchmark:
         # Load test data
         self.test_data = load_test_data(self.test_data_dir)
 
-    def use_safe_unicode(self) -> bool:
-        """Detect if Unicode emojis are safe to use."""
+        # Pre-compute dependency fingerprint once (best effort; avoid repeated I/O & hashing)
+        self.dependency_fingerprint: str | None = None
         try:
-            import sys
+            req_path = Path("requirements.txt")
+            if req_path.exists():
+                self.dependency_fingerprint = hashlib.sha256(req_path.read_bytes()).hexdigest()[:16]
+        except Exception:  # pragma: no cover - non-critical
+            self.dependency_fingerprint = None
 
-            # Check if output is being piped or redirected
+    def _detect_unicode_safety(self) -> bool:
+        try:
             if not sys.stdout.isatty():
-                return True  # Use safe fallback for piped output
-
-            # Test if current encoding supports emojis
+                return True
             encoding = sys.stdout.encoding or "utf-8"
             if encoding.lower() in ["cp1252", "ascii"]:
-                return True  # Use safe fallback for limited encodings
-
+                return True
             "🚀".encode(encoding)
-            return False  # Unicode is safe
-        except (UnicodeEncodeError, LookupError, AttributeError):
-            return True  # Use safe fallback
+            return False
+        except (UnicodeEncodeError, LookupError, AttributeError):  # pragma: no cover
+            return True
+
+    def use_safe_unicode(self) -> bool:
+        return self._unicode_safe
 
     def safe_print(self, message: str) -> None:
         """Print message with Unicode safety and error handling."""
@@ -214,6 +251,7 @@ class AICodeBenchmark:
 
     def run_single_model(self, model_name: str) -> dict[str, Any]:
         """Run all benchmark tests for a single model."""
+        safe_unicode = self.use_safe_unicode()
         print(f"\nTesting model: {model_name}")
         print("=" * 50)
 
@@ -230,7 +268,6 @@ class AICodeBenchmark:
         structure_validation = validate_submission_structure(model_dir)
         missing_files = [file for file, exists in structure_validation.items() if not exists]
         if missing_files:
-            safe_unicode = self.use_safe_unicode()
             warning_icon = "WARNING:" if safe_unicode else "⚠️"
             self.safe_print(f"{warning_icon} Missing or empty files: {', '.join(missing_files)}")
 
@@ -251,7 +288,6 @@ class AICodeBenchmark:
         ]
 
         for prompt_id, prompt_name, test_func in prompt_tests:
-            safe_unicode = self.use_safe_unicode()
             test_icon = "" if safe_unicode else "📝 "
             self.safe_print(f"\n{test_icon}Testing {prompt_name}...")
             try:
@@ -260,7 +296,6 @@ class AICodeBenchmark:
                 results["overall_score"] += prompt_result.get("score", 0)
                 results["total_possible"] += prompt_result.get("max_score", self.DEFAULT_MAX_SCORE)
 
-                safe_unicode = self.use_safe_unicode()
                 passed = prompt_result.get("passed", False)
                 if safe_unicode:
                     status = "PASSED" if passed else "FAILED"
@@ -278,7 +313,6 @@ class AICodeBenchmark:
                     self.safe_print(f"   {status} - Score: {score:.2f}/{max_score}")
 
             except Exception as e:
-                safe_unicode = self.use_safe_unicode()
                 error_icon = "ERROR:" if safe_unicode else "❌ ERROR:"
                 self.safe_print(f"   {error_icon} {e!s}")
                 results["prompts"][prompt_id] = {
@@ -298,7 +332,6 @@ class AICodeBenchmark:
         else:
             results["percentage"] = 0
 
-        safe_unicode = self.use_safe_unicode()
         final_icon = "" if safe_unicode else "🎯 "
 
         self.safe_print(
@@ -329,8 +362,14 @@ class AICodeBenchmark:
         api_file = model_dir / "prompt_4_api_sync.py"
         return self.validators.validate_prompt_4_api(api_file)
 
-    def run_all_models(self) -> dict[str, Any]:
-        """Run benchmark tests for all discovered models."""
+    def run_all_models(self, workers: int = 1) -> dict[str, Any]:
+        """Run benchmark tests for all discovered models.
+
+        Parameters
+        ----------
+        workers : int
+            Number of concurrent workers (1 => sequential).
+        """
         models = self.discover_models()
 
         if not models:
@@ -339,7 +378,6 @@ class AICodeBenchmark:
             self.safe_print(f"{error_icon} No models found in submissions directory!")
             self.safe_print(f"Please add model submissions to: {self.submissions_dir}")
             return {"error": "No models found"}
-
         safe_unicode = self.use_safe_unicode()
         discovery_icon = "" if safe_unicode else "🔍 "
         self.safe_print(f"{discovery_icon}Discovered {len(models)} model(s): {', '.join(models)}")
@@ -353,9 +391,19 @@ class AICodeBenchmark:
             "comparison": {},
         }
 
-        # Test each model
-        for model_name in models:
-            all_results["models"][model_name] = self.run_single_model(model_name)
+        # Test each model (optionally concurrently)
+        if workers and workers > 1:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+                future_map = {executor.submit(self.run_single_model, m): m for m in models}
+                for future in concurrent.futures.as_completed(future_map):
+                    model_name = future_map[future]
+                    try:
+                        all_results["models"][model_name] = future.result()
+                    except Exception as exc:  # pragma: no cover - defensive
+                        all_results["models"][model_name] = {"error": str(exc)}
+        else:
+            for model_name in models:
+                all_results["models"][model_name] = self.run_single_model(model_name)
 
         # Generate comparison data
         all_results["comparison"] = self._generate_comparison(all_results["models"])
@@ -386,8 +434,12 @@ class AICodeBenchmark:
 
         comparison["ranking"] = sorted(model_scores, key=lambda x: x["score"], reverse=True)
 
-        # Analyze prompt-specific performance
-        for prompt_id in ["prompt_1", "prompt_2", "prompt_3", "prompt_4"]:
+        # Dynamically derive prompt IDs from available data instead of hard-coded list
+        prompt_ids: set[str] = set()
+        for model_result in models_results.values():
+            if isinstance(model_result, dict):
+                prompt_ids.update(model_result.get("prompts", {}).keys())
+        for prompt_id in sorted(prompt_ids):
             prompt_scores = []
             for model_name, result in models_results.items():
                 if "error" not in result and prompt_id in result.get("prompts", {}):
@@ -417,55 +469,66 @@ class AICodeBenchmark:
         return comparison
 
     def _save_results(self, results: dict[str, Any]) -> None:
-        """Save results to files with robust error handling."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        """Save results atomically into a per-run directory with metadata injection."""
+        timestamp = self.run_timestamp
 
-        # Ensure proper folder structure exists
-        detailed_dir = self.results_dir / "detailed"
-        charts_dir = self.results_dir / "comparison_charts"
-        ensure_directories([detailed_dir, charts_dir])
+        # Inject metadata honoring opt-out
+        meta = results.setdefault("_metadata", {})
+        if self.disable_metadata:
+            meta.clear()
+            meta["spec_version"] = self.SPEC_VERSION
+        else:
+            meta.clear()
+            meta["spec_version"] = self.SPEC_VERSION
+            meta["git_commit"] = os.environ.get("GITHUB_SHA") or _resolve_git_commit()
+            meta["python_version"] = platform.python_version()
+            meta["platform"] = platform.platform()
+            meta["timestamp_utc"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+            if self.dependency_fingerprint:
+                meta["dependency_fingerprint"] = self.dependency_fingerprint
 
-        # Save main results (in main results dir)
-        results_file = self.results_dir / "latest_results.json"
+        # Per-run directory structure
+        run_dir = self.results_dir / timestamp
+        detailed_dir = run_dir / "detailed"
+        charts_dir = run_dir / "comparison_charts"
+        ensure_directories([run_dir, detailed_dir, charts_dir])
 
-        # Save detailed results (in detailed/ subdirectory)
-        detailed_results_file = detailed_dir / f"detailed_results_{timestamp}.json"
+        run_results_file = run_dir / "latest_results.json"
+        detailed_results_file = detailed_dir / "detailed_results.json"
+        root_latest = self.results_dir / "latest_results.json"  # backwards compatible pointer
 
-        saved_files = []
-        for file_path in [results_file, detailed_results_file]:
-            try:
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(results, f, indent=2, ensure_ascii=False)
-                saved_files.append(file_path)
-            except Exception as e:
-                # Critical: Try fallback ASCII encoding if UTF-8 fails
-                try:
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        json.dump(results, f, indent=2, ensure_ascii=True)
-                    saved_files.append(file_path)
-                    self.safe_print(f"Warning: Saved {file_path} with ASCII encoding due to: {e}")
-                except Exception as e2:
-                    self.safe_print(f"CRITICAL: Failed to save {file_path}: {e2}")
+        for target in [run_results_file, detailed_results_file, root_latest]:
+            self._atomic_write_json(target, results)
 
-        # Report saved files with safe Unicode handling
-        if not saved_files:
-            self.safe_print("\nERROR: Failed to save any results files!")
-
-        # Generate summary report (in detailed/ subdirectory)
+        # Generate summary & chart
         try:
             self._generate_summary_report(results, timestamp, detailed_dir)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             self.safe_print(f"Warning: Failed to generate summary report: {e}")
-
-        # Generate comparison chart (in comparison_charts/ subdirectory)
         try:
-            chart_file = charts_dir / f"comparison_chart_{timestamp}.txt"
+            chart_file = charts_dir / "comparison_chart.txt"
             generate_comparison_chart(results, chart_file)
-            safe_unicode = self.use_safe_unicode()
-            chart_icon = "" if safe_unicode else "📊 "
+            chart_icon = "" if self.use_safe_unicode() else "📊 "
             self.safe_print(f"{chart_icon}Comparison chart: {chart_file}")
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             self.safe_print(f"Warning: Failed to generate comparison chart: {e}")
+
+    def _atomic_write_json(self, path: Path, data: Any) -> None:
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        try:
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            os.replace(tmp, path)
+        except Exception:
+            try:
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=True)
+                os.replace(tmp, path)
+            except Exception as e2:  # pragma: no cover
+                self.safe_print(f"CRITICAL: Failed to save {path}: {e2}")
+                with contextlib.suppress(Exception):
+                    if tmp.exists():
+                        tmp.unlink()
 
     def _generate_summary_report(
         self, results: dict[str, Any], timestamp: str, output_dir: Path | None = None
@@ -475,48 +538,54 @@ class AICodeBenchmark:
             output_dir = self.results_dir
         report_file = output_dir / f"summary_report_{timestamp}.txt"
 
-        with open(report_file, "w", encoding="utf-8") as f:
-            f.write("AI CODE BENCHMARK RESULTS\n")
-            f.write("=" * 50 + "\n\n")
-            f.write(f"Run Date: {results['benchmark_run']['timestamp']}\n")
-            f.write(f"Models Tested: {results['benchmark_run']['total_models']}\n\n")
+        tmp_file = report_file.with_suffix(report_file.suffix + ".tmp")
+        try:
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                f.write("AI CODE BENCHMARK RESULTS\n")
+                f.write("=" * 50 + "\n\n")
+                f.write(f"Run Date: {results['benchmark_run']['timestamp']}\n")
+                f.write(f"Models Tested: {results['benchmark_run']['total_models']}\n\n")
 
-            # Overall ranking
-            if "ranking" in results.get("comparison", {}):
-                f.write("OVERALL RANKING\n")
+                if "ranking" in results.get("comparison", {}):
+                    f.write("OVERALL RANKING\n")
+                    f.write("-" * 20 + "\n")
+                    for i, model in enumerate(results["comparison"]["ranking"], 1):
+                        line = (
+                            f"{i}. {model['model']}: {model['score']} points "
+                            f"({model['percentage']}%)\n"
+                        )
+                        f.write(line)
+                    f.write("\n")
+
+                f.write("DETAILED RESULTS\n")
                 f.write("-" * 20 + "\n")
-                for i, model in enumerate(results["comparison"]["ranking"], 1):
+                for model_name, model_result in results["models"].items():
+                    f.write(f"\n{model_name}:\n")
+                    if "error" in model_result:
+                        f.write(f"  ERROR: {model_result['error']}\n")
+                        continue
                     f.write(
-                        f"{i}. {model['model']}: {model['score']} points ({model['percentage']}%)\n"
+                        f"  Overall Score: {model_result['overall_score']:.2f}/"
+                        f"{model_result['total_possible']} "
+                        f"({model_result['percentage']}%)\n"
                     )
-                f.write("\n")
 
-            # Detailed results for each model
-            f.write("DETAILED RESULTS\n")
-            f.write("-" * 20 + "\n")
-            for model_name, model_result in results["models"].items():
-                f.write(f"\n{model_name}:\n")
-                if "error" in model_result:
-                    f.write(f"  ERROR: {model_result['error']}\n")
-                    continue
-
-                f.write(
-                    f"  Overall Score: {model_result['overall_score']:.2f}/"
-                    f"{model_result['total_possible']} "
-                    f"({model_result['percentage']}%)\n"
-                )
-
-                prompts_data = model_result.get("prompts", {})
-                for prompt_id, prompt_result in prompts_data.items():
-                    prompt_name = prompt_id.replace("_", " ").title()
-                    status = "PASSED" if prompt_result.get("passed", False) else "FAILED"
-                    score = prompt_result.get("score", 0)
-                    max_score = prompt_result.get("max_score", 25)
-                    f.write(f"  {prompt_name}: {status} - {score}/{max_score}\n")
-
-                    if "feedback" in prompt_result:
-                        for feedback_line in prompt_result["feedback"]:
-                            f.write(f"    • {feedback_line}\n")
+                    prompts_data = model_result.get("prompts", {})
+                    for prompt_id, prompt_result in prompts_data.items():
+                        prompt_name = prompt_id.replace("_", " ").title()
+                        status = "PASSED" if prompt_result.get("passed", False) else "FAILED"
+                        score = prompt_result.get("score", 0)
+                        max_score = prompt_result.get("max_score", 25)
+                        f.write(f"  {prompt_name}: {status} - {score}/{max_score}\n")
+                        if "feedback" in prompt_result:
+                            for feedback_line in prompt_result["feedback"]:
+                                f.write(f"    • {feedback_line}\n")
+            os.replace(tmp_file, report_file)
+        except Exception as e:  # pragma: no cover
+            self.safe_print(f"Warning: Failed to write summary report atomically: {e}")
+            with contextlib.suppress(Exception):
+                if tmp_file.exists():
+                    tmp_file.unlink()
 
         safe_unicode = self.use_safe_unicode()
         report_icon = "" if safe_unicode else "📄 "
@@ -526,8 +595,11 @@ class AICodeBenchmark:
 # Removed alternate discover_models implementation (pre-release simplification)
 
 
-def main(argv=None) -> int:
-    """Main entry point."""
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Construct and return the argument parser.
+
+    Separated to allow tests to import and verify CLI flags without executing main logic.
+    """
     parser = argparse.ArgumentParser(description="AI Code Benchmark Tool")
     parser.add_argument("--model", help="Test specific model only")
     parser.add_argument(
@@ -537,11 +609,36 @@ def main(argv=None) -> int:
     )
     parser.add_argument("--results-dir", default="results", help="Directory to save results")
     parser.add_argument("--quiet", "-q", action="store_true", help="Suppress detailed output")
+    parser.add_argument(
+        "--no-metadata",
+        action="store_true",
+        help="Disable environment/git/dependency metadata collection (spec_version retained)",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of concurrent workers for model evaluation (default: 1)",
+    )
+    return parser
 
-    args = parser.parse_args(argv)
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments (test hook)."""
+    return build_arg_parser().parse_args(argv)
+
+
+def main(argv=None) -> int:
+    """Main entry point."""
+    args = parse_args(argv)
+    global_unicode_safe = use_safe_unicode_standalone()
 
     # Create benchmark instance
-    benchmark = AICodeBenchmark(args.submissions_dir, args.results_dir)
+    benchmark = AICodeBenchmark(
+        args.submissions_dir,
+        args.results_dir,
+        disable_metadata=args.no_metadata,
+    )
 
     try:
         if args.model:
@@ -570,8 +667,7 @@ def main(argv=None) -> int:
                 print(f"\nSingle model test completed: {args.model}")
 
                 # Inform user about detailed results location
-                safe_unicode = use_safe_unicode_standalone()
-                results_icon = "" if safe_unicode else "📁 "
+                results_icon = "" if global_unicode_safe else "📁 "
                 print(f"\n{results_icon}Detailed results have been saved to:")
                 print(
                     f"  • {benchmark.results_dir}/latest_results.json - Complete benchmark data "
@@ -593,10 +689,9 @@ def main(argv=None) -> int:
                 )
         else:
             # Test all models
-            results = benchmark.run_all_models()
+            results = benchmark.run_all_models(workers=max(1, args.workers))
             if not args.quiet and "models" in results:
-                safe_unicode = use_safe_unicode_standalone()
-                complete_icon = "" if safe_unicode else "🎉 "
+                complete_icon = "" if global_unicode_safe else "🎉 "
                 try:
                     print(
                         f"\n{complete_icon}Benchmark completed! "
@@ -607,7 +702,7 @@ def main(argv=None) -> int:
 
                 # Show quick summary
                 if "ranking" in results.get("comparison", {}):
-                    trophy_icon = "" if safe_unicode else "🏆 "
+                    trophy_icon = "" if global_unicode_safe else "🏆 "
                     try:
                         print(f"\n{trophy_icon}Top Performers:")
                     except UnicodeEncodeError:
@@ -620,7 +715,7 @@ def main(argv=None) -> int:
                             print(f"  {i}. {model['model']}: {model['percentage']}%")
 
                 # Inform user about detailed results location for all models
-                results_icon = "" if safe_unicode else "📁 "
+                results_icon = "" if global_unicode_safe else "📁 "
                 try:
                     print(f"\n{results_icon}Detailed results have been saved to:")
                 except UnicodeEncodeError:
@@ -665,16 +760,14 @@ def main(argv=None) -> int:
         return 0
 
     except KeyboardInterrupt:
-        safe_unicode = use_safe_unicode_standalone()
-        interrupt_icon = "" if safe_unicode else "⏹️  "
+        interrupt_icon = "" if global_unicode_safe else "⏹️  "
         try:
             print(f"\n\n{interrupt_icon}Benchmark interrupted by user")
         except UnicodeEncodeError:
             print("\n\nBenchmark interrupted by user")
         return 1
     except Exception as e:
-        safe_unicode = use_safe_unicode_standalone()
-        error_icon = "" if safe_unicode else "❌ "
+        error_icon = "" if global_unicode_safe else "❌ "
         try:
             print(f"\n{error_icon}Benchmark failed: {e!s}")
         except UnicodeEncodeError:

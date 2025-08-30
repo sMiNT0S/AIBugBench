@@ -1,0 +1,9 @@
+# Tier 2 (Templates) Ruff configuration (standalone minimal rules)
+# Invoke with: ruff check submissions/templates/ --config .ruff-tier2.toml
+
+line-length = 100
+target-version = "py310"
+
+[lint]
+select = ["E", "F", "S"]
+ignore = ["E501", "S101", "S301", "S307", "S311", "S506", "S602", "S607"]

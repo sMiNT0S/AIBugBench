@@ -91,6 +91,7 @@ disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-
 # aren't relevant to production code quality. We still keep correctness (no F821) while relaxing
 # formatting / style noise. Security assert usage already ignored.
 "tests/**" = ["S101", "E501", "S102", "SIM102", "F841"]
+"submissions/reference_implementations/**" = []  # Phase 2: explicit full rules (no ignores)
 "benchmark/validators.py" = ["S603", "S506"]  # subprocess calls + UniqueKeyLoader for duplicate detection
 "benchmark/runner.py" = ["S603", "S404"]  # audited subprocess usage
 "test_data/process_records.py" = ["S506", "S404"]  # deliberate yaml.load + subprocess import for test fixture

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Canonical template README at `submissions/templates/template/README.md` (centralized instructions; legacy single-level path removed)
 - Roadmap bullet for submission onboarding workflow (template consolidation + validation)
+- Reference implementation hardening: Prompt 1–4 reference files fully cleaned (no blanket suppressions; zero Ruff issues)
 
 ### Changed
 
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline automation script (`scripts/automate_models.py`) now references `submissions/templates/template -> submissions/user_submissions/<model>` path
 - Developer guide updated to use tiered structure paths exclusively and adjusted ordered list formatting to satisfy markdown lint
 - Template README refined (frontmatter retained, extraneous fenced code block removed, scoring link updated to `scoring-methodology.md`)
+- Standardized reference prompt docstrings & logging; removed residual whitespace-only lines and legacy `# noqa` usage
 
 ### Removed
 

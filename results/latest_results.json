@@ -1,6 +1,6 @@
 {
   "benchmark_run": {
-    "timestamp": "2025-08-30T17:40:17.100045",
+    "timestamp": "2025-08-30T18:26:22.101456",
     "total_models": 1,
     "prompts_tested": 4
   },
@@ -16,10 +16,10 @@
   },
   "_metadata": {
     "spec_version": "0.8.0",
-    "git_commit": "e89e438",
+    "git_commit": "a25952f",
     "python_version": "3.13.6",
     "platform": "Windows-11-10.0.26100-SP0",
-    "timestamp_utc": "2025-08-30T15:40:17.153269Z",
+    "timestamp_utc": "2025-08-30T16:26:22.154877Z",
     "dependency_fingerprint": "468574e5f8973523"
   }
 }

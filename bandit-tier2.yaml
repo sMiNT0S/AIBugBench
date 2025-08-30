@@ -1,0 +1,23 @@
+# Tier 2 (Templates) Bandit configuration - relaxed, high severity focus
+# Usage: bandit -c bandit-tier2.yaml -r submissions/templates/
+
+exclude_dirs:
+  - '.venv'
+  - 'venv'
+  - '__pycache__'
+
+skips:
+  - B101  # assert
+  - B105  # hardcoded passwords
+  - B106  # hardcoded passwords
+  - B107  # hardcoded passwords
+  - B301  # pickle
+  - B307  # eval
+  - B311  # random
+  - B506  # yaml load
+  - B602  # subprocess shell
+
+tests:
+  - B603  # subprocess untrusted
+  - B608  # SQL injection
+  - B610  # django SQL

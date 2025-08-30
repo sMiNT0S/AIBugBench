@@ -198,21 +198,18 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
 
 
 def create_directory_structure():
-    """Create the required directory structure."""
-    # Preferred tiered layout (Phase 1). We still create legacy 'submissions/template'
-    # for backward compatibility during deprecation window, but primary location
-    # is submissions/templates/template.
+    """Create the required directory structure (Phase 1 canonical layout only)."""
     directories = [
         "benchmark",
         "test_data",
         "prompts",
         "submissions",
-        # Tiered structure
+        # Tiered structure (canonical)
         "submissions/reference_implementations",
         "submissions/templates",
         "submissions/templates/template",
         "submissions/user_submissions",
-        # Legacy (to be removed in 0.9.0) - only create if missing
+        # Results directory retained
         "results",
     ]
 
@@ -222,14 +219,6 @@ def create_directory_structure():
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
         print(f"{checkmark} Created directory: {directory}")
-
-    legacy_template = Path("submissions/template")
-    if not legacy_template.exists():  # Do not overwrite existing legacy template
-        legacy_template.mkdir(parents=True, exist_ok=True)
-        print(
-            f"{checkmark} Created directory: submissions/template (legacy compatibility - "
-            "deprecated, migrate to submissions/templates/template)"
-        )
 
 
 def create_test_data():

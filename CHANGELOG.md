@@ -20,16 +20,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjusted `pyproject.toml` (Ruff & mypy excludes) to reflect canonical scaffold and remove legacy exclusions
 - Normalized secret scanning configuration and fixed malformed YAML in `.github/secret-patterns.yml`
 - Simplified `.semgrepignore` comment style and canonicalized paths
+- `setup.py`: removed automatic creation of deprecated `submissions/template/` (now only canonical tiered paths are created)
+- Offline automation script (`scripts/automate_models.py`) now references `submissions/templates/template -> submissions/user_submissions/<model>` path
+- Developer guide updated to use tiered structure paths exclusively and adjusted ordered list formatting to satisfy markdown lint
+- Template README refined (frontmatter retained, extraneous fenced code block removed, scoring link updated to `scoring-methodology.md`)
 
 ### Removed
 
 - Legacy `submissions/template/` directory and all fallback/deprecation notes (project remains private; no migration layer maintained)
+- Legacy migration compatibility test suite replaced with a minimal canonical layout assertion (`tests/test_migration_compatibility.py`)
 - Archival references to legacy template path in reports and internal dependency analysis docs
 
 ### Fixed
 
 - Broken/obsolete links pointing to legacy template path across README, troubleshooting, internals, scripts documentation, and audience path diagrams
 - Formatting and structure issues in secret patterns and semgrep ignore files introduced by prior ad-hoc edits
+- Template README previously rendered as plain text (fenced code block wrapper removed; proper markdown now renders)
+- Outdated scoring rubric link (`scoring_rubric.md`) updated to consolidated `scoring-methodology.md`
+- Offline automation script long instruction line wrapped to satisfy Ruff line-length rule
+- Markdown ordered list numbering inconsistency in developer guide corrected
 
 ### Planned
 

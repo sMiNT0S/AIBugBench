@@ -7,6 +7,8 @@ exclude_dirs:
   - '__pycache__'
   - '.git'
   - 'test_data'  # Exclude test data which may contain intentional security patterns
+  - 'submissions/user_submissions'
+  - 'submissions/templates'
 
 # Skip tests that cause issues on Windows or are not relevant
 skips:

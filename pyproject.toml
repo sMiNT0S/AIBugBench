@@ -19,7 +19,8 @@ target-version = "py310"
 exclude = [
     "test_data/",
     "venv/",
-    "submissions/example_model/",
+    "submissions/user_submissions/",
+    "submissions/templates/",
     "prompts/",
 ]
 

@@ -27,7 +27,10 @@ def main():
     print()
     print("Recommended workflow:")
     print("1. Use manual copy-paste approach from QUICKSTART.md")
-    print("2. Copy template: submissions/template -> submissions/your_model")
+    print(
+        "2. Copy template: submissions/templates/template -> "
+        "submissions/user_submissions/your_model"
+    )
     print("3. Paste AI responses into each file manually")
     print("4. Run: python run_benchmark.py --model your_model")
     print()

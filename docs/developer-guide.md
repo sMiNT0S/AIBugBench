@@ -4,29 +4,29 @@ Complete guide for adding and testing AI models in AIBugBench.
 
 ## Quick Start
 
-1. **Copy the template**:
+1. **Copy the template (tiered layout)**:
 
-   **Windows CMD:**
+  **Windows PowerShell (recommended):**
 
-   ```cmd
-   xcopy /E /I submissions\template submissions\your_model_name
-   ```
+  ```powershell
+  Copy-Item -Recurse submissions\templates\template submissions\user_submissions\your_model_name
+  ```
 
-   **Windows PowerShell:**
+  **Windows CMD:**
 
-   ```powershell
-   Copy-Item -Recurse submissions\template submissions\your_model_name
-   ```
+  ```cmd
+  xcopy /E /I submissions\templates\template submissions\user_submissions\your_model_name
+  ```
 
-   **macOS/Linux Bash:**
+  **macOS/Linux Bash:**
 
-   ```bash
-   cp -r submissions/template submissions/your_model_name
-   ```
+  ```bash
+  cp -r submissions/templates/template submissions/user_submissions/your_model_name
+  ```
 
-2. Present prompts to your AI model
-3. Save the AI's code responses in the appropriate files
-4. Run the benchmark:
+1. Present prompts to your AI model
+1. Save the AI's code responses in the appropriate files
+1. Run the benchmark:
 
    ```bash
    python run_benchmark.py --model your_model_name
@@ -69,7 +69,7 @@ Copy-paste the entire contents of `ai_prompt.md` into your AI conversation befor
 
 1. Open `prompts/prompt_1_refactoring.md`
 2. Copy the entire prompt text to your AI model
-3. Save the AI's Python code response as `submissions/your_model_name/prompt_1_solution.py`
+3. Save the AI's Python code response as `submissions/user_submissions/your_model_name/prompt_1_solution.py`
 
 **Expected Output Structure:**
 

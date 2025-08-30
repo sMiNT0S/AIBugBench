@@ -22,7 +22,7 @@ from pathlib import Path
 from shutil import which
 from typing import Any
 
-
+# Local imports
 from benchmark.scoring import BenchmarkScorer
 from benchmark.utils import (
     ensure_directories,
@@ -31,6 +31,9 @@ from benchmark.utils import (
     validate_submission_structure,
 )
 from benchmark.validators import PromptValidators
+
+# Default directory constant (Phase 1 restructure)
+DEFAULT_SUBMISSIONS_DIR = Path(__file__).parent / "submissions" / "user_submissions"
 
 
 def use_safe_unicode_standalone() -> bool:
@@ -80,7 +83,7 @@ class AICodeBenchmark:
 
     def __init__(
         self,
-        submissions_dir: str = "submissions",
+        submissions_dir: str = str(DEFAULT_SUBMISSIONS_DIR),
         results_dir: str = "results",
         disable_metadata: bool | None = None,
     ):

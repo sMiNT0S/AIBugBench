@@ -1,202 +1,28 @@
----
-title: Model Submission Workflow
-description: Detailed workflow for preparing AI model prompt solutions, directory layout, and benchmarking your submission in AIBugBench.
-search:
-  boost: 0.8
----
+# Model Submissions
 
-## How to Submit AI Model Results
+Three-tier structure for code quality and security:
 
-> Quick-start model submission instructions appear in [`docs/getting-started.md`](../docs/getting-started.md) and developer workflow details in [`docs/developer-guide.md`](../docs/developer-guide.md). This README expands on the directory layout and per‑prompt expectations.
+## reference_implementations/
 
-This directory contains AI model submissions for benchmarking. Each model gets its own subdirectory with standardized file names.
+Production-quality reference implementations.
 
-## Submission Structure
+- Full linting and security scanning
+- Complete test coverage required
+- Used as baseline for comparison
 
-Each model submission should follow this structure:
+## templates/
 
-submissions/your_model_name/
-├── prompt_1_solution.py          # Refactored process_records.py
-├── prompt_2_config_fixed.yaml    # Corrected config.yaml
-├── prompt_2_config.json          # JSON version of corrected config
-├── prompt_3_transform.py         # transform_and_enrich_users function
-└── prompt_4_api_sync.py          # sync_users_to_crm function
+Starting templates for new model implementations.
 
-## Step-by-Step Guide
+- Basic safety checks only
+- Minimal viable examples
 
-### 1. Prepare your environment
+## user_submissions/
 
-- Copy the `template/` directory: `cp -r template/ your_model_name/`
-- Have the test data files ready from `test_data/`
+Your AI model implementations.
 
-### 2. Present each prompt
-
-Give your AI model the exact prompts from the `prompts/` directory along with the test data files.
-
-### 3. Save responses
-
-Save each AI response in the corresponding file:
-
-- **Prompt 1 response** → `prompt_1_solution.py`
-- **Prompt 2 YAML fix** → `prompt_2_config_fixed.yaml`  
-- **Prompt 2 JSON conversion** → `prompt_2_config.json`
-- **Prompt 3 function** → `prompt_3_transform.py`
-- **Prompt 4 API function** → `prompt_4_api_sync.py`
-
-### 4. Test your submission
-
-```bash
-python run_benchmark.py --model your_model_name
-```
-
-## Example models
-
-Check out the `example_model/` directory to see what a complete submission looks like.
-
-## Tips for best results
-
-1. **Include complete code** - Make sure functions are complete and can be imported
-2. **Follow exact naming** - Function names must match exactly (e.g., `transform_and_enrich_users`)
-3. **Test locally first** - Try running the code yourself before submitting
-4. **Include error handling** - The benchmark rewards robust code
-
-## Common issues
-
-- **Import errors**: Make sure all required imports are included
-- **Function not found**: Check function names match exactly
-- **File format errors**: YAML and JSON must be valid syntax
-
-Need help? Check the documentation in `docs/` or open an issue!
-
----
-
-## prompts/prompt_1_refactoring.md
-
-## Prompt 1: Code Understanding and Refactoring
-
-## Instructions for AI model
-
-Analyze the provided Python script `process_records.py`.
-
-### Task 1: Identify problems
-
-List and explain at least five distinct problems with the script. Cover issues related to:
-
-- Style (PEP 8 compliance)
-- Efficiency
-- Error handling
-- Logical correctness
-
-### Task 2: Refactor the code  
-
-Provide a complete, refactored version of the script. The new script should be:
-
-- Modular and well-organized
-- Efficient and performant
-- Robust (handle potential FileNotFoundError, KeyError, etc.)
-- Adherent to modern Python best practices
-
-### Context files
-
-You will also have access to:
-
-- `config.yaml` - Configuration file (has issues)
-- `user_data.json` - Sample data for testing
-
-### Expected output
-
-A complete Python script that can be executed and produces the same functional output as the original, but with significantly improved code quality.
-
----
-
-## prompts/prompt_2_yaml_json.md
-
-## Prompt 2: Error Explanation and Multi-Format Conversion
-
-## Instructions for AI model
-
-The original `process_records.py` script will fail when trying to load `config.yaml`.
-
-### Task 1: Explain the errors
-
-Pinpoint the exact lines and reasons why the `yaml.load()` call will raise errors based on the content of `config.yaml`. Be specific about:
-
-- Indentation issues
-- Structural problems  
-- Type inconsistencies
-
-### Task 2: Correct the YAML
-
-Provide a fully corrected version of `config.yaml` that resolves all parsing issues while preserving the intended data structure.
-
-### Task 3: Convert to JSON
-
-Convert the corrected YAML content into a properly formatted JSON object. Ensure all data types (booleans, numbers, strings) are represented correctly in the JSON output.
-
-### Context files
-
-- `config.yaml` - The broken configuration file
-- `process_records.py` - Shows how the config is used
-
-### Expected outputs
-
-1. **Fixed YAML file** - Valid syntax, proper indentation, correct types
-2. **JSON conversion** - Equivalent data structure with proper JSON types
-
----
-
-## prompts/prompt_3_transformation.md
-
-## Prompt 3: Large File Reasoning and Bulk Transformation
-
-## Instructions for AI model
-
-Using knowledge from the previous prompts, write a new data transformation function.
-
-### Task: Create transform function
-
-Write a Python function called `transform_and_enrich_users(user_list)` that takes the list of user dictionaries from `user_data.json` and performs these operations:
-
-#### 1. Standardize IDs
-
-Ensure every user `id` is an integer.
-
-#### 2. Graceful error handling  
-
-The function must not crash. If a user record is missing a required key for an operation (e.g., `contact` or `email`), skip that specific transformation for that user and log a warning if possible.
-
-#### 3. Enrich data
-
-Add a new key `email_provider` to the `contact` dictionary. The value should be the domain part of the email address (e.g., for `jane.d@example.com`, the provider is `example.com`).
-
-#### 4. Complex conditional logic
-
-Add a new top-level key `account_tier` with this logic:
-
-- If `total_posts > 100` AND `total_comments > 300`: tier is "Gold"
-- If `total_posts > 50`: tier is "Silver"  
-- Otherwise: tier is "Bronze"
-
-#### 5. Type correction
-
-Ensure the `age` value in the `stats` dictionary is always an integer.
-
-### Context files
-
-- `user_data.json` - The data to transform
-- Previous solutions for context
-
-### Expected output
-
-A complete Python function that returns the list of fully transformed and enriched user records, with robust error handling.
-
----
-
-## prompts/prompt_4_api_simulation.md
-
-## Prompt 4: API Interaction Simulation
-
-## Instructions for AI model
+- Excluded from automated quality checks
+- Not tracked in git by default
 
 The business wants to synchronize processed user data with an external CRM system via REST API.
 

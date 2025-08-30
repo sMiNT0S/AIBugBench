@@ -2,6 +2,42 @@
 
 Complete guide for adding and testing AI models in AIBugBench.
 
+## Tiered Submission System
+
+AIBugBench uses a three-tier system for code submissions:
+
+### Tier 1: Reference Implementations
+
+Location: `submissions/reference_implementations/`
+
+- Full quality checks and security scanning
+- Must pass all linting rules
+- Used as baseline for benchmarking
+
+### Tier 2: Templates
+
+Location: `submissions/templates/`
+
+- Basic safety checks only
+- Starting points for new implementations
+- Relaxed linting rules
+
+### Tier 3: User Submissions
+
+Location: `submissions/user_submissions/`
+
+- AI-generated and user code
+- Excluded from automated checks
+- Not tracked in git
+
+### Usage
+
+1. Copy template to user_submissions
+2. Implement your solution
+3. Run benchmark: `python run_benchmark.py --model your_model`
+
+Reference implementations demonstrate best practices and serve as comparison baseline.
+
 ## Quick Start
 
 1. **Copy the template (tiered layout)**:

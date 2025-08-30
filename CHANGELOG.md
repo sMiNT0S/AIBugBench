@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 
 - Post-0.8.0 documentation polish and diagram additions
+- Tiered submission system documentation (developer guide section)
 - Validation package migration (execution + reporting layers) completion
 - Public documentation deployment enablement (GitHub Pages)
 

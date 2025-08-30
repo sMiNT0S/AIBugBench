@@ -47,7 +47,7 @@ Copy `scripts/pre_commit_template.sh` to `.git/hooks/pre-commit` and make it exe
 **🔍 API Reference:** [CLI and Python API](docs/api-reference.md)  
 **🧪 Validation Tools:** See `validation/README.md` for internal doc/security/audit utilities (advanced)  
 **📤 Submissions Guide:** See `submissions/README.md` for model folder layout & workflow (developer)  
-**📦 Template Usage:** See `submissions/template/README.md` for per‑prompt file replacement instructions  
+**📦 Template Usage:** See `submissions/templates/template/README.md` for per‑prompt file replacement instructions  
 **🛠️ Doc Command Validator:** See `scripts/README.md` for `validate_docs.py` usage & CI integration  
 
 ---

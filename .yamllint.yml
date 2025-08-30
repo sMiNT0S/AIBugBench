@@ -3,7 +3,7 @@ extends: default
 
 ignore: |
   test_data/
-  submissions/template/
+  submissions/templates/template/
   submissions/example_model/
 
 rules:

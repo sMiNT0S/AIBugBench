@@ -8,6 +8,7 @@ Status: Beta (v0.8.0 spec_version)
 - Introduce unified run_cmd helper wrapping subprocess.run (allow‑listed binaries, enforced timeouts, consistent logging); then annotate existing imports with rationale to silence low‑severity Bandit noise instead of broad skips
 - Coverage gating in CI (existing script integration)
 - Results metadata completeness (already inject spec_version, commit, env)
+- Submission onboarding workflow (consolidate duplicate templates, add validation & diff-based review aids)
 
 ### Type Hygiene (Incremental Mypy Tightening)
 

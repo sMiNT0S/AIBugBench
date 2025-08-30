@@ -9,7 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-_No unreleased additions yet._
+- Canonical template README at `submissions/templates/template/README.md` (centralized instructions; legacy single-level path removed)
+- Roadmap bullet for submission onboarding workflow (template consolidation + validation)
+
+### Changed
+
+- Consolidated duplicate template directories into single canonical tiered path (`submissions/templates/template/`)
+- Updated all public and internal docs, configs, and workflows to remove legacy `submissions/template/` references (CodeQL config, security workflow, secret/semgrep/yamllint ignores, docs, reports, dependency analysis)
+- Refined `.gitignore` to drop obsolete `.bandit` & `reports/` patterns (moved to local exclude) and track only canonical template path
+- Adjusted `pyproject.toml` (Ruff & mypy excludes) to reflect canonical scaffold and remove legacy exclusions
+- Normalized secret scanning configuration and fixed malformed YAML in `.github/secret-patterns.yml`
+- Simplified `.semgrepignore` comment style and canonicalized paths
+
+### Removed
+
+- Legacy `submissions/template/` directory and all fallback/deprecation notes (project remains private; no migration layer maintained)
+- Archival references to legacy template path in reports and internal dependency analysis docs
+
+### Fixed
+
+- Broken/obsolete links pointing to legacy template path across README, troubleshooting, internals, scripts documentation, and audience path diagrams
+- Formatting and structure issues in secret patterns and semgrep ignore files introduced by prior ad-hoc edits
 
 ### Planned
 

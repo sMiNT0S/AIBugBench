@@ -229,7 +229,8 @@ Missing required file: prompt_1_solution.py
 # Check what files are missing
 ls -la submissions/my_model/
 # Copy missing files from template
-cp submissions/template/prompt_1_solution.py submissions/my_model/
+# (Legacy path removed) copy from canonical template:
+cp submissions/templates/template/prompt_1_solution.py submissions/my_model/
 # Verify all required files exist
 python scripts/validate_submission.py my_model
 ```

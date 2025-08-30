@@ -224,7 +224,7 @@ self.doc_files = [
     "docs/adding_models.md",
     "docs/interpreting_results.md",
     "docs/scoring_rubric.md",
-    "submissions/template/README.md",
+  "submissions/templates/template/README.md",
     "your_new_file.md",  # Add your file here
 ]
 ```

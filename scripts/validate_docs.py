@@ -200,7 +200,8 @@ class DocumentationValidator:
             "docs/adding_models.md",
             "docs/interpreting_results.md",
             "docs/scoring_rubric.md",
-            "submissions/template/README.md",
+            # Updated canonical template path (legacy submissions/template removed)
+            "submissions/templates/template/README.md",
         ]
 
         # Command block patterns for different platforms

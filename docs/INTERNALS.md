@@ -32,7 +32,7 @@ Location: `submissions/`
 Purpose: Holds model solution directories (reference, templates, user submissions) used by the benchmark runner.
 
 Guide: [submissions/README.md](../submissions/README.md)  
-Template Instructions: [submissions/template/README.md](../submissions/template/README.md)
+Template Instructions: [submissions/templates/template/README.md](../submissions/templates/template/README.md)
 
 ## Repository Audit Tool
 

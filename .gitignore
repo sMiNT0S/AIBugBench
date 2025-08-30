@@ -30,10 +30,7 @@ ENV/
 .venv/
 site-packages/
 
-# IDE and Editors
-.vscode/
-.vscode/settings.json
-.idea/
+# IDE and Editors (project-wide)
 *.swp
 *.swo
 *~
@@ -63,9 +60,7 @@ coverage.xml
 bandit_report.json
 audit_report*.json
 *_audit_report.json
-.bandit
 # Keep security/audit config files versioned (.safety-project.ini, .semgrepignore, .trufflehogignore)
-reports/
 
 # CI Results and Build Artifacts
 ci_results/
@@ -75,55 +70,32 @@ warn-*.txt
 
 # Generated Files and Executables
 *.spec
-repo_audit_new.py
 
-# Results (keep directory structure but not contents)
-results/*.json
-results/*.txt
+# Results (keep directory, ignore bulk outputs, track latest summary file & gitkeep)
+results/**
 !results/.gitkeep
-results/comparison_charts/
-results/detailed/
+!results/latest_results.json
 
 # Development Artifacts and Temporary Files
-showcase_results.json
-fixes.txt
-commit_message.txt
-*_results.json
+status/
 *.tmp
 *.bak
 .temp/
-temp_test.py
-nul
-scan_status.ps1
-setup-security.ps1
-showcase_cli.py
-status/
-nul
 
-# Keep template directory
-!submissions/template/
+# Keep canonical template directory
+!submissions/templates/template/
 
-# Claude Code documentation (exclude from commits)
-.claude/
-.mcp.json
-test_new_user_experience.ps1
-validation_report.txt
-# scripts/ - now tracked for transparency
-BEFORE_RELEASE.md
-PRIMER.md
-RELEASE_NOTES.md
-2025-*.txt
+# Developer-specific & transient files
+# -------------------------------------------------------------
+# Use .git/info/exclude (not committed) for personal/editor/scratch ignores.
+# This keeps the shared .gitignore focused on universally generated artifacts.
+# Local exclude currently contains (for reference only — do not copy back):
+#   .vscode/, .idea/
+#   showcase_results.json, *_results.json,
+#   temp_test.py, scan_status.ps1, setup-security.ps1, showcase_cli.py
+#   test_new_user_experience.ps1, 2025-*.txt
+#   .mcp.json
+# -------------------------------------------------------------
 
-# Claude Code documentation artifacts (exclude planning docs)
+# Documentation artifacts (exclude planning docs)
 docs_private/
-
-# Documentation Build Artifacts
-SHOWCASE_README.md
-showcase/
-.bandit.disabled
-site/
-scripts/cleanpycache.ps1
-securityaudit.txt
-.github/chatmodes/.chatmode.md
-tags-backup.bundle
-.mailmap

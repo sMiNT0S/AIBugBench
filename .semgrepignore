@@ -1,16 +1,20 @@
-# Semgrep ignore patterns for AIBugBench
+# Semgrep ignore patterns for AIBugBench (plain comment style, not markdown headings)
+
 ## Excludes known false positives and intentional security patterns
 
 ## Test data and example directories
+
 test_data/
-submissions/template/
+submissions/templates/template/
 submissions/example_model/
 
 ## Documentation files
+
 docs/
 *.md
 
-## Build and temporary files    
+## Build and temporary files
+
 __pycache__/
 *.pyc
 *.pyo
@@ -20,12 +24,15 @@ dist/
 *.egg-info/
 
 ## IDE files
+
 .vscode/
 .idea/
 
 ## Results directory
+
 results/
 
 ## Git metadata
+
 .github/
 .git/

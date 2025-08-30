@@ -20,7 +20,7 @@ paths:
 # Exclude paths that contain intentional test patterns
 paths-ignore:
   - "test_data/**"
-  - "submissions/template/**"
+  - "submissions/templates/template/**"
   - "submissions/example_model/**"
   - "results/**"
   - "docs/**"

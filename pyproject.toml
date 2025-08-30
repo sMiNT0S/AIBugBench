@@ -19,7 +19,6 @@ target-version = "py310"
 exclude = [
     "test_data/",
     "venv/",
-    "submissions/template/",
     "submissions/example_model/",
     "prompts/",
 ]
@@ -60,9 +59,8 @@ python_version = "3.10"
 ignore_missing_imports = true
 # Exclude problematic duplicate modules in template/example_model
 exclude = [
-    "submissions/template/",
     "submissions/example_model/",
-    "submissions/templates/",  # duplicate nested template scaffold; excluded to avoid mypy duplicate modules
+    "submissions/templates/",  # template scaffold (excluded from type checking)
     "test_data/",
     "venv/",
     "htmlcov/",

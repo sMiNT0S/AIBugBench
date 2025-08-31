@@ -55,6 +55,7 @@ Optional Tooling:
 
 ## Deferred (Implement When Adoption Justifies)
 
+- Phase 4: PR security automation (CODEOWNERS, mandatory PR security workflow, enhanced gating). Deferred until repository is public and receives external contributor PRs. Activation criteria: (a) repo visibility switched to public, OR (b) ≥1 external (non-owner) PR merged, OR (c) expanded sensitive surface (networked plugins / execution backends) introduced. Rationale: added CI minutes & maintenance cost outweigh benefit while private; existing local + scheduled security scans (TruffleHog, Semgrep, CodeQL, Safety, pip-audit, Bandit) already cover current risk profile.
 - Fuzz & mutation tests for docs/yaml parsers
 - Concurrency / load stress harness
 - SBOM + provenance attestation (CycloneDX, optional signing)

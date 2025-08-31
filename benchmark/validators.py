@@ -21,9 +21,12 @@ from .secure_runner import SecureRunner
 def _sandbox_enabled() -> bool:
     """Return True if sandbox integration should be active.
 
-    Enabled by default; set AIBUGBENCH_UNSAFE=1 to disable (used for debugging / performance).
+    Enabled by default; disable with AIBUGBENCH_UNSAFE set to a truthy value ("1", "true",
+    "yes", "on"). Documentation examples use "true"; we also support numeric and common
+    boolean variants for convenience.
     """
-    return os.environ.get("AIBUGBENCH_UNSAFE") != "1"
+    val = os.environ.get("AIBUGBENCH_UNSAFE", "").strip().lower()
+    return val not in {"1", "true", "yes", "on"}
 
 
 def sandbox_validator(func):  # type: ignore[override]

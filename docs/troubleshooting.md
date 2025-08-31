@@ -383,8 +383,8 @@ python run_benchmark.py --model example_model --verbose --debug
 # Validate specific documentation file
 python scripts/validate_docs.py --docs-only --verbose --project-root .
 
-# Run single test with full output
-python -m pytest tests/test_validators.py::test_specific_function -v -s
+# Run single validator test (parametric suite) with full output
+python -m pytest tests/test_validators_parametric.py::test_prompt1_parametric -v -s
 ```
 
 ## Emergency Recovery

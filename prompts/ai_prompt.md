@@ -1,4 +1,4 @@
-Welcome to AIBugBench!
+# Welcome to AIBugBench
 
 I'm about to test your coding abilities using AIBugBench, a comprehensive benchmarking tool
 that evaluates AI code generation across 4 different programming challenges.

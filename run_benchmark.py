@@ -605,6 +605,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description="AI Code Benchmark Tool")
     parser.add_argument("--model", help="Test specific model only")
+    # Phase 3 security flags
+    parser.add_argument(
+        "--unsafe",
+        action="store_true",
+        help="DANGEROUS: Disable sandbox/resource isolation (gives submitted code normal access)",
+    )
+    parser.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="Allow network access during execution (future enforcement; currently advisory)",
+    )
+    parser.add_argument(
+        "--trusted-model",
+        action="store_true",
+        help="Skip unsafe mode confirmation prompt (CI / trusted submissions only)",
+    )
     parser.add_argument(
         "--submissions-dir",
         default="submissions",
@@ -631,12 +647,67 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return build_arg_parser().parse_args(argv)
 
 
+def _print_security_status(args: argparse.Namespace, unicode_safe: bool) -> None:
+    """Display security status banner each run (Phase 3)."""
+    # Determine symbols based on environment
+    sandbox_enabled = not args.unsafe
+    network_allowed = args.allow_network
+    trusted = args.trusted_model
+    lines = []
+    lines.append("Sandboxing:     {}".format("ENABLED" if sandbox_enabled else "DISABLED"))
+    lines.append("Network:        {}".format("ALLOWED" if network_allowed else "BLOCKED"))
+    lines.append("Env Clean:      {}".format("CLEANED" if sandbox_enabled else "FULL"))
+    lines.append("ResourceLimits: {}".format("ENFORCED" if sandbox_enabled else "NONE"))
+    lines.append("Trusted Model:  {}".format("YES" if trusted else "NO"))
+
+    # Box drawing (fallback to ASCII if not unicode safe)
+    if unicode_safe:
+        top = "+" + "-" * 38 + "+"
+        bottom = top
+    else:
+        top = "╔" + "═" * 38 + "╗"
+        bottom = "╚" + "═" * 38 + "╝"
+
+    print(top)
+    title = "AIBugBench Security Status"
+    print("|" + title.center(38) + "|") if unicode_safe else print("║" + title.center(38) + "║")
+    mid_border = "+" + "-" * 38 + "+" if unicode_safe else "╠" + "═" * 38 + "╣"
+    print(mid_border)
+    for line in lines:
+        print(("|" if unicode_safe else "║") + line.ljust(38) + ("|" if unicode_safe else "║"))
+    print(bottom)
+
+
 def main(argv=None) -> int:
     """Main entry point."""
     args = parse_args(argv)
     global_unicode_safe = use_safe_unicode_standalone()
 
-    # Create benchmark instance
+    # Always display security status (even in quiet mode)
+    _print_security_status(args, global_unicode_safe)
+
+    # Confirm unsafe mode unless trusted
+    if args.unsafe and not args.trusted_model:
+        try:
+            resp = input("WARNING: UNSAFE mode disables sandbox & limits. Type 'yes' to continue: ")
+        except EOFError:  # Non-interactive context defaults to abort for safety
+            print("Aborted (non-interactive unsafe request)")
+            return 1
+        if resp.strip().lower() != "yes":
+            print("Aborted.")
+            return 1
+
+    # Propagate environment flags BEFORE benchmark creation so any later components can read
+    if args.unsafe:
+        os.environ["AIBUGBENCH_UNSAFE"] = "true"
+    else:
+        # Ensure variable not set to force sandbox
+        if os.environ.get("AIBUGBENCH_UNSAFE"):
+            os.environ.pop("AIBUGBENCH_UNSAFE", None)
+    if args.allow_network:
+        os.environ["AIBUGBENCH_ALLOW_NETWORK"] = "true"
+
+    # Create benchmark instance AFTER env is configured
     benchmark = AICodeBenchmark(
         args.submissions_dir,
         args.results_dir,

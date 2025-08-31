@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Canonical template README at `submissions/templates/template/README.md` (centralized instructions; legacy single-level path removed)
 - Roadmap bullet for submission onboarding workflow (template consolidation + validation)
 - Reference implementation hardening: Prompt 1–4 reference files fully cleaned (no blanket suppressions; zero Ruff issues)
+- Initial sandbox execution support: `benchmark/secure_runner.py` (temp dir isolation, env scrub, CPU & memory rlimits, subprocess wrapper) – Phase 1 security hardening
 
 ### Changed
 

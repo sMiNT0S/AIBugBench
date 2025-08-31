@@ -31,12 +31,13 @@ def check_security_files() -> dict[str, bool]:
     security_files = {
         ".github/dependabot.yml": "Dependabot configuration",
         ".github/workflows/security.yml": "Security workflow",
+        ".github/workflows/security-audit.yml": "SAFETY2.0 security audit workflow",
         ".github/codeql/codeql-config.yml": "CodeQL configuration",
         ".trufflehogignore": "TruffleHog ignore patterns",
         ".semgrepignore": "Semgrep ignore patterns",
         ".safety-project.ini": "Safety configuration",
         ".github/secret-patterns.yml": "Custom secret patterns",
-        "docs/SECURITY_INFRASTRUCTURE.md": "Security documentation"
+        "docs/security.md": "Security documentation"
     }
 
     project_root = Path(__file__).parent.parent
@@ -115,7 +116,13 @@ def run_safety_check() -> bool:
                         print(f"     {advisory}")
                     if len(vulns) > 3:
                         print(f"     ... and {len(vulns) - 3} more")
-                return False
+                    return False
+                else:
+                    print("  [OK] No known vulnerabilities found in dependencies")
+                    return True
+            else:
+                print("  [OK] No known vulnerabilities found in dependencies")
+                return True
         except json.JSONDecodeError:
             print(f"  [ERROR] Safety check failed: {stderr}")
             return False

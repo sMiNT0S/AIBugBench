@@ -4,6 +4,7 @@ description: Deep usage guide for validate_docs.py including command classificat
 search:
   boost: 0.6
 ---
+## LEGACY FOR NOW (especially validate_docs.py) - NEEDS PATCH AFTER SANDBOX/REHAULS/REFACTORS. LEGACY REFERENCES STILL USED
 
 ## Documentation Validation Tools
 

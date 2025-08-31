@@ -4,7 +4,7 @@ Three-tier structure for code quality and security:
 
 ## reference_implementations/
 
-Production-quality reference implementations.
+Production-quality reference implementations. (This is roughly the expected behavior/output)
 
 - Full linting and security scanning
 - Complete test coverage required
@@ -24,7 +24,7 @@ Your AI model implementations.
 - Excluded from automated quality checks
 - Not tracked in git by default
 
-The business wants to synchronize processed user data with an external CRM system via REST API.
+("The business wants to synchronize processed user data with an external CRM system via REST API.
 
 ### Task: Create API sync function
 
@@ -57,4 +57,4 @@ Write a complete, standalone Python function `sync_users_to_crm(user_data, api_t
 
 ### Expected output
 
-A production-ready function with robust error handling that could be used in a real application.
+A production-ready function with robust error handling that could be used in a real application.")

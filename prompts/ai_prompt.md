@@ -7,6 +7,7 @@ Here's what you need to know:
 
 [TARGET] WHAT IS AIBUGBENCH?
 AIBugBench is a scoring system that tests your ability to:
+
 - Fix and refactor broken Python code
 - Convert between YAML and JSON formats correctly
 - Transform and enrich data structures
@@ -14,6 +15,7 @@ AIBugBench is a scoring system that tests your ability to:
 
 [CHART] SCORING SYSTEM:
 You'll be scored across 7 categories (100 points total):
+
 - Syntax correctness
 - Code structure and organization
 - Execution and functionality
@@ -23,12 +25,14 @@ You'll be scored across 7 categories (100 points total):
 - Code maintainability
 
 [WRENCH] THE CHALLENGES:
+
 1. **Code Refactoring**: Fix a broken Python script with style, logic, and efficiency issues
 2. **Data Format Conversion**: Correct malformed YAML and convert it to proper JSON
 3. **Data Transformation**: Implement complex data processing with business rules
 4. **API Integration**: Build secure API synchronization with comprehensive error handling
 
 [BULB] SUCCESS TIPS:
+
 - Read requirements carefully - each challenge has specific criteria
 - Focus on clean, secure, and efficient code
 - Handle edge cases and errors properly

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reference implementation hardening: Prompt 1–4 reference files fully cleaned (no blanket suppressions; zero Ruff issues)
 - Initial sandbox execution support: `benchmark/secure_runner.py` (temp dir isolation, env scrub, CPU & memory rlimits, subprocess wrapper) – Phase 1 security hardening
 - Sandbox integration Phase 2: validators now execute inside isolated SecureRunner environment by default with opt-out via `AIBUGBENCH_UNSAFE=1` (path remapping + test data isolation)
+- Pre-release security audit script (`scripts/security_audit.py`) implementing Phase 5 checks (sandbox primitives, validator integration, CLI security flags & banner) with PASS/FAIL/DEFERRED outcomes and JSON output mode
 
 ### Changed
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developer guide updated to use tiered structure paths exclusively and adjusted ordered list formatting to satisfy markdown lint
 - Template README refined (frontmatter retained, extraneous fenced code block removed, scoring link updated to `scoring-methodology.md`)
 - Standardized reference prompt docstrings & logging; removed residual whitespace-only lines and legacy `# noqa` usage
+- Documented explicit deferral of Phase 4 (PR security automation: CODEOWNERS + workflow enforcement) in roadmap; commit sequence intentionally advances Phase 3 -> 5 while repository remains private to avoid premature process overhead
 
 ### Removed
 
@@ -50,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tiered submission system documentation (developer guide section)
 - Validation package migration (execution + reporting layers) completion
 - Public documentation deployment enablement (GitHub Pages)
+- Phase 4 security automation (CODEOWNERS + PR gating workflow) – deferred until repository is public / external contribution begins
 
 ## [0.8.1-beta] - 2025-08-27
 

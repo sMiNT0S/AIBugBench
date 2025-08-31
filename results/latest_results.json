@@ -1,12 +1,12 @@
 {
   "benchmark_run": {
-    "timestamp": "2025-08-31T03:45:26.254342",
+    "timestamp": "2025-08-31T22:50:16.898868",
     "total_models": 1,
     "prompts_tested": 4
   },
   "models": {
-    "nonexistent_model": {
-      "error": "Model 'nonexistent_model' not found in any tier (reference_implementations/, user_submissions/, or legacy root)"
+    "test": {
+      "error": "Model 'test' not found in any tier (reference_implementations/, user_submissions/, or legacy root)"
     }
   },
   "comparison": {
@@ -16,10 +16,10 @@
   },
   "_metadata": {
     "spec_version": "0.8.0",
-    "git_commit": "e6f4010",
+    "git_commit": "799a193",
     "python_version": "3.13.6",
     "platform": "Windows-11-10.0.26100-SP0",
-    "timestamp_utc": "2025-08-31T01:45:26.316726Z",
+    "timestamp_utc": "2025-08-31T20:50:16.959966Z",
     "dependency_fingerprint": "468574e5f8973523"
   }
 }

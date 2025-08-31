@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial sandbox execution support: `benchmark/secure_runner.py` (temp dir isolation, env scrub, CPU & memory rlimits, subprocess wrapper) – Phase 1 security hardening
 - Sandbox integration Phase 2: validators now execute inside isolated SecureRunner environment by default with opt-out via `AIBUGBENCH_UNSAFE=1` (path remapping + test data isolation)
 - Pre-release security audit script (`scripts/security_audit.py`) implementing Phase 5 checks (sandbox primitives, validator integration, CLI security flags & banner) with PASS/FAIL/DEFERRED outcomes and JSON output mode
+- **SAFETY2.0 comprehensive security hardening**: Enhanced filesystem confinement with comprehensive guards for `open()`, `os.remove()`, `shutil.*` operations preventing access outside sandbox boundaries
+- **SAFETY2.0 subprocess execution blocking**: Complete subprocess isolation blocking `subprocess.run()`, `subprocess.call()`, `subprocess.Popen()`, and `os.system()` calls within sandbox environment
+- **SAFETY2.0 enhanced security audit**: Dynamic canary tests for filesystem, network, and subprocess isolation validation with improved sitecustomize loading mechanism
+- **SAFETY2.0 security status banner**: Enhanced CLI security status display showing subprocess blocking and filesystem confinement enforcement levels
 
 ### Changed
 
@@ -30,12 +34,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Template README refined (frontmatter retained, extraneous fenced code block removed, scoring link updated to `scoring-methodology.md`)
 - Standardized reference prompt docstrings & logging; removed residual whitespace-only lines and legacy `# noqa` usage
 - Documented explicit deferral of Phase 4 (PR security automation: CODEOWNERS + workflow enforcement) in roadmap; commit sequence intentionally advances Phase 3 -> 5 while repository remains private to avoid premature process overhead
+- **SAFETY2.0 security audit workflow**: Updated `.github/workflows/security-audit.yml` to use Python 3.13 matching development environment and project requirements
+- **SAFETY2.0 sitecustomize enhancement**: Modified `run_python_sandboxed()` method to properly load sitecustomize guards by removing `-I` flag and adding PYTHONPATH configuration
 
 ### Removed
 
 - Legacy `submissions/template/` directory and all fallback/deprecation notes (project remains private; no migration layer maintained)
 - Legacy migration compatibility test suite replaced with a minimal canonical layout assertion (`tests/test_migration_compatibility.py`)
 - Archival references to legacy template path in reports and internal dependency analysis docs
+- **SAFETY2.0 diagnostic tools**: Removed temporary `test_subprocess_block.py` diagnostic script after successful subprocess blocking validation
 
 ### Fixed
 
@@ -45,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outdated scoring rubric link (`scoring_rubric.md`) updated to consolidated `scoring-methodology.md`
 - Offline automation script long instruction line wrapped to satisfy Ruff line-length rule
 - Markdown ordered list numbering inconsistency in developer guide corrected
+- **SAFETY2.0 subprocess canary test**: Fixed dynamic subprocess canary test to properly execute within sandbox context using correct `cwd` parameter and sitecustomize loading
+- **SAFETY2.0 import ordering**: Resolved all Ruff import ordering violations and code quality issues across security-enhanced modules
 
 ### Planned
 

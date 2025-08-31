@@ -4,7 +4,7 @@
 
 AIBugBench uses a comprehensive 7-category scoring system to evaluate AI-generated code across multiple quality dimensions. Each prompt is worth 25 points for a total of 100 points, with passing threshold at 60% (15/25 points per prompt).
 
-**🆕 Enhanced Scoring Features:**
+**Scoring Features:**
 
 - **Security analysis**: Detects vulnerabilities, hardcoded secrets, unsafe patterns
 - **Performance evaluation**: Identifies inefficient algorithms and memory issues

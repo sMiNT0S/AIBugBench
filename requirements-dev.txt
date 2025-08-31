@@ -2,10 +2,10 @@
 # Install with: pip install -r requirements-dev.txt
 
 # Testing framework and coverage
-pytest>=8.0.0          # Testing framework with Python 3.13 support
-pytest-cov>=4.0.0      # Code coverage reporting
-pytest-mock>=3.10.0    # Mock fixtures for pytest
-coverage>=7.0.0        # Code coverage measurement
+pytest>=8.0.0,<9.0.0          # Testing framework with Python 3.13 support
+pytest-cov>=4.0.0,<7.0.0      # Code coverage reporting (compatible with coverage 7.x)
+pytest-mock>=3.10.0           # Mock fixtures for pytest
+coverage>=7.0.0,<8.0.0        # Code coverage measurement
 
 # Security tools
 bandit>=1.8.0          # Static security analysis

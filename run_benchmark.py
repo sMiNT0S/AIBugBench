@@ -639,6 +639,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=1,
         help="Number of concurrent workers for model evaluation (default: 1)",
     )
+    parser.add_argument(
+        "--mem",
+        type=int,
+        default=512,
+        choices=[256, 384, 512, 768, 1024],
+        help="Memory limit (MB) for sandboxed execution (default: 512)",
+    )
     return parser
 
 
@@ -656,6 +663,8 @@ def _print_security_status(args: argparse.Namespace, unicode_safe: bool) -> None
     lines = []
     lines.append("Sandboxing:     {}".format("ENABLED" if sandbox_enabled else "DISABLED"))
     lines.append("Network:        {}".format("ALLOWED" if network_allowed else "BLOCKED"))
+    lines.append("Subprocess:     {}".format("BLOCKED" if sandbox_enabled else "ALLOWED"))
+    lines.append("Filesystem:     {}".format("CONFINED" if sandbox_enabled else "FULL ACCESS"))
     lines.append("Env Clean:      {}".format("CLEANED" if sandbox_enabled else "FULL"))
     lines.append("ResourceLimits: {}".format("ENFORCED" if sandbox_enabled else "NONE"))
     lines.append("Trusted Model:  {}".format("YES" if trusted else "NO"))
@@ -686,6 +695,35 @@ def main(argv=None) -> int:
     # Always display security status (even in quiet mode)
     _print_security_status(args, global_unicode_safe)
 
+    # Phase 5.5: Run security audit gating unless explicitly unsafe.
+    if not args.unsafe:
+        audit_script = Path("scripts/security_audit.py")
+        if audit_script.exists():
+            try:
+                # Run audit in a lightweight subprocess to avoid importing benchmark state.
+                proc = subprocess.run(
+                    [sys.executable, str(audit_script)],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    check=False,
+                )
+            except Exception as e:  # pragma: no cover - defensive
+                print(f"Security audit invocation failed: {e}")
+                return 2
+            if proc.returncode != 0:
+                print(proc.stdout.rstrip())
+                print(
+                    "Security audit failed. Refusing to run benchmark. "
+                    "Re-run with --unsafe to bypass (NOT RECOMMENDED)."
+                )
+                return 2
+        else:
+            print(
+                "Warning: security audit script missing (scripts/security_audit.py). "
+                "Proceeding; add Phase 5.5 audit for stronger guarantees."
+            )
+
     # Confirm unsafe mode unless trusted
     if args.unsafe and not args.trusted_model:
         try:
@@ -713,6 +751,8 @@ def main(argv=None) -> int:
         args.results_dir,
         disable_metadata=args.no_metadata,
     )
+    # Propagate memory limit to validators (temporary attribute contract)
+    benchmark.sandbox_memory_mb = args.mem  # type: ignore[attr-defined]
 
     try:
         if args.model:

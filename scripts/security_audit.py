@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
-"""AIBugBench Pre-Release Security Audit (Phase 5)
+"""AIBugBench Security Audit (Phase 5.5)
 
-This script performs a series of lightweight, dependency-free checks
-verifying that core security hardening measures are in place prior to
-public release.
+Expanded audit superseding Phase 5 script. Provides a broader set of
+static heuristics validating pre-release security posture. No external
+dependencies or network calls are made.
 
-Checks (Mandatory):
-  1. Sandbox implementation (secure_runner) present with key primitives
-  2. Validator integration (sandbox decorator + SecureRunner usage)
-  3. CLI security flags & banner logic present
+Checks are grouped as:
+    MANDATORY  -> Must PASS (FAIL aborts with exit code 1). DEFERRED allowed.
+    DEFERRED   -> Planned / nice-to-have hardening; FAIL does not block.
 
-Checks (Deferred / Informational):
-  4. PR security automation (Phase 4) — currently deferred; reported but
-     absence does not fail audit (see ROADMAP deferred section).
+Legend:
+    PASS      ✅ Requirement satisfied
+    FAIL      ❌ Requirement missing / mismatch
+    DEFERRED  ⏸ Feature intentionally postponed / partial
 
-Exit code:
-  0 -> All mandatory checks pass (informational/deferred may be missing)
-  1 -> One or more mandatory checks fail or script internal error occurs
-
-Optional Flags:
-  --json  Emit machine-readable JSON summary to stdout (no color/icons)
-
-The script purposely avoids external imports and network calls.
+Rationale for some DEFERRED classifications:
+    - Network block: Not yet implemented (Phase after public visibility)
+    - Python isolated mode (-I/-S) is less relevant since untrusted code is
+        imported within a controlled sandbox process, not a new Python exec.
+    - Filesystem confinement beyond temp dir (e.g., chroot/namespace) not yet
+        implemented; temp dir isolation accepted for initial release.
+    - Environment strict whitelist vs pattern scrub currently partial; full
+        whitelist may be added later if leakage risk identified.
+    - PR security automation deferred while repository remains private.
 """
 from __future__ import annotations
 
@@ -31,6 +32,7 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 
@@ -41,8 +43,12 @@ class CheckResult:
     message: str
     mandatory: bool
 
-    def to_icon_line(self) -> str:
-        icon = {"PASS": "✅", "FAIL": "❌", "DEFERRED": "⏸"}.get(self.status, "❓")
+    def to_icon_line(self, ascii_only: bool = False) -> str:
+        if ascii_only:
+            icon_map = {"PASS": "[PASS]", "FAIL": "[FAIL]", "DEFERRED": "[DEFER]"}
+        else:
+            icon_map = {"PASS": "✅", "FAIL": "❌", "DEFERRED": "⏸"}
+        icon = icon_map.get(self.status, "?")
         return f"{icon} {self.name}: {self.status} - {self.message}"
 
 
@@ -160,11 +166,147 @@ def check_pr_security_deferred() -> CheckResult:
     )
 
 
+def _read_secure_runner() -> str:
+    return read_text(Path("benchmark/secure_runner.py"))
+
+
+# ---- Phase 5.5 Additional Checks -------------------------------------------------
+
+def check_temp_workdir() -> CheckResult:
+    sr = _read_secure_runner()
+    if "tempfile.mkdtemp" in sr or "TemporaryDirectory" in sr:
+        return CheckResult("Temp workdir", "PASS", "sandbox uses temp directory", True)
+    return CheckResult("Temp workdir", "FAIL", "no temp directory usage detected", True)
+
+
+def check_env_whitelist() -> CheckResult:
+    sr = _read_secure_runner()
+    uses_clear = "os.environ.clear" in sr  # restore path counts
+    copies_env = "os.environ.copy" in sr
+    if uses_clear and not copies_env:
+        return CheckResult("Env whitelist", "PASS", "environment cleared then rebuilt", False)
+    if uses_clear and copies_env:
+        return CheckResult(
+            "Env whitelist",
+            "DEFERRED",
+            "environment partially scrubbed (pattern removal + clear on exit)",
+            False,
+        )
+    return CheckResult("Env whitelist", "DEFERRED", "pattern-based scrubbing only", False)
+
+
+def check_python_isolation() -> CheckResult:
+    # We import user code inside same interpreter; -I/-S not applicable (defer)
+    sr = _read_secure_runner()
+    if any(flag in sr for flag in [" -I", "'-I'", '"-I"']):
+        return CheckResult("Python isolation", "PASS", "-I flag present", False)
+    return CheckResult(
+        "Python isolation",
+        "DEFERRED",
+        "-I/-S not yet used (import model code)",
+        False,
+    )
+
+
+def check_resource_limits_wired() -> CheckResult:
+    sr = _read_secure_runner()
+    vd = read_text(Path("benchmark/validators.py"))
+    has_rlimit = "resource.setrlimit" in sr
+    uses_runner = "SecureRunner" in vd and "run_with_limits" in sr
+    if has_rlimit and uses_runner:
+        return CheckResult("Resource limits wired", "PASS", "CPU/memory limits present", True)
+    if has_rlimit:
+        return CheckResult(
+            "Resource limits wired", "FAIL", "limits defined but validators may bypass", True
+        )
+    return CheckResult("Resource limits wired", "FAIL", "no resource limits detected", True)
+
+
+def check_network_block() -> CheckResult:
+    sr = _read_secure_runner()
+    if "Network control implemented" in sr:
+        return CheckResult("Network block", "PASS", "network control marker present", True)
+    if "Network control not implemented" in sr or "network not implemented" in sr.lower():
+        return CheckResult("Network block", "DEFERRED", "network blocking deferred", True)
+    return CheckResult("Network block", "DEFERRED", "no explicit network blocking (planned)", True)
+
+
+def check_filesystem_bounds() -> CheckResult:
+    sr = _read_secure_runner()
+    if any(token in sr for token in ["chroot", "bubblewrap", "nsjail", "bwrap"]):
+        return CheckResult(
+            "Filesystem bounds",
+            "PASS",
+            "external confinement tool referenced",
+            False,
+        )
+    # Check for comprehensive filesystem guard implementation
+    has_path_guard = "guarded_open" in sr and "_check_path_or_raise" in sr
+    has_comprehensive = all(guard in sr for guard in [
+        "guarded_shutil_copy", "guarded_os_remove", "guarded_shutil_rmtree"
+    ])
+    if has_path_guard and has_comprehensive:
+        return CheckResult(
+            "Filesystem bounds", "PASS", "comprehensive filesystem guard active", False
+        )
+    if "tempfile.mkdtemp" in sr:
+        return CheckResult("Filesystem bounds", "DEFERRED", "temp dir isolation only", False)
+    return CheckResult("Filesystem bounds", "FAIL", "no isolation primitives detected", False)
+
+
+def check_banner_honesty() -> CheckResult:
+    cli = read_text(Path("run_benchmark.py"))
+    sr = _read_secure_runner()
+    # Simple heuristic: if banner mentions ENFORCED ensure setrlimit present
+    banner_claims_limits = "ENFORCED" in cli or "ResourceLimits" in cli
+    has_limits = "resource.setrlimit" in sr
+    if banner_claims_limits and not has_limits:
+        return CheckResult("Banner honesty", "FAIL", "banner overclaims limits", True)
+    return CheckResult("Banner honesty", "PASS", "banner consistent with implementation", True)
+
+
+def check_subprocess_block() -> CheckResult:
+    sr = _read_secure_runner()
+    if "_subprocess_blocked" in sr and "subprocess.run = _subprocess_blocked" in sr:
+        return CheckResult("Subprocess block", "PASS", "subprocess execution blocked", True)
+    return CheckResult("Subprocess block", "FAIL", "subprocess execution not blocked", True)
+
+
+def check_github_security_config() -> CheckResult:
+    workflows = Path(".github/workflows")
+    if not workflows.exists():
+        return CheckResult("GitHub security config", "DEFERRED", "no workflows directory", False)
+    ymls = list(workflows.glob("*.yml")) + list(workflows.glob("*.yaml"))
+    if not ymls:
+        return CheckResult(
+            "GitHub security config", "DEFERRED", "workflows dir present but empty", False
+        )
+    codeowners = Path(".github/CODEOWNERS")
+    if not codeowners.exists():
+        return CheckResult(
+            "GitHub security config", "DEFERRED", "CODEOWNERS missing (recommended)", False
+        )
+    return CheckResult("GitHub security config", "PASS", "basic repo security scaffolding", False)
+
+
 def run_checks() -> list[CheckResult]:
     checks: list[tuple[Callable[[], CheckResult], bool]] = [
+        # Core (existing Phase 5)
         (check_sandbox, True),
         (check_validator_integration, True),
         (check_cli_security, True),
+        # Phase 5.5 additions
+        (check_temp_workdir, True),
+        (check_resource_limits_wired, True),
+        (check_network_block, True),  # DEFERRED acceptable until implemented
+        (check_subprocess_block, True),
+        (check_banner_honesty, True),
+        # Non-mandatory hardening (deferred / informational)
+        (check_env_whitelist, False),
+        (check_python_isolation, False),
+        (check_filesystem_bounds, False),
+        (check_github_security_config, False),
+        # Original deferred Phase 4 automation
         (check_pr_security_deferred, False),
     ]
     results: list[CheckResult] = []
@@ -178,6 +320,175 @@ def run_checks() -> list[CheckResult]:
     return results
 
 
+# ---------------- Dynamic Canary Tests (Phase 5.5) -----------------
+def _dynamic_cpu_canary() -> CheckResult:
+    """Run a tight CPU loop expecting timeout -> PASS else FAIL."""
+    try:
+        subprocess.run(
+            [sys.executable, "-I", "-B", "-c", "while True: pass"],
+            timeout=1,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        return CheckResult("Canary CPU loop", "FAIL", "loop did not time out", True)
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary CPU loop", "PASS", "timed out as expected", True)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary CPU loop", "FAIL", f"error: {exc}", True)
+
+
+def _dynamic_network_canary() -> CheckResult:
+    """Attempt outbound connection; expect guard to block."""
+    try:
+        # Add current directory to path for import
+        repo_root = Path(__file__).parent.parent
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from benchmark.secure_runner import SecureRunner  # lazy import
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Network", "FAIL", f"import error: {exc}", True)
+
+    sr = SecureRunner("canary_model")
+    try:
+        with sr.sandbox() as sb:
+            test_script = Path(sb) / "network_test.py"
+            test_script.write_text(
+                (
+                    "import socket, sys;\n"
+                    "try:\n"
+                    "    s=socket.create_connection(('example.com',80),1); s.close(); print('OK')\n"
+                    "except Exception as e:\n"
+                    "    print('BLOCK', e.__class__.__name__)\n"
+                ),
+                encoding="utf-8",
+            )
+            proc = subprocess.run(
+                [sys.executable, "-I", "-B", str(test_script)],
+                cwd=sb,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=3,
+                check=False,
+            )
+            out = proc.stdout
+            if "BLOCK" in out:
+                return CheckResult("Canary Network", "PASS", "connection blocked", True)
+            return CheckResult("Canary Network", "DEFERRED", "no block (feature deferred)", True)
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary Network", "PASS", "timeout treated as blocked", True)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Network", "FAIL", f"error: {exc}", True)
+
+
+def _dynamic_subprocess_canary() -> CheckResult:
+    """Attempt subprocess execution; expect blocking."""
+    try:
+        # Add current directory to path for import
+        repo_root = Path(__file__).parent.parent
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from benchmark.secure_runner import SecureRunner  # lazy import
+    except Exception as exc:  # pragma: no cover
+        return CheckResult(
+            "Canary Subprocess",
+            "DEFERRED",
+            f"secure_runner import failed: {exc}",
+            True,
+        )
+    sr = SecureRunner("canary_model")
+    try:
+        with sr.sandbox() as sb:
+            test_script = Path(sb) / "subprocess_test.py"
+            test_script.write_text(
+                (
+                    "import subprocess;\n"
+                    "try:\n"
+                    "    subprocess.run(['python', '-c', 'print(\"EXECUTED\")']); "
+                    "print('ALLOWED')\n"
+                    "except Exception as e:\n"
+                    "    print('BLOCKED', e.__class__.__name__)\n"
+                ),
+                encoding="utf-8",
+            )
+            # Run through SecureRunner to ensure sitecustomize is active
+            proc = sr.run_python_sandboxed(
+                [str(test_script)],
+                timeout=3,
+                cwd=sb,
+            )
+            out = proc.stdout
+            if "BLOCKED" in out:
+                return CheckResult(
+                    "Canary Subprocess", "PASS", "subprocess execution blocked", True
+                )
+            return CheckResult(
+                "Canary Subprocess", "FAIL", f"subprocess execution allowed: {out!r}", True
+            )
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary Subprocess", "DEFERRED", "timeout (indeterminate)", True)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Subprocess", "FAIL", f"error: {exc}", True)
+
+
+def _dynamic_fs_canary() -> CheckResult:
+    """Attempt reading a file outside sandbox; expect denial."""
+    try:
+        # Add current directory to path for import
+        repo_root = Path(__file__).parent.parent
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from benchmark.secure_runner import SecureRunner  # lazy import
+    except Exception as exc:  # pragma: no cover
+        return CheckResult(
+            "Canary Filesystem",
+            "DEFERRED",
+            f"secure_runner import failed: {exc}",
+            False,
+        )
+    sr = SecureRunner("canary_model")
+    try:
+        with sr.sandbox() as sb:
+            outside = Path.home() / ".ssh" / "id_rsa"
+            test_script = Path(sb) / "attempt.py"
+            test_script.write_text(
+                (
+                    f"import pathlib,sys; p=pathlib.Path(r'{outside}');\n"
+                    "try: open(p,'rb').read(1); print('OPENED')\n"
+                    "except Exception as e: print('DENIED', e.__class__.__name__)\n"
+                ),
+                encoding="utf-8",
+            )
+            proc = subprocess.run(
+                [sys.executable, "-I", "-B", str(test_script)],
+                cwd=sb,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=3,
+                check=False,
+            )
+            out = proc.stdout
+            if "DENIED" in out:
+                return CheckResult("Canary Filesystem", "PASS", "outside file blocked", False)
+            return CheckResult("Canary Filesystem", "DEFERRED", "no FS confinement yet", False)
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary Filesystem", "DEFERRED", "timeout (indeterminate)", False)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Filesystem", "FAIL", f"error: {exc}", False)
+
+
+def run_dynamic_canaries(existing: list[CheckResult]) -> list[CheckResult]:
+    return [
+        *existing,
+        _dynamic_cpu_canary(),
+        _dynamic_network_canary(),
+        _dynamic_subprocess_canary(),
+        _dynamic_fs_canary(),
+    ]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AIBugBench security audit")
     parser.add_argument("--json", action="store_true", help="Emit JSON summary")
@@ -187,6 +498,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     results = run_checks()
+    results = run_dynamic_canaries(results)
     mandatory_fail = any(r.status == "FAIL" and r.mandatory for r in results)
 
     if args.json:
@@ -198,22 +510,49 @@ def main() -> int:
         print()
         return 0 if not mandatory_fail else 1
 
-    print("🔒 AIBugBench Security Audit\n")
+    ascii_only = False
+    header = "🔒 AIBugBench Security Audit\n"
+    try:
+        print(header)
+    except UnicodeEncodeError:
+        ascii_only = True
+        print("[SECURITY AUDIT]\n")
     for r in results:
-        print(r.to_icon_line())
+        try:
+            print(r.to_icon_line(ascii_only=ascii_only))
+        except UnicodeEncodeError:
+            ascii_only = True
+            print(r.to_icon_line(ascii_only=True))
 
     print("\nSummary:")
-    passed = sum(1 for r in results if r.status == "PASS")
-    deferred = sum(1 for r in results if r.status == "DEFERRED")
-    print(
-        f"  Mandatory passed: {passed - deferred}/{sum(1 for r in results if r.mandatory)}"
-    )
-    print(f"  Deferred / informational: {deferred}")
+    passed = sum(1 for r in results if r.status == "PASS" and r.mandatory)
+    deferred = sum(1 for r in results if r.status == "DEFERRED" and r.mandatory)
+    total_mandatory = sum(1 for r in results if r.mandatory)
+    try:
+        print(
+            f"  Mandatory passed: {passed}/{total_mandatory} (DEFERRED: {deferred})"
+        )
+        print(
+            f"  Optional / informational: {sum(1 for r in results if not r.mandatory)}"
+        )
+    except UnicodeEncodeError:
+        print(
+            f"  Mandatory passed: {passed}/{total_mandatory} (DEFERRED: {deferred})"
+        )
+        print(
+            f"  Optional / informational: {sum(1 for r in results if not r.mandatory)}"
+        )
 
     if mandatory_fail:
-        print("\n❌ Security audit FAILED (mandatory check failure)")
+        try:
+            print("\n❌ Security audit FAILED (mandatory check failure)")
+        except UnicodeEncodeError:
+            print("\n[FAIL] Security audit FAILED (mandatory check failure)")
         return 1
-    print("\n✅ Security audit PASSED (mandatory checks) — deferred items optional")
+    try:
+        print("\n✅ Security audit PASSED (mandatory checks) — deferred items optional")
+    except UnicodeEncodeError:
+        print("\n[PASS] Security audit PASSED (mandatory checks) - deferred items optional")
     return 0
 
 

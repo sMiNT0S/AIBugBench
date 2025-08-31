@@ -5,8 +5,6 @@ import json
 import os
 from pathlib import Path
 import re
-import subprocess  # Bandit B404/B603: controlled python solution execution (shell=False)
-import sys
 import tempfile
 from typing import Any
 from unittest.mock import Mock, patch
@@ -759,9 +757,25 @@ validation_rules:
                 with open(test_data, "w", encoding="utf-8") as f:
                     json.dump(payload, f)
 
-                # Run the script
-                cmd = [sys.executable, str(solution_file.resolve()), str(test_config)]
-                proc = subprocess.run(cmd, cwd=tmpdir, capture_output=True, text=True, timeout=10)
+                # Run the script inside SecureRunner sandbox for enforced isolation
+                from benchmark.secure_runner import SecureRunner
+                runner = SecureRunner(self.model_name, allow_network=False)
+                with runner.sandbox():
+                    mem_limit = 512
+                    if (
+                        hasattr(self, "sandbox_owner")
+                        and hasattr(self.sandbox_owner, "sandbox_memory_mb")  # type: ignore[attr-defined]
+                    ):
+                        mem_limit = getattr(  # type: ignore[attr-defined]
+                            self.sandbox_owner,
+                            "sandbox_memory_mb",
+                            512,
+                        )
+                    proc = runner.run_python_sandboxed(
+                        [str(solution_file.resolve()), str(test_config)],
+                        timeout=10,
+                        memory_mb=mem_limit,
+                    )
 
                 if proc.returncode == 0:
                     execution_scoring.add_check(

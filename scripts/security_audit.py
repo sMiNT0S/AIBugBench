@@ -479,12 +479,113 @@ def _dynamic_fs_canary() -> CheckResult:
         return CheckResult("Canary Filesystem", "FAIL", f"error: {exc}", False)
 
 
+def _dynamic_process_spawn_canary() -> CheckResult:
+    """Attempt exec/spawn/fork operations; expect blocking."""
+    try:
+        # Add current directory to path for import
+        repo_root = Path(__file__).parent.parent
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from benchmark.secure_runner import SecureRunner  # lazy import
+    except Exception as exc:  # pragma: no cover
+        return CheckResult(
+            "Canary Process Spawn",
+            "DEFERRED",
+            f"secure_runner import failed: {exc}",
+            True,
+        )
+    sr = SecureRunner("canary_model")
+    try:
+        with sr.sandbox() as sb:
+            test_script = Path(sb) / "process_spawn_test.py"
+            test_script.write_text(
+                (
+                    "import os, sys;\n"
+                    "blocked_count = 0;\n"
+                    "# Test exec family\n"
+                    "for func_name in ['execv', 'execve', 'execvp', 'execvpe']:\n"
+                    "    if hasattr(os, func_name):\n"
+                    "        try:\n"
+                    "            getattr(os, func_name)([sys.executable, '-c', 'print(1)'])\n"
+                    "            print(f'{func_name} ALLOWED')\n"
+                    "        except Exception:\n"
+                    "            blocked_count += 1\n"
+                    "# Test spawn family\n"
+                    "for func_name in ['spawnv', 'spawnve', 'spawnvp', 'spawnvpe']:\n"
+                    "    if hasattr(os, func_name):\n"
+                    "        try:\n"
+                    "            args = [sys.executable, ['-c', 'print(1)']]\n"
+                    "            getattr(os, func_name)(os.P_NOWAIT, *args)\n"
+                    "            print(f'{func_name} ALLOWED')\n"
+                    "        except Exception:\n"
+                    "            blocked_count += 1\n"
+                    "# Test fork family\n"
+                    "for func_name in ['fork', 'forkpty']:\n"
+                    "    if hasattr(os, func_name):\n"
+                    "        try:\n"
+                    "            getattr(os, func_name)()\n"
+                    "            print(f'{func_name} ALLOWED')\n"
+                    "        except Exception:\n"
+                    "            blocked_count += 1\n"
+                    "# Test posix_spawn family\n"
+                    "for func_name in ['posix_spawn', 'posix_spawnp']:\n"
+                    "    if hasattr(os, func_name):\n"
+                    "        try:\n"
+                    "            args = [sys.executable, ['-c', 'print(1)'], {}]\n"
+                    "            getattr(os, func_name)(*args)\n"
+                    "            print(f'{func_name} ALLOWED')\n"
+                    "        except Exception:\n"
+                    "            blocked_count += 1\n"
+                    "print(f'BLOCKED_COUNT:{blocked_count}')\n"
+                ),
+                encoding="utf-8",
+            )
+            # Run through SecureRunner to ensure sitecustomize is active
+            proc = sr.run_python_sandboxed(
+                [str(test_script)],
+                timeout=3,
+                cwd=sb,
+            )
+            out = proc.stdout
+            if "BLOCKED_COUNT:" in out:
+                # Extract the count of blocked operations
+                import re
+                match = re.search(r'BLOCKED_COUNT:(\d+)', out)
+                if match:
+                    blocked_count = int(match.group(1))
+                    if blocked_count > 0:
+                        return CheckResult(
+                            "Canary Process Spawn",
+                            "PASS",
+                            f"process spawn operations blocked ({blocked_count} functions)",
+                            True
+                        )
+            if "ALLOWED" in out:
+                return CheckResult(
+                    "Canary Process Spawn",
+                    "FAIL",
+                    f"process spawn operations allowed: {out!r}",
+                    True
+                )
+            return CheckResult(
+                "Canary Process Spawn",
+                "DEFERRED",
+                f"no process spawn functions detected: {out!r}",
+                True
+            )
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary Process Spawn", "DEFERRED", "timeout (indeterminate)", True)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Process Spawn", "FAIL", f"error: {exc}", True)
+
+
 def run_dynamic_canaries(existing: list[CheckResult]) -> list[CheckResult]:
     return [
         *existing,
         _dynamic_cpu_canary(),
         _dynamic_network_canary(),
         _dynamic_subprocess_canary(),
+        _dynamic_process_spawn_canary(),
         _dynamic_fs_canary(),
     ]
 

@@ -14,6 +14,8 @@ from typing import Any
 class TestRunner:
     """Handles execution of test scripts and validation."""
 
+    __test__ = False  # Tell pytest this is not a test class
+
     def __init__(self, test_data_dir: Path):
         self.test_data_dir = test_data_dir
 

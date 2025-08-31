@@ -19,7 +19,11 @@ from contextlib import contextmanager
 import multiprocessing
 import os
 from pathlib import Path
-import resource  # type: ignore[attr-defined]
+
+try:  # Windows compatibility: resource not available
+    import resource  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover - platform specific
+    resource = None  # type: ignore[assignment]
 import shutil
 import tempfile
 from typing import Any
@@ -112,10 +116,10 @@ class SecureRunner:
         def target(queue: multiprocessing.Queue):  # type: ignore[type-arg]
             try:
                 # Apply CPU limit
-                if hasattr(resource, "RLIMIT_CPU"):
+                if resource is not None and hasattr(resource, "RLIMIT_CPU"):
                     resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
                 # Apply address space (best-effort)
-                if hasattr(resource, "RLIMIT_AS"):
+                if resource is not None and hasattr(resource, "RLIMIT_AS"):
                     bytes_limit = memory_mb * 1024 * 1024
                     resource.setrlimit(resource.RLIMIT_AS, (bytes_limit, bytes_limit))
                 result = func(*args)

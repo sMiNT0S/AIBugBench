@@ -1,9 +1,8 @@
-"""
-Validators for AI Code Benchmark prompts
-"""
+"""Validators for AI Code Benchmark prompts."""
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import subprocess  # Bandit B404/B603: controlled python solution execution (shell=False)
@@ -15,6 +14,80 @@ from unittest.mock import Mock, patch
 import requests
 import yaml
 from yaml.constructor import ConstructorError
+
+from .secure_runner import SecureRunner
+
+
+def _sandbox_enabled() -> bool:
+    """Return True if sandbox integration should be active.
+
+    Enabled by default; set AIBUGBENCH_UNSAFE=1 to disable (used for debugging / performance).
+    """
+    return os.environ.get("AIBUGBENCH_UNSAFE") != "1"
+
+
+def sandbox_validator(func):  # type: ignore[override]
+    """Decorator to execute validator logic inside SecureRunner sandbox (Phase 2).
+
+    - Determines model folder from first Path arg (under submissions/<tier>/<model>/...)
+    - Maps Path args into sandbox copy (sandbox/submission/...)
+    - Temporarily rewires self.test_data_dir to sandbox/test_data if present.
+    Assumptions (documented in developer guide): model path depth = submissions/<tier>/<model>/.
+    """
+    def wrapper(self, *args, **kwargs):  # type: ignore[override]
+        if not _sandbox_enabled():
+            return func(self, *args, **kwargs)
+        if not args or not hasattr(args[0], 'parts'):
+            return func(self, *args, **kwargs)
+        first_path = args[0]
+        try:
+            parts = list(first_path.parts)
+            if 'submissions' not in parts:
+                return func(self, *args, **kwargs)
+            idx = parts.index('submissions')
+            # Expect: submissions/<tier>/<model>/...
+            if len(parts) < idx + 3:
+                return func(self, *args, **kwargs)
+            tier = parts[idx + 1]
+            model = parts[idx + 2]
+            model_name = f"{tier}/{model}"
+        except Exception:
+            return func(self, *args, **kwargs)
+
+        sr = SecureRunner(model_name=model_name)
+        with sr.sandbox() as sb_dir:
+            # Remap Path arguments inside sandbox submission root
+            new_args = []
+            submission_root = sb_dir / 'submission'
+            for a in args:
+                if hasattr(a, 'parts') and 'submissions' in getattr(a, 'parts', []):
+                    a_parts = list(a.parts)
+                    try:
+                        a_idx = a_parts.index('submissions')
+                        # Skip submissions/<tier>/<model>
+                        rel = (
+                            Path(*a_parts[a_idx + 3:])
+                            if len(a_parts) > a_idx + 3
+                            else Path(a_parts[-1])
+                        )
+                        sandbox_path = submission_root / rel
+                        new_args.append(sandbox_path)
+                    except Exception:
+                        new_args.append(a)
+                else:
+                    new_args.append(a)
+
+            # Swap test_data_dir to sandbox copy if available
+            original_test_data = getattr(self, 'test_data_dir', None)
+            sandbox_test_data = sb_dir / 'test_data'
+            if sandbox_test_data.exists():
+                self.test_data_dir = sandbox_test_data  # type: ignore[attr-defined]
+            try:
+                return func(self, *new_args, **kwargs)
+            finally:
+                if original_test_data is not None:
+                    self.test_data_dir = original_test_data  # type: ignore[attr-defined]
+    return wrapper
 
 
 class UniqueKeyLoader(yaml.SafeLoader):
@@ -542,6 +615,7 @@ class PromptValidators:
         else:
             self.original_config = None
 
+    @sandbox_validator
     def validate_prompt_1_refactoring(self, solution_file: Path) -> dict[str, Any]:
         """Validate Prompt 1: Code Refactoring & Analysis."""
         result = {
@@ -1041,6 +1115,7 @@ validation_rules:
 
         return result
 
+    @sandbox_validator
     def validate_prompt_2_yaml_json(self, yaml_file: Path, json_file: Path) -> dict[str, Any]:
         """Validate Prompt 2: YAML/JSON Correction with 7-category scoring."""
 
@@ -1421,6 +1496,7 @@ validation_rules:
 
         return result
 
+    @sandbox_validator
     def validate_prompt_3_transformation(self, transform_file: Path) -> dict[str, Any]:
         """Validate Prompt 3: Data Transformation with 7-category scoring."""
 
@@ -1987,6 +2063,7 @@ validation_rules:
 
         return result
 
+    @sandbox_validator
     def validate_prompt_4_api(self, api_file: Path) -> dict[str, Any]:
         """Validate Prompt 4: API Integration with behavioral testing."""
 

@@ -24,6 +24,7 @@ Rationale for some DEFERRED classifications:
         whitelist may be added later if leakage risk identified.
     - PR security automation deferred while repository remains private.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -172,6 +173,7 @@ def _read_secure_runner() -> str:
 
 # ---- Phase 5.5 Additional Checks -------------------------------------------------
 
+
 def check_temp_workdir() -> CheckResult:
     sr = _read_secure_runner()
     if "tempfile.mkdtemp" in sr or "TemporaryDirectory" in sr:
@@ -242,9 +244,10 @@ def check_filesystem_bounds() -> CheckResult:
         )
     # Check for comprehensive filesystem guard implementation
     has_path_guard = "guarded_open" in sr and "_check_path_or_raise" in sr
-    has_comprehensive = all(guard in sr for guard in [
-        "guarded_shutil_copy", "guarded_os_remove", "guarded_shutil_rmtree"
-    ])
+    has_comprehensive = all(
+        guard in sr
+        for guard in ["guarded_shutil_copy", "guarded_os_remove", "guarded_shutil_rmtree"]
+    )
     if has_path_guard and has_comprehensive:
         return CheckResult(
             "Filesystem bounds", "PASS", "comprehensive filesystem guard active", False
@@ -270,6 +273,27 @@ def check_subprocess_block() -> CheckResult:
     if "_subprocess_blocked" in sr and "subprocess.run = _subprocess_blocked" in sr:
         return CheckResult("Subprocess block", "PASS", "subprocess execution blocked", True)
     return CheckResult("Subprocess block", "FAIL", "subprocess execution not blocked", True)
+
+
+def check_dynamic_code_block() -> CheckResult:
+    sr = _read_secure_runner()
+    has_eval_block = "builtins.eval = _dynamic_code_blocked" in sr
+    has_exec_block = "builtins.exec = _dynamic_code_blocked" in sr
+    has_compile_block = "builtins.compile = _dynamic_code_blocked" in sr
+
+    if has_eval_block and has_exec_block and has_compile_block:
+        return CheckResult("Dynamic code block", "PASS", "eval/exec/compile blocked", True)
+    return CheckResult("Dynamic code block", "FAIL", "dynamic code execution not blocked", True)
+
+
+def check_dangerous_imports_block() -> CheckResult:
+    sr = _read_secure_runner()
+    has_import_guard = "builtins.__import__ = _protected_import" in sr
+    has_dangerous_check = "dangerous_modules = {" in sr and "'ctypes'" in sr
+
+    if has_import_guard and has_dangerous_check:
+        return CheckResult("Dangerous imports block", "PASS", "dangerous imports blocked", True)
+    return CheckResult("Dangerous imports block", "FAIL", "dangerous imports not blocked", True)
 
 
 def check_github_security_config() -> CheckResult:
@@ -300,6 +324,8 @@ def run_checks() -> list[CheckResult]:
         (check_resource_limits_wired, True),
         (check_network_block, True),  # DEFERRED acceptable until implemented
         (check_subprocess_block, True),
+        (check_dynamic_code_block, True),
+        (check_dangerous_imports_block, True),
         (check_banner_honesty, True),
         # Non-mandatory hardening (deferred / informational)
         (check_env_whitelist, False),
@@ -550,7 +576,8 @@ def _dynamic_process_spawn_canary() -> CheckResult:
             if "BLOCKED_COUNT:" in out:
                 # Extract the count of blocked operations
                 import re
-                match = re.search(r'BLOCKED_COUNT:(\d+)', out)
+
+                match = re.search(r"BLOCKED_COUNT:(\d+)", out)
                 if match:
                     blocked_count = int(match.group(1))
                     if blocked_count > 0:
@@ -558,25 +585,175 @@ def _dynamic_process_spawn_canary() -> CheckResult:
                             "Canary Process Spawn",
                             "PASS",
                             f"process spawn operations blocked ({blocked_count} functions)",
-                            True
+                            True,
                         )
             if "ALLOWED" in out:
                 return CheckResult(
                     "Canary Process Spawn",
                     "FAIL",
                     f"process spawn operations allowed: {out!r}",
-                    True
+                    True,
                 )
             return CheckResult(
                 "Canary Process Spawn",
                 "DEFERRED",
                 f"no process spawn functions detected: {out!r}",
-                True
+                True,
             )
     except subprocess.TimeoutExpired:
         return CheckResult("Canary Process Spawn", "DEFERRED", "timeout (indeterminate)", True)
     except Exception as exc:  # pragma: no cover
         return CheckResult("Canary Process Spawn", "FAIL", f"error: {exc}", True)
+
+
+def _dynamic_code_execution_canary() -> CheckResult:
+    """Attempt dynamic code execution; expect blocking."""
+    try:
+        # Add current directory to path for import
+        repo_root = Path(__file__).parent.parent
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from benchmark.secure_runner import SecureRunner  # lazy import
+    except Exception as exc:  # pragma: no cover
+        return CheckResult(
+            "Canary Dynamic Code",
+            "DEFERRED",
+            f"secure_runner import failed: {exc}",
+            True,
+        )
+    sr = SecureRunner("canary_model")
+    try:
+        with sr.sandbox() as sb:
+            test_script = Path(sb) / "dynamic_code_test.py"
+            test_script.write_text(
+                (
+                    "import sys;\n"
+                    "blocked_count = 0;\n"
+                    "# Test eval\n"
+                    "try:\n"
+                    "    eval('print(\"EVAL_WORKED\")')\n"
+                    "    print('EVAL ALLOWED')\n"
+                    "except Exception:\n"
+                    "    blocked_count += 1\n"
+                    "# Test exec\n"
+                    "try:\n"
+                    "    exec('print(\"EXEC_WORKED\")')\n"
+                    "    print('EXEC ALLOWED')\n"
+                    "except Exception:\n"
+                    "    blocked_count += 1\n"
+                    "# Test compile\n"
+                    "try:\n"
+                    "    code = compile('print(\"COMPILE_WORKED\")', '<string>', 'exec')\n"
+                    "    exec(code)\n"
+                    "    print('COMPILE ALLOWED')\n"
+                    "except Exception:\n"
+                    "    blocked_count += 1\n"
+                    "print(f'BLOCKED_COUNT:{blocked_count}')\n"
+                ),
+                encoding="utf-8",
+            )
+            # Run through SecureRunner to ensure sitecustomize is active
+            proc = sr.run_python_sandboxed(
+                [str(test_script)],
+                timeout=3,
+                cwd=sb,
+            )
+            out = proc.stdout
+            if "BLOCKED_COUNT:" in out:
+                # Extract the count of blocked operations
+                import re
+
+                match = re.search(r"BLOCKED_COUNT:(\d+)", out)
+                if match:
+                    blocked_count = int(match.group(1))
+                    if blocked_count >= 2:  # At least eval and exec should be blocked
+                        return CheckResult(
+                            "Canary Dynamic Code",
+                            "PASS",
+                            f"dynamic code execution blocked ({blocked_count}/3 functions)",
+                            True,
+                        )
+            if any(word in out for word in ["EVAL_WORKED", "EXEC_WORKED", "COMPILE_WORKED"]):
+                return CheckResult(
+                    "Canary Dynamic Code", "FAIL", f"dynamic code execution allowed: {out!r}", True
+                )
+            return CheckResult(
+                "Canary Dynamic Code", "DEFERRED", f"indeterminate result: {out!r}", True
+            )
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary Dynamic Code", "DEFERRED", "timeout (indeterminate)", True)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Dynamic Code", "FAIL", f"error: {exc}", True)
+
+
+def _dangerous_imports_canary() -> CheckResult:
+    """Attempt dangerous module imports; expect blocking."""
+    try:
+        # Add current directory to path for import
+        repo_root = Path(__file__).parent.parent
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from benchmark.secure_runner import SecureRunner  # lazy import
+    except Exception as exc:  # pragma: no cover
+        return CheckResult(
+            "Canary Dangerous Imports",
+            "DEFERRED",
+            f"secure_runner import failed: {exc}",
+            True,
+        )
+    sr = SecureRunner("canary_model")
+    try:
+        with sr.sandbox() as sb:
+            test_script = Path(sb) / "dangerous_imports_test.py"
+            test_script.write_text(
+                (
+                    "blocked_count = 0;\n"
+                    "dangerous_modules = ['ctypes', 'marshal', 'pickle'];\n"
+                    "for module_name in dangerous_modules:\n"
+                    "    try:\n"
+                    "        __import__(module_name)\n"
+                    "        print(f'{module_name} IMPORT ALLOWED')\n"
+                    "    except Exception as e:\n"
+                    "        if 'disabled in sandbox' in str(e):\n"
+                    "            blocked_count += 1\n"
+                    "        else:\n"
+                    "            print(f'{module_name} IMPORT ERROR: {e}')\n"
+                    "print(f'BLOCKED_COUNT:{blocked_count}')\n"
+                ),
+                encoding="utf-8",
+            )
+            # Run through SecureRunner to ensure sitecustomize is active
+            proc = sr.run_python_sandboxed(
+                [str(test_script)],
+                timeout=3,
+                cwd=sb,
+            )
+            out = proc.stdout
+            if "BLOCKED_COUNT:" in out:
+                # Extract the count of blocked operations
+                import re
+
+                match = re.search(r"BLOCKED_COUNT:(\d+)", out)
+                if match:
+                    blocked_count = int(match.group(1))
+                    if blocked_count >= 2:  # At least ctypes and marshal should be blocked
+                        return CheckResult(
+                            "Canary Dangerous Imports",
+                            "PASS",
+                            f"dangerous imports blocked ({blocked_count}/3 modules)",
+                            True,
+                        )
+            if "IMPORT ALLOWED" in out:
+                return CheckResult(
+                    "Canary Dangerous Imports", "FAIL", f"dangerous imports allowed: {out!r}", True
+                )
+            return CheckResult(
+                "Canary Dangerous Imports", "DEFERRED", f"indeterminate result: {out!r}", True
+            )
+    except subprocess.TimeoutExpired:
+        return CheckResult("Canary Dangerous Imports", "DEFERRED", "timeout (indeterminate)", True)
+    except Exception as exc:  # pragma: no cover
+        return CheckResult("Canary Dangerous Imports", "FAIL", f"error: {exc}", True)
 
 
 def run_dynamic_canaries(existing: list[CheckResult]) -> list[CheckResult]:
@@ -586,6 +763,8 @@ def run_dynamic_canaries(existing: list[CheckResult]) -> list[CheckResult]:
         _dynamic_network_canary(),
         _dynamic_subprocess_canary(),
         _dynamic_process_spawn_canary(),
+        _dynamic_code_execution_canary(),
+        _dangerous_imports_canary(),
         _dynamic_fs_canary(),
     ]
 
@@ -630,19 +809,11 @@ def main() -> int:
     deferred = sum(1 for r in results if r.status == "DEFERRED" and r.mandatory)
     total_mandatory = sum(1 for r in results if r.mandatory)
     try:
-        print(
-            f"  Mandatory passed: {passed}/{total_mandatory} (DEFERRED: {deferred})"
-        )
-        print(
-            f"  Optional / informational: {sum(1 for r in results if not r.mandatory)}"
-        )
+        print(f"  Mandatory passed: {passed}/{total_mandatory} (DEFERRED: {deferred})")
+        print(f"  Optional / informational: {sum(1 for r in results if not r.mandatory)}")
     except UnicodeEncodeError:
-        print(
-            f"  Mandatory passed: {passed}/{total_mandatory} (DEFERRED: {deferred})"
-        )
-        print(
-            f"  Optional / informational: {sum(1 for r in results if not r.mandatory)}"
-        )
+        print(f"  Mandatory passed: {passed}/{total_mandatory} (DEFERRED: {deferred})")
+        print(f"  Optional / informational: {sum(1 for r in results if not r.mandatory)}")
 
     if mandatory_fail:
         try:

@@ -63,7 +63,7 @@ class PlatformBenchmarkValidator:
         cmd = [sys.executable, "run_benchmark.py", "--model", model_name]
 
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # noqa: S603  # Intentional for platform validation
                 cmd,
                 cwd=self.project_root,
                 capture_output=True,

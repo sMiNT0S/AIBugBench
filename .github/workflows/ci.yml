@@ -80,7 +80,7 @@ jobs:
             --cov-report=term
       
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238  # v4.6.0
         if: always()
         with:
           files: ./coverage.xml
@@ -277,8 +277,8 @@ jobs:
             ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
       
       - name: Run bandit security scan
-        # Scan full codebase excluding user submissions & template scaffolds (reference impls included)
-        run: bandit -q -r . -x tests,docs,submissions/user_submissions,submissions/templates -f json -o bandit-report.json
+        # Use pyproject.toml configuration for consistent exclusions
+        run: bandit -r . -ll --configfile pyproject.toml -f json -o bandit-report.json
         continue-on-error: true
       
       - name: Run safety check

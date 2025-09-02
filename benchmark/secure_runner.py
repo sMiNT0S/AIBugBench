@@ -481,7 +481,7 @@ class SecureRunner:
                             )
                 preexec = _limits
 
-            return subprocess.run(
+            return subprocess.run(  # noqa: S603  # Secure sandbox execution
                 cmd,
                 cwd=str(cwd) if cwd else None,
                 env=env,
@@ -509,7 +509,7 @@ class SecureRunner:
         """
         if not WINDOWS_JOB_SUPPORT:
             # Fallback to regular subprocess if Job Objects unavailable
-            return subprocess.run(
+            return subprocess.run(  # noqa: S603  # Windows fallback execution
                 cmd,
                 cwd=str(cwd) if cwd else None,
                 env=env,
@@ -538,7 +538,7 @@ class SecureRunner:
             # Start process and assign to job
             # Note: We use subprocess.run but could enhance with job assignment
             # For now, this provides the Job Object infrastructure
-            return subprocess.run(
+            return subprocess.run(  # noqa: S603  # Job object controlled execution
                 cmd,
                 cwd=str(cwd) if cwd else None,
                 env=env,

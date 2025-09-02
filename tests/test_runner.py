@@ -1,7 +1,7 @@
 """
 Integration tests for run_benchmark.py CLI functionality.
 
-Tests the main CLI entry point, argument parsing, and full benchmark execution.
+Tests the main CLI entry point, argument parsing, and full execution.
 """
 
 import json
@@ -128,7 +128,7 @@ def process_records(filename):
     @pytest.mark.integration
     def test_cli_help_message(self):
         """Test that CLI shows help message."""
-        result = subprocess.run([
+        result = subprocess.run([  # noqa: S603  # CLI help test - safe command
             sys.executable, "run_benchmark.py", "--help"
         ], capture_output=True, text=True)
 
@@ -141,7 +141,7 @@ def process_records(filename):
     def test_cli_version_info(self):
         """Test CLI can be imported and executed."""
         # Test that the module can be imported without errors
-        result = subprocess.run([
+        result = subprocess.run([  # noqa: S603  # Module import test - safe command
             sys.executable, "-c", "import run_benchmark; print('Import successful')"
         ], capture_output=True, text=True)
 
@@ -192,7 +192,7 @@ def process_records(filename):
     @pytest.mark.integration
     def test_cli_invalid_model(self, temp_dir):
         """Test CLI with non-existent model."""
-        result = subprocess.run([
+        result = subprocess.run([  # noqa: S603  # CLI error handling test - safe command
             sys.executable, "run_benchmark.py",
             "--model", "nonexistent_model",
             "--submissions-dir", str(temp_dir / "empty_submissions")

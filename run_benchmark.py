@@ -60,7 +60,7 @@ def _resolve_git_commit() -> str:
         git_exe = which("git")
         if not git_exe:
             return "unknown"
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603  # Git version check - safe command
             [git_exe, "rev-parse", "--short", "HEAD"],
             capture_output=True,
             text=True,
@@ -701,7 +701,7 @@ def main(argv=None) -> int:
         if audit_script.exists():
             try:
                 # Run audit in a lightweight subprocess to avoid importing benchmark state.
-                proc = subprocess.run(
+                proc = subprocess.run(  # noqa: S603  # Security audit execution - controlled script
                     [sys.executable, str(audit_script)],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,

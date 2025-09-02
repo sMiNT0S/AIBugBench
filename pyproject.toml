@@ -41,10 +41,8 @@ select = [
     "S",   # security
 ]
 ignore = [
-    "S105",  # hardcoded password - false positives in test code
     "S101",  # use of assert detected
-    "S108",  # hardcoded temporary directory
-    "S603",  # subprocess call: check for execution of untrusted input
+    "S108",  # hardcoded temporary directory  
     "S506",  # use of yaml.load with unsafe loader - false positive in test code
 ]
 
@@ -126,8 +124,8 @@ markers = [
 # Exclude directories with intentionally hostile test cases and generated content
 exclude_dirs = [
     "test_data",
-    "submissions/template",
-    "submissions/example_model", 
+    "submissions/templates",
+    "submissions/user_submissions",
     "prompts",
     "venv"
 ]

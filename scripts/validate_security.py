@@ -15,7 +15,7 @@ import sys
 def run_command(cmd: list[str], capture_output: bool = True) -> tuple[int, str, str]:
     """Run a command and return exit code, stdout, stderr."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603  # Security tool execution - controlled commands
             cmd,
             capture_output=capture_output,
             text=True,

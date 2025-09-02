@@ -2232,7 +2232,7 @@ validation_rules:
 
         # Category 3: Execution - REVOLUTIONARY: Actual behavioral testing with mocks
         test_user_data = [{"id": 1, "name": "Test User"}]  # Simple test data
-        test_token = "test_token_12345" # nosec B105 - deliberate for testing
+        test_token = "test_token_12345"  # noqa: S105  # Deliberate test token
 
         # Monkeypatch requests.post for behavioral testing
         with patch("requests.post") as mock_post:

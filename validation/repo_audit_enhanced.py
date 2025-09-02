@@ -182,7 +182,7 @@ def run_cmd(cmd: list[str], cwd: Path, timeout: float = DEFAULT_TIMEOUT) -> tupl
     if not cmd or cmd[0] not in allowed:
         return 1, "", f"Command not allowed: {cmd[0] if cmd else 'empty'}"
     try:
-        p = subprocess.run(
+        p = subprocess.run(  # noqa: S603  # Repository audit tool execution - controlled commands
             cmd,
             cwd=str(cwd),
             capture_output=True,

@@ -12,7 +12,7 @@ import pytest
 def test_runner_empty_submissions_dir(temp_dir: Path):
     empty_dir = temp_dir / "submissions"
     empty_dir.mkdir()
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: S603  # CLI empty submissions test - safe command
         [
             sys.executable,
             "run_benchmark.py",

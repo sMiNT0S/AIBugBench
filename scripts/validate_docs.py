@@ -595,7 +595,7 @@ class DocumentationValidator:
                 # Try both python and python3
                 for py_cmd in ["python", "python3", "py"]:
                     try:
-                        subprocess.run(
+                        subprocess.run(  # noqa: S603  # Tool version check - safe command
                             [py_cmd, "--version"], capture_output=True, check=True, timeout=5
                         )
                         return True
@@ -603,7 +603,7 @@ class DocumentationValidator:
                         continue
                 return False
             else:
-                subprocess.run(
+                subprocess.run(  # noqa: S603  # Tool version check - safe command
                     [tool, "--version"], capture_output=True, check=True, timeout=5
                 )
                 return True
@@ -657,7 +657,7 @@ class DocumentationValidator:
             shell_cmd = ["bash", "-c", command.content]
 
         try:
-            process = subprocess.run(
+            process = subprocess.run(  # noqa: S603  # Shell command execution for docs validation
                 shell_cmd,
                 capture_output=True,
                 text=True,

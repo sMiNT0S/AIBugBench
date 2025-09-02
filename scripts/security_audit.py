@@ -364,11 +364,12 @@ def run_checks() -> list[CheckResult]:
 def _dynamic_cpu_canary() -> CheckResult:
     """Run a tight CPU loop expecting timeout -> PASS else FAIL."""
     try:
-        subprocess.run(
+        subprocess.run(  # noqa: S603  # Security test - controlled timeout test
             [sys.executable, "-I", "-B", "-c", "while True: pass"],
             timeout=1,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            text=True,
             check=False,
         )
         return CheckResult("Canary CPU loop", "FAIL", "loop did not time out", True)
@@ -403,7 +404,7 @@ def _dynamic_network_canary() -> CheckResult:
                 ),
                 encoding="utf-8",
             )
-            proc = subprocess.run(
+            proc = subprocess.run(  # noqa: S603  # Security test - network connectivity validation
                 [sys.executable, "-I", "-B", str(test_script)],
                 cwd=sb,
                 stdout=subprocess.PIPE,
@@ -500,7 +501,7 @@ def _dynamic_fs_canary() -> CheckResult:
                 ),
                 encoding="utf-8",
             )
-            proc = subprocess.run(
+            proc = subprocess.run(  # noqa: S603  # Security test - filesystem access validation
                 [sys.executable, "-I", "-B", str(test_script)],
                 cwd=sb,
                 stdout=subprocess.PIPE,

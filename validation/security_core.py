@@ -37,7 +37,7 @@ def run_command(
     cmd: list[str], capture_output: bool = True, cwd: Path | None = None
 ) -> tuple[int, str, str]:
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603  # Security validation tool execution - controlled commands
             cmd,
             capture_output=capture_output,
             text=True,

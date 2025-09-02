@@ -256,7 +256,7 @@ jobs:
       - name: Run Safety check on dependencies
         run: |
           pip install -r requirements.txt
-          safety check --json --output safety-report.json || echo "Safety scan completed"
+          safety check --json > safety-report.json || echo "Safety scan completed"
           cat safety-report.json
 
       - name: Run pip-audit for comprehensive dependency analysis

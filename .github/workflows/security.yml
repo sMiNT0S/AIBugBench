@@ -37,13 +37,13 @@ jobs:
       actions: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           # Fetch full history for comprehensive secret scanning
           fetch-depth: 0
 
       - name: Setup Python for secret scanning
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: '3.13'
 
@@ -170,7 +170,7 @@ jobs:
           EOF
 
       - name: Upload security scan results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         if: always()
         with:
           name: security-scan-results
@@ -195,7 +195,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -213,7 +213,7 @@ jobs:
               - submissions/example_model/**
 
       - name: Setup Python for CodeQL
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: '3.13'
 
@@ -237,10 +237,10 @@ jobs:
       actions: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: '3.13'
 
@@ -316,7 +316,7 @@ jobs:
           EOF
 
       - name: Upload dependency scan results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         if: always()
         with:
           name: dependency-scan-results
@@ -337,7 +337,7 @@ jobs:
       actions: read
     steps:
       - name: Download all security scan results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
         with:
           pattern: "*-scan-results"
           merge-multiple: true
@@ -407,7 +407,7 @@ jobs:
           EOF
 
       - name: Upload comprehensive security report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
           name: security-comprehensive-report
           path: security-comprehensive-report.json

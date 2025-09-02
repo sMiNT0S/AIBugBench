@@ -12,16 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Canonical template README at `submissions/templates/template/README.md` (centralized instructions; legacy single-level path removed)
 - Roadmap bullet for submission onboarding workflow (template consolidation + validation)
 - Reference implementation hardening: Prompt 1–4 reference files fully cleaned (no blanket suppressions; zero Ruff issues)
-- Initial sandbox execution support: `benchmark/secure_runner.py` (temp dir isolation, env scrub, CPU & memory rlimits, subprocess wrapper) – Phase 1 security hardening
-- Sandbox integration Phase 2: validators now execute inside isolated SecureRunner environment by default with opt-out via `AIBUGBENCH_UNSAFE=1` (path remapping + test data isolation)
-- Pre-release security audit script (`scripts/security_audit.py`) implementing Phase 5 checks (sandbox primitives, validator integration, CLI security flags & banner) with PASS/FAIL/DEFERRED outcomes and JSON output mode
-- **SAFETY2.0 comprehensive security hardening**: Enhanced filesystem confinement with comprehensive guards for `open()`, `os.remove()`, `shutil.*` operations preventing access outside sandbox boundaries
-- **SAFETY2.0 subprocess execution blocking**: Complete subprocess isolation blocking `subprocess.run()`, `subprocess.call()`, `subprocess.Popen()`, and `os.system()` calls within sandbox environment
-- **SAFETY2.0 enhanced security audit**: Dynamic canary tests for filesystem, network, and subprocess isolation validation with improved sitecustomize loading mechanism
-- **SAFETY2.0 security status banner**: Enhanced CLI security status display showing subprocess blocking and filesystem confinement enforcement levels
-- **SAFETY2.0 security audit workflow**: Updated the security files check to include security-audit.yml alongside the existing comprehensive security workflow.
-- **SAFETY2.0 post-implementation security hardening**: Advanced bypass prevention measures implementing closure-based guard protection, comprehensive process spawn/exec/fork family blocking (`os.execv/spawnv/fork` etc.), directory listing protection (`os.listdir/scandir` path validation), and enhanced sitecustomize isolation - security audit now passes 11/12 mandatory checks with new "Canary Process Spawn" test confirming 6 process creation functions blocked
-- **SAFETY2.0+ bypass vector analysis**: Additional security hardening addressing critical bypass vectors including dynamic code execution blocking (`eval/exec/compile` functions), dangerous import protection (blocking `ctypes/marshal/pickle` modules), import system manipulation prevention (`importlib.reload` blocking), and memory manipulation guards - security audit enhanced to 15/16 mandatory checks with comprehensive canary testing for all bypass vectors
+- **SAFETY2.0 comprehensive security implementation**: Complete security hardening with enhanced filesystem confinement, subprocess execution blocking, dynamic code execution blocking (`eval/exec/compile` functions), dangerous import protection (blocking `ctypes/marshal/pickle` modules), Windows Job Objects for real CPU/memory limits, comprehensive bypass prevention measures, pre-release security audit script (`scripts/security_audit.py`) with comprehensive canary testing achieving 16/17 mandatory security checks, PR Security Workflow (`.github/workflows/pr-security.yml`) with automated security checks including Ruff security rules, Bandit analysis, Safety vulnerability scanning, pip-audit checks, and security audit validation, and Hash-Pinned Dependencies (`requirements.lock`) with cryptographic hashes for supply chain integrity via pip-tools including production installation guidance and automated generation script
 
 ### Changed
 
@@ -36,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developer guide updated to use tiered structure paths exclusively and adjusted ordered list formatting to satisfy markdown lint
 - Template README refined (frontmatter retained, extraneous fenced code block removed, scoring link updated to `scoring-methodology.md`)
 - Standardized reference prompt docstrings & logging; removed residual whitespace-only lines and legacy `# noqa` usage
-- Documented explicit deferral of Phase 4 (PR security automation: CODEOWNERS + workflow enforcement) in roadmap; commit sequence intentionally advances Phase 3 -> 5 while repository remains private to avoid premature process overhead
 - **SAFETY2.0 security audit workflow**: Updated `.github/workflows/security-audit.yml` to use Python 3.13 matching development environment and project requirements
 - **SAFETY2.0 sitecustomize enhancement**: Modified `run_python_sandboxed()` method to properly load sitecustomize guards by removing `-I` flag and adding PYTHONPATH configuration
 
@@ -65,7 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tiered submission system documentation (developer guide section)
 - Validation package migration (execution + reporting layers) completion
 - Public documentation deployment enablement (GitHub Pages)
-- Phase 4 security automation (CODEOWNERS + PR gating workflow) – deferred until repository is public / external contribution begins
 
 ## [0.8.1-beta] - 2025-08-27
 

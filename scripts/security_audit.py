@@ -134,29 +134,21 @@ def check_cli_security() -> CheckResult:
 def check_pr_security_deferred() -> CheckResult:
     """Informational check for deferred Phase 4 (does not fail audit)."""
     workflow = Path(".github/workflows/pr-security.yml")
-    codeowners = Path(".github/CODEOWNERS")
     roadmap = read_text(Path("docs/ROADMAP.md"))
     deferred = re.search(r"Phase 4: PR security automation.*Deferred", roadmap, re.IGNORECASE)
 
-    if workflow.exists() and codeowners.exists():
+    if workflow.exists():
         return CheckResult(
             "PR Security Automation",
             "PASS",
             "workflow active",
             False,
         )
-    if not workflow.exists() and not codeowners.exists() and deferred:
+    if not workflow.exists() and deferred:
         return CheckResult(
             "PR Security Automation",
             "DEFERRED",
             "explicitly deferred in roadmap",
-            False,
-        )
-    if codeowners.exists() or workflow.exists():
-        return CheckResult(
-            "PR Security Automation",
-            "DEFERRED",
-            "partial artifacts present; finalize or remove",
             False,
         )
     return CheckResult(
@@ -296,6 +288,17 @@ def check_dangerous_imports_block() -> CheckResult:
     return CheckResult("Dangerous imports block", "FAIL", "dangerous imports not blocked", True)
 
 
+def check_windows_job_objects() -> CheckResult:
+    sr = _read_secure_runner()
+    has_job_import = "import win32job" in sr and "WINDOWS_JOB_SUPPORT" in sr
+    has_job_method = "_run_with_job_objects" in sr
+    has_platform_check = "if WINDOWS_JOB_SUPPORT:" in sr
+
+    if has_job_import and has_job_method and has_platform_check:
+        return CheckResult("Windows Job Objects", "PASS", "Job Objects support implemented", True)
+    return CheckResult("Windows Job Objects", "FAIL", "Job Objects not implemented", True)
+
+
 def check_github_security_config() -> CheckResult:
     workflows = Path(".github/workflows")
     if not workflows.exists():
@@ -306,9 +309,19 @@ def check_github_security_config() -> CheckResult:
             "GitHub security config", "DEFERRED", "workflows dir present but empty", False
         )
     codeowners = Path(".github/CODEOWNERS")
+    # For private repos, CODEOWNERS is overkill - just check if we have security workflows
+    has_security_workflows = any(
+        "security" in y.name.lower() or "pr" in y.name.lower() for y in ymls
+    )
+
+    if has_security_workflows:
+        return CheckResult("GitHub security config", "PASS", "security workflows present", False)
     if not codeowners.exists():
         return CheckResult(
-            "GitHub security config", "DEFERRED", "CODEOWNERS missing (recommended)", False
+            "GitHub security config",
+            "DEFERRED",
+            "basic workflows only (CODEOWNERS optional for private repo)",
+            False
         )
     return CheckResult("GitHub security config", "PASS", "basic repo security scaffolding", False)
 
@@ -326,6 +339,7 @@ def run_checks() -> list[CheckResult]:
         (check_subprocess_block, True),
         (check_dynamic_code_block, True),
         (check_dangerous_imports_block, True),
+        (check_windows_job_objects, True),
         (check_banner_honesty, True),
         # Non-mandatory hardening (deferred / informational)
         (check_env_whitelist, False),

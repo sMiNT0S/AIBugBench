@@ -4,11 +4,11 @@ Status: Beta (v0.8.0 spec_version)
 
 ## Near-Term (Stabilization)
 
-- Execution sandbox (basic restricted subprocess wrapper; enforce time/resource limits)
-- Introduce unified run_cmd helper wrapping subprocess.run (allow‑listed binaries, enforced timeouts, consistent logging); then annotate existing imports with rationale to silence low‑severity Bandit noise instead of broad skips
-- Coverage gating in CI (existing script integration)
-- Results metadata completeness (already inject spec_version, commit, env)
-- Submission onboarding workflow (consolidate duplicate templates, add validation & diff-based review aids)
+- ✅ **Execution sandbox**: Comprehensive SecureRunner with temp directory isolation, resource limits, subprocess blocking, and dynamic code execution prevention
+- ✅ **Unified subprocess control**: Complete subprocess execution blocking (exceeds original allow-list approach) with comprehensive process spawn protection
+- ✅ **Coverage gating in CI**: Implemented with pytest-cov, Codecov integration, and coverage reporting
+- ✅ **Results metadata completeness**: Already inject spec_version, commit, env
+- ✅ **Submission onboarding workflow**: Template consolidation completed (duplicate templates removed, canonical path established)
 
 ### Type Hygiene (Incremental Mypy Tightening)
 
@@ -55,7 +55,9 @@ Optional Tooling:
 
 ## Deferred (Implement When Adoption Justifies)
 
-- Phase 4: PR security automation (CODEOWNERS, mandatory PR security workflow, enhanced gating). Deferred until repository is public and receives external contributor PRs. Activation criteria: (a) repo visibility switched to public, OR (b) ≥1 external (non-owner) PR merged, OR (c) expanded sensitive surface (networked plugins / execution backends) introduced. Rationale: added CI minutes & maintenance cost outweigh benefit while private; existing local + scheduled security scans (TruffleHog, Semgrep, CodeQL, Safety, pip-audit, Bandit) already cover current risk profile.
+- ✅ **Phase 4: PR security automation**: **IMPLEMENTED** - Comprehensive PR security workflow with mandatory security checks (Ruff security rules, Bandit analysis, pip-audit, security audit validation). Note: CODEOWNERS file not yet created but can be added when needed.
+- **Environment isolation hardening**: Complete environment variable whitelisting (vs. current pattern removal + clear on exit) for enhanced security isolation.
+- **Python interpreter isolation**: Investigate `-I/-S` Python isolation flags for imported model code execution, though current in-process architecture may require significant redesign.
 - **Pre-commit Framework Migration**: Replace manual `.git/hooks/pre-commit` with standardized `pre-commit` tool for public contributors. Implementation plan: (1) Add `pre-commit` to `requirements-dev.txt`, (2) Create `.pre-commit-config.yaml` with ruff + pytest-smoke hooks, (3) Update `CONTRIBUTING.md` with setup instructions: `pre-commit install`, (4) Maintain current manual hook for private development, (5) Enable contributor opt-out via `--no-verify`. Activation criteria: repository goes public OR first external contributor onboarding. Rationale: ensures consistent code quality gates across all contributors while avoiding setup complexity during private development phase.
 - Fuzz & mutation tests for docs/yaml parsers
 - Concurrency / load stress harness
@@ -66,6 +68,9 @@ Optional Tooling:
 
 ## Long-Term
 
+- **Container/jail runner**: Optional isolation mode with docker/podman support (--isolation=docker) providing OS-level egress blocking, read-only root filesystem, and kernel-enforced resource limits
+- **OS-level network egress blocking**: Enhanced network isolation beyond Python-level blocks for adversarial use cases (--network=none, bubblewrap/nsjail)
+- **Enhanced sandbox isolation**: User-namespace jails, seccomp filters, and bind-mounted work directories for multi-tenant scenarios
 - Sandboxed multi-language execution adapters
 - Distributed run orchestrator
 - Cached artifact layer & incremental scoring

@@ -24,37 +24,25 @@ Your AI model implementations.
 - Excluded from automated quality checks
 - Not tracked in git by default
 
-("The business wants to synchronize processed user data with an external CRM system via REST API.
+## Directory Structure
 
-### Task: Create API sync function
+```
+submissions/
+├── reference_implementations/
+│   └── example_model/
+│       └── [prompt solutions]
+├── templates/
+│   └── template/
+│       └── [prompt templates]
+└── user_submissions/
+    └── [your models here]
+```
 
-Write a complete, standalone Python function `sync_users_to_crm(user_data, api_token)` that simulates this process.
+## Getting Started
 
-#### Requirements
+1. Copy the template directory to user_submissions with your model name
+2. Implement solutions for each prompt
+3. Run the benchmark against your model
+4. Review results in the results/ directory
 
-**Target Endpoint**: `https://api.crm-system.com/v2/users/sync`
-
-**HTTP Method**: POST
-
-**Headers**:
-
-- `Content-Type: application/json`
-- `Authorization: Bearer <api_token>`
-
-**Payload**: JSON object with single key `users` containing the user records list
-
-**Error Handling**: Use the `requests` library with comprehensive handling for:
-
-- Network problems (`requests.exceptions.ConnectionError`)
-- HTTP status codes:
-  - `401 Unauthorized` (invalid token)
-  - `400 Bad Request` (bad data)  
-  - `503 Service Unavailable`
-  - Generic handling for other 4xx/5xx errors
-- Print informative error messages for each case
-
-**Success Case**: If successful (status 200/202), parse JSON response and return the `job_id` value.
-
-### Expected output
-
-A production-ready function with robust error handling that could be used in a real application.")
+For detailed submission instructions, see [submissions/templates/template/README.md](templates/template/README.md).

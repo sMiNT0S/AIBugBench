@@ -22,20 +22,7 @@ Concise description of the change.
 
 ## Additional Notes
 
-Anything reviewers should focus on.## Summary
-Brief description of the changes.
-
-## Changes
-
--
-
-## Checklist
-
-- [ ] Tests passing (`pytest -q`)
-- [ ] Lint clean (`ruff check .`)
-- [ ] Updated docs (if needed)
-- [ ] Added/updated tests (if needed)
-- [ ] No core scoring logic altered
+Anything reviewers should focus on.
 
 ## Related Issues
 

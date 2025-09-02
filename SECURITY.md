@@ -52,22 +52,32 @@ Out of scope: protecting production infrastructure, multi-tenant isolation, GPU 
 
 Execution & Quality Gates:
 
+- **SecureRunner sandbox**: Comprehensive execution isolation with temp directory containment, environment variable scrubbing, and resource limits (CPU, memory, file size)
+- **Process execution blocking**: Complete subprocess isolation blocking all process spawning (subprocess.run/call/Popen, os.system, os.exec*/spawn*/fork* family)
+- **Dynamic code execution protection**: Blocks eval(), exec(), compile() and dangerous imports (ctypes, marshal, pickle)
+- **Filesystem confinement**: Path validation preventing access outside sandbox boundaries with guards on open(), os.remove(), shutil.* operations
+- **Windows Job Objects**: Platform-specific CPU/memory limits via pywin32 for real resource control (vs no-op resource module)
 - Zero Ruff lint errors policy (style + selected security rules)
 - ≥60% test coverage with focused unit tests around validators and runners
 - Platform validation to detect cross-run or cross-platform drift
 
 Static & Dynamic Scanning:
 
-- Bandit (configured via `bandit.yaml`)
+- **PR Security Automation**: Automated security checks in pull requests (Ruff security rules, Bandit, pip-audit, security audit validation)
+- Bandit (configured via `pyproject.toml`)
 - CodeQL (GitHub code scanning)
 - Ruff security rules (`S` select on demand)
+- **Security Audit Script**: Comprehensive validation with dynamic canary testing for all security vectors
 - (Planned / referenced) Semgrep ruleset (add once config lands)
 
 Secrets & Dependency Hygiene:
 
 - GitHub secret scanning (native)
 - TruffleHog (extended secret pattern sweep) — referenced in CHANGELOG
-- Safety + pip-audit dual dependency advisories
+- pip-audit dependency vulnerability scanning (Safety tool also available with Safety 3.6.1)
+- **Hash-pinned requirements**: `requirements.lock` provides cryptographic integrity verification via `pip install --require-hashes`
+- Production deployments should use: `pip install --require-hashes -r requirements.lock`
+- `requirements.txt` remains human-readable; `requirements.lock` is auto-generated with hashes
 - Dependabot updates (version & security alerts)
 
 Supply Chain Controls:
@@ -84,10 +94,74 @@ Operational Safeguards:
 
 ## 4. Sandbox & Safe Execution Guidelines
 
-Recommended when running untrusted submissions (Yes, even from LLM/AI, explained more below in 4.1):
+**Current Implementation:**
+
+The benchmark includes a comprehensive `SecureRunner` sandbox that:
+
+- Creates isolated temporary directories for execution
+- Blocks all subprocess and process spawning operations
+- Prevents dynamic code execution (eval/exec/compile)
+- Restricts filesystem access to sandbox boundaries
+- Implements resource limits (CPU, memory, file size)
+- Uses Windows Job Objects for real limits on Windows platforms
+
+**Technical Implementation Details:**
+
+The security guards are loaded via `sitecustomize.py` mechanism which executes automatically in child Python processes:
+
+```python
+# Import guard pattern (simplified)
+_builtins_import = __import__
+
+def _safe_import(name, *args, **kwargs):
+    banned = {"ctypes", "pickle", "marshal"}
+    if name in banned:
+        raise ImportError(f"{name} is disabled in sandbox")
+    return _builtins_import(name, *args, **kwargs)
+
+import builtins
+builtins.__import__ = _safe_import
+```
+
+```python
+# Subprocess blocking pattern (simplified)
+import subprocess, os
+def _deny(*a, **k): raise RuntimeError("Subprocess disabled")
+subprocess.run = subprocess.call = subprocess.Popen = _deny
+os.system = _deny
+```
+
+```python
+# Filesystem bounds enforcement (simplified)
+from pathlib import Path
+SANDBOX_ROOT = Path(os.environ["AIBB_TMP"]).resolve()
+
+def _inside(p: Path) -> Path:
+    p = Path(p).resolve()
+    p.relative_to(SANDBOX_ROOT)  # raises if outside
+    return p
+```
+
+**Pre-run Security Gate:**
+
+The benchmark **requires** a security audit to pass before any code execution:
+
+```bash
+python scripts/security_audit.py || exit 1
+```
+
+This audit validates that all security guards are active and prevents accidental regressions. The CLI refuses to run if security checks fail.
+
+**Technical Notes:**
+
+- Python's `-I` isolated mode prevents sitecustomize loading, so we use PYTHONPATH injection instead to ensure guards always load
+- Guards provide explicit error messages when blocked operations are attempted
+- Honest CLI banners show which protections are actually enforced vs. claimed
+
+**Additional Recommendations for Enhanced Security:**
 
 - Use a dedicated Python virtual environment
-- Optionally run inside a disposable container or VM
+- Optionally run inside a disposable container or VM (planned future enhancement)
 - Disable outbound network (firewall / OS policy) unless explicitly required
 - Strip environment variables containing secrets before run
 - Run with least privileges (non-admin user)
@@ -123,9 +197,12 @@ Recommended when running untrusted submissions (Yes, even from LLM/AI, explained
 ## 7. Dependency Management & Supply Chain
 
 - Regular Dependabot PRs reviewed by maintainers (no blind auto-merge)
-- Dual scanners (Safety + pip-audit) for broader advisory coverage
+- pip-audit vulnerability scanning for comprehensive advisory coverage (Safety tool also available with Safety 3.6.1)
 - Prefer minimal dependency surface; additions must justify functionality gain
-- Periodic `pip install --require-hashes` (future enhancement) under consideration for stronger integrity
+- **Hash-pinned requirements**: `requirements.lock` provides cryptographic integrity verification via `pip install --require-hashes`
+- Production deployments should use: `pip install --require-hashes -r requirements.lock`
+- `requirements.txt` remains human-readable; `requirements.lock` is auto-generated with hashes
+- **Update process**: Run `python scripts/update_requirements_lock.py` when changing dependencies to regenerate hash-pinned lock file
 
 ## 8. Privacy & Telemetry
 
@@ -146,21 +223,23 @@ Recommended when running untrusted submissions (Yes, even from LLM/AI, explained
 ### Bash / Linux / macOS
 
 ```bash
-pip install bandit safety pip-audit ruff
+pip install bandit pip-audit safety ruff
 ruff check . --select S
 bandit -r . -f json
-safety check
 pip-audit
+safety check
+python scripts/security_audit.py
 ```
 
 ### PowerShell
 
 ```powershell
-pip install bandit safety pip-audit ruff
+pip install bandit pip-audit safety ruff
 ruff check . --select S
 bandit -r . -f json
-safety check
 pip-audit
+safety check
+python scripts/security_audit.py
 ```
 
 ## 11. Best Practices for Users
@@ -173,10 +252,21 @@ pip-audit
 
 ## 12. Known & Planned Improvements
 
+**Future Enhancements (Optional):**
+
+- **Container/jail runner**: Optional isolation mode with docker/podman support providing OS-level egress blocking and read-only filesystem
+- **Enhanced network isolation**: Kernel-level network blocking beyond current Python-level guards for adversarial use cases
+- **User-namespace jails**: bubblewrap/nsjail integration for stronger process isolation in multi-tenant scenarios
 - Semgrep ruleset integration (status: planned)
-- Optional network isolation helper script
 - Hash-based integrity verification for result JSON files
-- Consolidated safe subprocess wrapper (planned) – reduce scattered subprocess.run usage, enforce allow‑list + timeouts
+
+**Recently Implemented:**
+
+- ✅ Consolidated safe subprocess wrapper (complete blocking implemented)
+- ✅ PR security automation with comprehensive security checks
+- ✅ Hash-pinned dependencies with cryptographic integrity verification
+- ✅ Windows Job Objects for real resource limits
+- ✅ Dynamic code execution and dangerous import protection
 
 ## 13. Contact & Questions
 

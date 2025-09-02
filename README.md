@@ -4,7 +4,19 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
 
-Comprehensive AI code generation benchmark with 7-category quality assessment.
+## Welcome to AIBugBench
+
+So... you decided to vibe-code a weekend project, and now your personal API key is public. How tragic. Next time, run it here first.
+
+AIBugBench is a comprehensive benchmark for testing AI-generated code across 7 quality categories. Because trusting AI with your codebase should come with receipts.
+
+### What This Does
+
+- **Benchmark AI Models:** Test how well LLMs write secure, correct, and maintainable code
+- **Catch Security Issues:** Find API key leaks, SQL injections, and other oopsies before production
+- **Regression Testing:** Ensure your fine-tuned model didn't forget how to code
+- **Compare Models:** Side-by-side scoring to pick the least dangerous option
+- **Validate Improvements:** Prove your prompt engineering actually works
 
 ## Quick Start (60 seconds)
 
@@ -17,10 +29,10 @@ python run_benchmark.py --model example_model
 
 ## Navigation
 
-**🚀 First-Time Users:** [Getting Started Guide](docs/getting-started.md) - Setup and run your first benchmark  
-**📊 Regular Users:** [User Guide](docs/user-guide.md) - Run benchmarks and interpret results  
-**👨‍💻 Model Developers:** [Developer Guide](docs/developer-guide.md) - Add and test AI models  
-**🏗️ Contributors:** [Architecture](docs/architecture.md) & [Contributing](CONTRIBUTING.md) - Understand and extend the codebase  
+**First-Time Users:** [Getting Started Guide](docs/getting-started.md) - Setup and run your first benchmark  
+**Regular Users:** [User Guide](docs/user-guide.md) - Run benchmarks and interpret results  
+**Model Developers:** [Developer Guide](docs/developer-guide.md) - Add and test AI models  
+**Contributors:** [Architecture](docs/architecture.md) & [Contributing](CONTRIBUTING.md) - Understand and extend the codebase  
 
 ## FAQ
 
@@ -41,14 +53,14 @@ Copy `scripts/pre_commit_template.sh` to `.git/hooks/pre-commit` and make it exe
 
 ## Resources
 
-**📖 Documentation:** [Full documentation site](https://sMiNT0S.github.io/AIBugBench/)  
-**🔧 Troubleshooting:** [Common issues and solutions](docs/troubleshooting.md)  
-**📈 Scoring:** [Detailed scoring methodology](docs/scoring-methodology.md)  
-**🔍 API Reference:** [CLI and Python API](docs/api-reference.md)  
-**🧪 Validation Tools:** See `validation/README.md` for internal doc/security/audit utilities (advanced)  
-**📤 Submissions Guide:** See `submissions/README.md` for model folder layout & workflow (developer)  
-**📦 Template Usage:** See `submissions/templates/template/README.md` for per‑prompt file replacement instructions  
-**🛠️ Doc Command Validator:** See `scripts/README.md` for `validate_docs.py` usage & CI integration  
+**Documentation:** [Full documentation site](https://sMiNT0S.github.io/AIBugBench/)  
+**Troubleshooting:** [Common issues and solutions](docs/troubleshooting.md)  
+**Scoring:** [Detailed scoring methodology](docs/scoring-methodology.md)  
+**API Reference:** [CLI and Python API](docs/api-reference.md)  
+**Validation Tools:** See `validation/README.md` for internal doc/security/audit utilities (advanced)  
+**Submissions Guide:** See `submissions/README.md` for model folder layout & workflow (developer)  
+**Template Usage:** See `submissions/templates/template/README.md` for per‑prompt file replacement instructions  
+**Doc Command Validator:** See `scripts/README.md` for `validate_docs.py` usage & CI integration  
 
 ---
 

@@ -2,3 +2,4 @@
 ## Pinned to match pyproject.toml (single source of truth). Update both together.
 PyYAML==6.0.2
 requests==2.32.5
+pywin32==311; sys_platform == "win32"

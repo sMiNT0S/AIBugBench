@@ -1,0 +1,57 @@
+name: PR Security Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dev dependencies with hash verification
+        run: |
+          python -m pip install --upgrade pip
+          # Install main dependencies with hash verification
+          pip install --require-hashes -r requirements.lock
+          # Install dev dependencies (could add hashes here too)
+          pip install -r requirements-dev.txt
+
+      - name: Ruff Security Rules (S rules)
+        run: |
+          ruff check --select=S .
+
+      - name: Bandit Security Analysis
+        run: |
+          bandit -r . -ll --configfile pyproject.toml
+
+      - name: pip-audit Vulnerability Check
+        run: |
+          pip-audit --format=json
+
+      - name: Security Audit Script
+        run: |
+          python scripts/security_audit.py --json > audit.json
+          cat audit.json
+
+      - name: Fail if security audit fails
+        run: |
+          python -c "
+          import json, sys, pathlib
+          data = json.loads(pathlib.Path('audit.json').read_text())
+          ok = bool(data.get('ok'))
+          print('Security Audit OK:', ok)
+          sys.exit(0 if ok else 1)
+          "

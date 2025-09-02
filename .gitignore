@@ -61,7 +61,7 @@ coverage.xml
 bandit_report.json
 audit_report*.json
 *_audit_report.json
-# Keep security/audit config files versioned (.safety-project.ini, .semgrepignore, .trufflehogignore)
+# Keep security/audit config files versioned (.safety-project.ini, .semgrepignore, .trufflehogignore, etc.)
 
 # CI Results and Build Artifacts
 ci_results/

@@ -39,13 +39,13 @@ assignees: ''
 ### Before Submitting
 
 - [ ] I've checked the [README FAQ section](../../README.md#frequently-asked-questions)
-- [ ] I've reviewed the [QUICKSTART guide](../../QUICKSTART.md)
+- [ ] I've reviewed the [Getting Started guide](../../docs/getting-started.md)
 - [ ] I've searched existing issues for similar questions
 - [ ] I've provided clear environment information above
 
 ### Common Quick Answers
 
-- **Setup Issues**: See [QUICKSTART.md](../../QUICKSTART.md) for step-by-step setup
+- **Setup Issues**: See [Getting Started](../../docs/getting-started.md) for step-by-step setup
 - **Results Location**: Check `/results` directory for timestamped files
 - **Python Version**: Requires Python 3.13+ with modern syntax features
 - **Cross-Platform**: Windows commands use `xcopy`, Unix/macOS use `cp -r`

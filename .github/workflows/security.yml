@@ -49,7 +49,12 @@ jobs:
 
       - name: Install TruffleHog for secret scanning
         run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+          # Install specific pinned version for reproducible builds
+          TRUFFLEHOG_VERSION="3.81.10"
+          curl -sSfL "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_amd64.tar.gz" -o trufflehog.tar.gz
+          tar -xzf trufflehog.tar.gz
+          sudo mv trufflehog /usr/local/bin/
+          chmod +x /usr/local/bin/trufflehog
 
       - name: Run TruffleHog Git History Scan
         run: |
@@ -63,7 +68,7 @@ jobs:
 
       - name: Install semgrep for pattern-based secret detection
         run: |
-          pip install semgrep
+          pip install semgrep==1.134.0
 
       - name: Run Semgrep Secret Patterns
         run: |
@@ -198,7 +203,7 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@e2b3eafc8d227b0241d48be5f425d47c2d750a13  # v3.26.10
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
@@ -223,7 +228,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@e2b3eafc8d227b0241d48be5f425d47c2d750a13  # v3.26.10
         with:
           category: "/language:${{matrix.language}}"
           upload: true
@@ -246,7 +251,7 @@ jobs:
 
       - name: Install Safety for dependency scanning
         run: |
-          pip install safety pip-audit
+          pip install safety==3.6.1 pip-audit==2.9.0
 
       - name: Run Safety check on dependencies
         run: |

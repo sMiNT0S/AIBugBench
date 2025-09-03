@@ -33,7 +33,7 @@ def main() -> int:
 
     # If you really want a fallback, uncomment below.
     # But integrity without hashes is theater, so we default to failing.
-    print("❌ pip-tools not found. Install with: pip install pip-tools==7.4.1", file=sys.stderr)
+    print("❌ pip-tools not found. Install with: pip install 'pip-tools>=7.5.0'", file=sys.stderr)
     return 2
 
 if __name__ == "__main__":

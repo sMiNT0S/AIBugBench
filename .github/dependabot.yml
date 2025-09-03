@@ -3,15 +3,15 @@
 
 version: 2
 updates:
-  # Python dependencies in pyproject.toml
+  # Python dependencies (requirements.txt, requirements-dev.txt, pyproject.toml if present)
   - package-ecosystem: "pip"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
+    schedule:  # Move to daily so security patches land faster
+      interval: "daily"
       time: "09:00"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 5
+    versioning-strategy: increase-if-necessary  # Avoid needless major bumps
     assignees:
       - "sMiNT0S"
     commit-message:
@@ -19,11 +19,11 @@ updates:
       prefix-development: "deps-dev"
       include: "scope"
     labels:
-      - "dependencies"  # Removed 'security' label (label not present in repo)
-    allow:  # Focus on both direct & indirect updates
+      - "dependencies"
+    allow:
       - dependency-type: "direct"
       - dependency-type: "indirect"
-    groups:  # Group related updates together
+    groups:  # Broaden grouping to cut PR noise
       requests-group:
         patterns:
           - "requests*"
@@ -38,8 +38,21 @@ updates:
           - "ruff"
           - "mypy"
           - "pytest*"
+          - "coverage*"
+          - "bandit"
+          - "safety"
+          - "pip-audit"
+          - "pip-tools"
+      security-tools:
+        patterns:
+          - "bandit"
+          - "safety"
+          - "pip-audit"
+      typing:
+        patterns:
+          - "types-*"
 
-  # GitHub Actions dependency updates
+  # GitHub Actions (will only update if using tags; pinned SHAs will not auto-update)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -47,7 +60,8 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Etc/UTC"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
+    versioning-strategy: increase-if-necessary
     assignees:
       - "sMiNT0S"
     commit-message:
@@ -57,3 +71,11 @@ updates:
       - "dependencies"
     allow:
       - dependency-type: "direct"
+    groups:
+      github-actions-core:
+        patterns:
+          - "actions/*"
+      github-actions-security:
+        patterns:
+          - "github/codeql-action*"
+          - "aquasecurity/*"

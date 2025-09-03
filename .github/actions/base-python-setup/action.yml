@@ -13,7 +13,7 @@ runs:
       shell: bash
       run: |
         python -m pip install --upgrade pip
-        pip install pip-tools==7.4.1
+        pip install 'pip-tools>=7.5.0'
         pip install --require-hashes -r requirements.lock
     - name: Install dev tools
       if: ${{ inputs.install-dev == 'true' }}
@@ -35,7 +35,7 @@ runs:
       if: ${{ inputs.install-security == 'true' }}
       shell: bash
       run: |
-        pip install pip-tools==7.4.1
+        pip install 'pip-tools>=7.5.0'
         pip install bandit==${{ env.BANDIT_VERSION }} safety
 inputs:
   python-version:

@@ -26,7 +26,7 @@ No changes yet.
 - **SAFETY2.0 comprehensive security implementation**: Filesystem confinement, subprocess & dynamic code execution blocking (`eval/exec/compile`), dangerous import protection (`ctypes/marshal/pickle`), Windows Job Objects, bypass prevention, pre-release security audit script (`scripts/security_audit.py`), PR security workflow (`.github/workflows/pr-security.yml`), Safety & pip-audit integration, hash‑pinned dependencies (`requirements.lock`).
 - Missing results directory: Created `results/collected-results/` for benchmark comparison functionality
 - Scripts cleanup: Functional lock updater (`scripts/update_requirements_lock.py`), argparse CLIs for `scripts/compare_benchmarks.py` & enhanced `scripts/pin_actions_to_sha.py` (`--list/--dry-run/--apply`), centralized `classify_command` in `validation/docs_core.py`.
-- Dependency lock enforcement: Added CI `lock-verification` job (pip-tools==7.4.1) to fail when `requirements.lock` is out of sync with `requirements.txt`; PR security workflow installs with `--require-hashes`.
+- Dependency lock enforcement: Added CI `lock-verification` job (pip-tools>=7.5.0) to fail when `requirements.lock` is out of sync with `requirements.txt`; PR security workflow installs with `--require-hashes`.
 
 ### Changed
 

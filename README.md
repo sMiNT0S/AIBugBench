@@ -105,7 +105,7 @@ Update flow:
 2. Regenerate lock (same Python major/minor):
 
    ```bash
-   pip install pip-tools==7.4.1
+   pip install "pip-tools>=7.5.0"
    python -m piptools compile --generate-hashes -o requirements.lock requirements.txt
    ```
 

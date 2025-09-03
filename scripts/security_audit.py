@@ -813,6 +813,15 @@ def reconcile_static_with_canaries(results: list[CheckResult]) -> list[CheckResu
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AIBugBench security audit")
     parser.add_argument("--json", action="store_true", help="Emit JSON summary")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="",
+        help=(
+            "Optional path to write JSON payload (implies --json). "
+            "If provided, the JSON file is written atomically."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -823,13 +832,33 @@ def main() -> int:
     results = reconcile_static_with_canaries(results)
     mandatory_fail = any(r.status == "FAIL" and r.mandatory for r in results)
 
-    if args.json:
+    if args.json or args.output:
         payload = {
             "results": [asdict(r) for r in results],
             "ok": not mandatory_fail,
+            "summary": {
+                "mandatory_passed": sum(1 for r in results if r.status == "PASS" and r.mandatory),
+                "mandatory_failed": sum(1 for r in results if r.status == "FAIL" and r.mandatory),
+                "mandatory_deferred": sum(
+                    1 for r in results if r.status == "DEFERRED" and r.mandatory
+                ),
+                "total_mandatory": sum(1 for r in results if r.mandatory),
+                "total_optional": sum(1 for r in results if not r.mandatory),
+            },
+            "version": 1,
         }
+        # Always emit to stdout for existing workflow compatibility
         json.dump(payload, sys.stdout, indent=2)
         print()
+        # Optional direct file write (atomic)
+        if args.output:
+            try:
+                out_path = Path(args.output)
+                tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+                tmp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+                tmp_path.replace(out_path)
+            except Exception as exc:  # pragma: no cover - robustness
+                print(f"Warning: failed to write output file {args.output}: {exc}", file=sys.stderr)
         return 0 if not mandatory_fail else 1
 
     ascii_only = False

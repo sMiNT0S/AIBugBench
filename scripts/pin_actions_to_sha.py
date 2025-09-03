@@ -17,6 +17,9 @@ ACTION_PINS = {
     "actions/download-artifact@v4": (
         "actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e"
     ),
+    "codecov/codecov-action@v5": (
+        "codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00"
+    ),
 }
 
 def _rewrite(content: str) -> str:

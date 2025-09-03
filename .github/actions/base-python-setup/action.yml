@@ -1,0 +1,55 @@
+name: Base Python Setup
+description: Checkout, setup Python, install hashed base dependencies.
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+    - name: Set up Python
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install base hashed dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools==7.4.1
+        pip install --require-hashes -r requirements.lock
+    - name: Install dev tools
+      if: ${{ inputs.install-dev == 'true' }}
+      shell: bash
+      run: |
+        pip install \
+          ruff==${{ env.RUFF_VERSION }} \
+          mypy==${{ env.MYPY_VERSION }} \
+          pytest==${{ env.PYTEST_VERSION }}
+    - name: Install test tooling
+      if: ${{ inputs.install-test == 'true' }}
+      shell: bash
+      run: |
+        pip install \
+          pytest==${{ env.PYTEST_VERSION }} \
+          pytest-cov==${{ env.PYTEST_COV_VERSION }} \
+          coverage==${{ env.COVERAGE_VERSION }}
+    - name: Install security tooling
+      if: ${{ inputs.install-security == 'true' }}
+      shell: bash
+      run: |
+        pip install pip-tools==7.4.1
+        pip install bandit==${{ env.BANDIT_VERSION }} safety
+inputs:
+  python-version:
+    description: Python version to use
+    required: true
+  install-dev:
+    description: Install dev lint/type tools
+    required: false
+    default: 'false'
+  install-test:
+    description: Install test/coverage tooling
+    required: false
+    default: 'false'
+  install-security:
+    description: Install security scanning tools
+    required: false
+    default: 'false'

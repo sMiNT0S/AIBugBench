@@ -3,6 +3,12 @@ name: CI
 env:
   PYTHON_DEFAULT_VERSION: '3.12'
   BANDIT_VERSION: '1.8.6'
+  RUFF_VERSION: '0.5.5'
+  MYPY_VERSION: '1.11.2'
+  PYTEST_VERSION: '8.3.2'
+  PYTEST_COV_VERSION: '5.0.0'
+  COVERAGE_VERSION: '7.6.1'
+  SAFETY_VERSION: '3.2.5'
 
 on:
   push:
@@ -13,6 +19,7 @@ on:
 # (Moved to top-level env block)
 
 jobs:
+
   lock-verification:
     name: Dependency Lock Verification
     permissions:
@@ -66,17 +73,12 @@ jobs:
       actions: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      - name: Base Python + dev tools
+        uses: ./.github/actions/base-python-setup
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pip-tools==7.4.1
-          pip install -r requirements.txt
-          pip install ruff mypy pytest
+          install-dev: 'true'
+          print-versions: 'true'
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -88,12 +90,13 @@ jobs:
         run: ruff check .
       # Dual mypy passes: ensure lowest supported (config default 3.10) stays clean,
       # then re-run with 3.13 stdlib/typeshed to surface forward-typing issues.
+      # Explicit targets (no src/ layout): benchmark/, validation/, and run_benchmark.py.
       - name: "mypy (min supported: 3.10)"
         run: |
-          python -m mypy benchmark validation run_benchmark.py --no-error-summary
+          python -m mypy ./benchmark ./validation ./run_benchmark.py --no-error-summary
       - name: "mypy (latest runtime: 3.13 types)"
         run: |
-          python -m mypy benchmark validation run_benchmark.py --no-error-summary --python-version 3.13 --cache-dir .mypy_cache/py313
+          python -m mypy ./benchmark ./validation ./run_benchmark.py --no-error-summary --python-version 3.13 --cache-dir .mypy_cache/py313
       - name: Format check with ruff
         run: ruff format --check .
 
@@ -107,19 +110,12 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      - name: Base Python + test tooling
+        uses: ./.github/actions/base-python-setup
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pip-tools==7.4.1
-          pip install -r requirements.txt
-          pip install pytest pytest-cov coverage
+          install-test: 'true'
+          print-versions: 'true'
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -148,6 +144,18 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
 
+      - name: Detect coverage.xml presence
+        id: coverage_file
+        shell: bash
+        run: |
+          if [ -f coverage.xml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "coverage.xml present"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "coverage.xml missing"
+          fi
+
       # New: publish the HTML coverage report for PR browsing
       - name: Upload HTML coverage
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
@@ -156,27 +164,32 @@ jobs:
           path: htmlcov
           if-no-files-found: warn
           retention-days: 7
-      # Detect presence of Codecov secret without job-level env
+  # Detect presence of Codecov secret without job-level env
       - name: Detect Codecov token
         shell: bash
         run: |
           if [ -n "${{ secrets.CODECOV_TOKEN }}" ]; then
-            echo "HAVE_CODECOV=1" >> "$GITHUB_ENV"
+          echo "HAVE_CODECOV=1" >> "$GITHUB_ENV"
           else
-            echo "HAVE_CODECOV=0" >> "$GITHUB_ENV"
+          echo "HAVE_CODECOV=0" >> "$GITHUB_ENV"
           fi
 
       - name: Upload to Codecov
         if: ${{ env.HAVE_CODECOV == '1' && hashFiles('coverage.xml') != '' }}
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00
         with:
           files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
       - name: Skip Codecov (no token present)
-        if: ${{ env.HAVE_CODECOV != '1' }}
-        run: echo "Codecov token not provided; skipping upload (private repo)."
+        if: ${{ env.HAVE_CODECOV != '1' || steps.coverage_file.outputs.present != 'true' }}
+        run: |
+          if [ "$HAVE_CODECOV" != '1' ]; then
+            echo "Codecov token not provided; skipping upload (private repo)."
+          elif [ "${{ steps.coverage_file.outputs.present }}" != 'true' ]; then
+            echo "coverage.xml missing; skipping Codecov upload."
+          fi
   multi-platform-tests:
     name: Multi-Platform Tests
     needs: test-coverage
@@ -197,19 +210,12 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      - name: Base Python + test tooling
+        uses: ./.github/actions/base-python-setup
         with:
           python-version: ${{ matrix.python-version }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pip-tools==7.4.1
-          pip install -r requirements.txt
-          pip install pytest pytest-cov coverage
+          install-test: 'true'
+          print-versions: 'false'
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -217,20 +223,20 @@ jobs:
           key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python-version }}-
-      
+      - name: Install package (editable)
+        run: python -m pip install -e .
+
       - name: Run comprehensive test suite
         run: |
           echo "Running comprehensive test suite on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
           pytest tests/ -v --tb=short -m "not slow"
-        continue-on-error: true
-      
+
       - name: Run unit tests (fallback)
         if: failure()
-        run: pytest tests/test_imports.py -v --tb=short
-        continue-on-error: true
-      
-      - name: Setup test environment
-        run: python setup.py
+        run: |
+          echo "Full suite failed; executing minimal import smoke test for diagnostics..."
+          pytest tests/test_imports.py -v --tb=short || true
+          echo "Primary test suite failure retained (job will fail)."
       
       - name: Validate test data structure
         shell: bash
@@ -265,10 +271,8 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      - name: Base Python setup
+        uses: ./.github/actions/base-python-setup
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       
@@ -278,11 +282,6 @@ jobs:
           pattern: benchmark-results-*
           path: ./collected-results
           merge-multiple: true
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
       
       - name: Run cross-platform comparison
         id: comparison
@@ -336,18 +335,12 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+      - name: Base Python + security tooling
+        uses: ./.github/actions/base-python-setup
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-      
-      - name: Install security tools (pinned)
-        run: |
-          python -m pip install --upgrade pip
-          pip install pip-tools==7.4.1
-          pip install bandit==${{ env.BANDIT_VERSION }} safety
+          install-security: 'true'
+          print-versions: 'true'
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -364,6 +357,19 @@ jobs:
       - name: Run safety check
         run: safety check --json > safety-report.json
         continue-on-error: true
+      - name: Run internal security audit
+        run: python scripts/security_audit.py --json --output audit.json
+        continue-on-error: true
+
+      - name: Fail if audit not ok
+        run: >
+          python -c "import json,sys,pathlib;d=json.loads(pathlib.Path('audit.json').read_text()); ok=bool(d.get('ok'));print('Audit OK:',ok);sys.exit(0 if ok else 1)"
+        continue-on-error: false
+
+      - name: Generate security audit summary
+        if: always()
+        run: python scripts/generate_audit_summary.py audit.json || true
+      
       
       - name: Upload security reports
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
@@ -373,4 +379,6 @@ jobs:
           path: |
             bandit-report.json
             safety-report.json
+            audit.json
+            audit_summary.md
           retention-days: 30

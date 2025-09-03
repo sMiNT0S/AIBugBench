@@ -1,53 +1,51 @@
 [project]
 name = "aibugbench"
-version = "0.8.1-beta"
+version = "0.9.0-beta"
 description = "AI code generation benchmarking tool"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: MIT License"]
 authors = [{ name = "sMiNT0S" }]
 maintainers = [{ name = "AIBugBench Maintainers" }]
 readme = "README.md"
-requires-python = ">=3.10,<=3.13"
+requires-python = ">=3.10,<3.14"
 dependencies = [
-    "PyYAML==6.0.2",
-    "requests==2.32.5",
-    "pywin32==311; sys_platform == 'win32'"
+  "PyYAML==6.0.2",
+  "requests==2.32.5",
+  "pywin32==311; sys_platform == 'win32'"
 ]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 exclude = [
-    "test_data/",
-    "venv/",
-    "submissions/user_submissions/",
-    "submissions/templates/",
-    "prompts/",
+  "test_data/",
+  "venv/",
+  "submissions/user_submissions/",
+  "submissions/templates/",
+  "prompts/"
 ]
 
 [tool.ruff.lint]
 # Strict set; expect noise, then burn it down with autofix + small PRs.
 select = [
-    "E",   # pycodestyle errors (correctness)
-    "F",   # pyflakes (unused vars, etc.)
-    "W",   # pycodestyle warnings (whitespace, etc.)
-    "I",   # import sorting (isort)
-    "UP",  # pyupgrade (modernize to 3.13 styles where safe)
-    "B",   # flake8-bugbear (common footguns)
-    "C4",  # flake8-comprehensions
-    "SIM", # flake8-simplify
-    "N",   # pep8-naming
-    "RUF", # Ruff-specific improvements
-    "S",   # security
+  "E",   # pycodestyle errors (correctness)
+  "F",   # pyflakes (unused vars, etc.)
+  "W",   # pycodestyle warnings (whitespace, etc.)
+  "I",   # import sorting (isort)
+  "UP",  # pyupgrade (modernize to 3.13 styles where safe)
+  "B",   # flake8-bugbear (common footguns)
+  "C4",  # flake8-comprehensions
+  "SIM", # flake8-simplify
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific improvements
+  "S"    # security
 ]
 ignore = [
-    "S101",  # use of assert detected
-    "S108",  # hardcoded temporary directory  
-    "S506",  # use of yaml.load with unsafe loader - false positive in test code
+  "S108"  # hardcoded temporary directory
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["aibugbench"]
+known-first-party = ["benchmark", "validation", "run_benchmark"]
 combine-as-imports = true
 force-sort-within-sections = true
 
@@ -57,89 +55,55 @@ quote-style = "double"
 [tool.mypy]
 python_version = "3.10"
 ignore_missing_imports = true
-# Exclude problematic duplicate modules in template/example_model
+plugins = []  # explicit (currently none configured)
 exclude = [
-    "submissions/example_model/",
-    "submissions/templates/",  # template scaffold (excluded from type checking)
-    "test_data/",
-    "venv/",
-    "htmlcov/",
-    ".git/"
+  "submissions/reference_implementations/example_model/",
+  "submissions/templates/",
+  "test_data/",
+  "venv/",
+  "htmlcov/",
+  ".git/"
 ]
-# Very lenient initial setup for legacy codebase
 allow_untyped_globals = true
 allow_redefinition = false
 allow_untyped_defs = true
 allow_incomplete_defs = true
 check_untyped_defs = true
-# Disable strict checks initially
 no_implicit_optional = false
 strict_optional = false
-# Minimal warnings for now
 warn_unused_ignores = true
 warn_return_any = true
 warn_unreachable = true
 show_error_codes = true
-# Skip errors that would require major refactoring
 disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-overload"]
 
-# Tests can use bare `assert` without tripping bandit S101.
-# Benchmark core functionality requires subprocess calls and intentional YAML loader usage.
-[tool.ruff.lint.per-file-ignores]
-# Tests may include intentionally long lines, simplified constructs, and dynamic patterns that
-# aren't relevant to production code quality. We still keep correctness (no F821) while relaxing
-# formatting / style noise. Security assert usage already ignored.
-"tests/**" = ["S101", "E501", "S102", "SIM102", "F841"]
-"submissions/reference_implementations/**" = []  # Phase 2: explicit full rules (no ignores)
-"benchmark/validators.py" = ["S603", "S506"]  # subprocess calls + UniqueKeyLoader for duplicate detection
-"benchmark/runner.py" = ["S603", "S404"]  # audited subprocess usage
-"test_data/process_records.py" = ["S506", "S404"]  # deliberate yaml.load + subprocess import for test fixture
+# Strict-on-core override: enforce stronger typing only for core packages
+[[tool.mypy.overrides]]
+module = [
+  "benchmark",
+  "benchmark.*",
+  "validation",
+  "validation.*",
+  "run_benchmark"
+]
+disallow_untyped_defs = true
+no_implicit_optional = true
+disallow_any_generics = true
 
-[tool.pytest.ini_options]
-minversion = "8.0"
-addopts = [
-    "-ra",
-    "--strict-markers", 
-    "--strict-config",
-    "--cov=benchmark",
-    "--cov=run_benchmark",
-    "--cov=repo_audit",
-    "--cov-report=term-missing",
-    "--cov-report=html:htmlcov",
-    "--cov-report=xml",
-    "--cov-fail-under=62"
-]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-markers = [
-    "unit: marks tests as unit tests (deselect with '-m \"not unit\"')",
-    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
-    "smoke: marks tests as smoke tests (deselect with '-m \"not smoke\"')",
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-]
+[tool.ruff.lint.per-file-ignores]
+# Tests may use asserts, long lines, and a controlled subprocess call pattern.
+"tests/**" = ["S101", "E501", "S102", "SIM102", "F841", "S603"]
+# Core files with audited exceptions
+"benchmark/validators.py" = ["S603", "S506"]       # subprocess call + safe YAML loader override
+"benchmark/runner.py"     = ["S603", "S404"]       # audited subprocess usage
+"test_data/process_records.py" = ["S506", "S404"]  # fixture: yaml.load + subprocess import
 
 [tool.bandit]
 # Exclude directories with intentionally hostile test cases and generated content
 exclude_dirs = [
-    "test_data",
-    "submissions/templates",
-    "submissions/user_submissions",
-    "prompts",
-    "venv"
+  "test_data",
+  "submissions/templates",
+  "submissions/user_submissions",
+  "prompts",
+  "venv"
 ]
-
-# Coverage configuration (migrated from .coveragerc for consolidation)
-[tool.coverage.run]
-branch = true
-source = ["benchmark", "run_benchmark", "validation"]
-
-[tool.coverage.report]
-omit = [
-    "tests/*",
-    "*/__init__.py"
-]
-
-
-

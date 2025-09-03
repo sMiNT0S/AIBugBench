@@ -12,6 +12,13 @@ if (!(Test-Path $py)) {
 # Clean previous coverage data to avoid branch/statement mismatch
 & $py -m coverage erase | Out-Null
 
+# Get coverage minimum threshold from environment or use .coveragerc default
+$coverageMin = $env:COVERAGE_MIN
+if (-not $coverageMin) {
+    # Default threshold if not specified - .coveragerc will control the actual value
+    $coverageMin = "62"
+}
+
 $pytestArgs = @(
     '-m', 'not slow',
     '--cov=benchmark',
@@ -20,7 +27,7 @@ $pytestArgs = @(
     '--cov-report=term-missing',
     '--cov-report=xml',
     '--cov-report=html',
-    '--cov-fail-under=62'
+    "--cov-fail-under=$coverageMin"
 )
 if ($FailFast) { $pytestArgs += @('--maxfail=1') }
 

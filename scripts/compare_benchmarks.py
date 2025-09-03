@@ -5,15 +5,22 @@ Reads JSON files named platform_validation_*.json from a supplied results direct
 floating tolerance across platforms. Prints a summary and exits non-zero if
 inconsistency is detected.
 """
+
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
-import sys
 from typing import Any
 
-TOLERANCE = 0.01  # allowable absolute score difference
-RESULTS_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("./collected-results")
+DEFAULT_TOL = 0.01
+
+def _parse() -> tuple[Path, float]:
+    p = argparse.ArgumentParser()
+    p.add_argument("--dir", default="./collected-results")
+    p.add_argument("--tolerance", type=float, default=DEFAULT_TOL)
+    a = p.parse_args()
+    return Path(a.dir), a.tolerance
 
 
 def load_results(results_dir: Path) -> list[dict[str, Any]]:
@@ -35,7 +42,7 @@ def load_results(results_dir: Path) -> list[dict[str, Any]]:
     return platform_results
 
 
-def summarize(platform_results: list[dict[str, Any]]) -> int:
+def summarize(platform_results: list[dict[str, Any]], tol: float) -> int:
     if len(platform_results) < 2:
         print("⚠️ Insufficient platform results for comparison")
         return 0
@@ -48,7 +55,7 @@ def summarize(platform_results: list[dict[str, Any]]) -> int:
     diff = max_score - min_score
     print(f"📊 Score range: {min_score:.2f} - {max_score:.2f} (diff: {diff:.2f})")
 
-    if diff > TOLERANCE:
+    if diff > tol:
         print("❌ INCONSISTENT SCORES DETECTED!")
         print("Platform scores:", dict(zip(platforms, scores, strict=False)))
         return 1
@@ -72,8 +79,9 @@ def summarize(platform_results: list[dict[str, Any]]) -> int:
 
 
 def main() -> int:
-    results = load_results(RESULTS_DIR)
-    return summarize(results)
+    results_dir, tol = _parse()
+    results = load_results(results_dir)
+    return summarize(results, tol)
 
 
 if __name__ == "__main__":  # pragma: no cover

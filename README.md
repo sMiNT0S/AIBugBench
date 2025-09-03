@@ -3,6 +3,23 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
+[![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
+[![Test Coverage](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security-audit.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security-audit.yml)
+[![Security Analysis](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml)
+[![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
+![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
+
+## Badge Meanings & Local Reproduction
+
+| Badge | Meaning | How to Reproduce Locally |
+|-------|---------|--------------------------|
+| CI | Lint (ruff) + tests (pytest) pass | `pytest -q` then `ruff check .` |
+| Test Coverage | Coverage job in `ci.yml` meets threshold (>=62% default) | `pwsh scripts/test_with_coverage.ps1` |
+| Security Audit | Fast static/config audit (`security-audit.yml`) passes | (auto in workflow) |
+| Security Analysis | Full security suite (`security.yml`: bandit, secrets, pins) passes | `bandit -r . -ll` (plus internal scripts) |
+| Tiered Validation | Structural & doc validators succeed | (workflow: `tiered-validation.yml`) |
+| Type Checking | Core modules mypy-clean under strict-core profile | `mypy benchmark run_benchmark.py` |
 
 ## Welcome to AIBugBench
 
@@ -26,6 +43,18 @@ python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activat
 pip install -r requirements.txt && python setup.py
 python run_benchmark.py --model example_model
 ```
+
+## Security at a glance
+
+- Runs model-generated Python in a **separate child process**
+- Enforced guards: **no eval/exec/compile**, **no subprocess**, **no network**, **sandboxed filesystem**
+- Import gate: bans `ctypes`, `pickle`, `marshal`; blocks `importlib.reload`
+- Pre-run **security audit** must pass locally and in CI
+- Ephemeral workdir per run; outputs harvested, temp wiped
+- POSIX: rlimits; Windows: watchdog today, **Job Objects coming** for hard caps
+- Opt-out: `--unsafe` (loud, logged)
+
+See `SAFETY.md` for the full threat model, guarantees, and verification steps.
 
 ## Navigation
 
@@ -65,6 +94,25 @@ Copy `scripts/pre_commit_template.sh` to `.git/hooks/pre-commit` and make it exe
 ---
 
 **Requirements:** Python 3.10+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
+
+## Dependency Lock (pip-tools)
+
+Locked deps live in `requirements.lock` (hashes enforced in PR security workflow).
+
+Update flow:
+
+1. Edit `requirements.txt` (minimal, top-level direct deps only).
+2. Regenerate lock (same Python major/minor):
+
+   ```bash
+   pip install pip-tools==7.4.1
+   python -m piptools compile --generate-hashes -o requirements.lock requirements.txt
+   ```
+
+3. Install with verification: `pip install --require-hashes -r requirements.lock`
+4. Commit both files together.
+
+CI enforcement: the `lock-verification` job recompiles when `requirements.txt` changes and fails if `requirements.lock` is out of sync.
 
 ## Scope & Limitations
 

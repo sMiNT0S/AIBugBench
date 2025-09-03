@@ -65,20 +65,20 @@ class UserProcessor:
         try:
             path = Path(config_path)
             if not path.exists():
-                raise ConfigurationError(
-                    f"Configuration file not found: {config_path}"
-                )
+                raise ConfigurationError(f"Configuration file not found: {config_path}")
 
             with path.open("r") as file:
-                config = yaml.safe_load(file)
+                raw = yaml.safe_load(file)
+
+            if not isinstance(raw, dict):
+                raise ConfigurationError("Configuration root must be a mapping")
+            config: dict[str, Any] = raw
 
             # Validate required configuration sections
             required_sections = ["paths", "validation_rules"]
             for section in required_sections:
                 if section not in config:
-                    raise ConfigurationError(
-                        f"Missing required config section: {section}"
-                    )
+                    raise ConfigurationError(f"Missing required config section: {section}")
 
             return config
 
@@ -112,9 +112,7 @@ class UserProcessor:
             if "users" not in data:
                 raise DataValidationError("JSON file missing 'users' key")
             self.records = data["users"]
-            self.logger.info(
-                f"Loaded {len(self.records)} records from {self.data_path}"
-            )
+            self.logger.info(f"Loaded {len(self.records)} records from {self.data_path}")
         except json.JSONDecodeError as exc:
             raise DataValidationError(f"Invalid JSON in data file: {exc}") from exc
 
@@ -124,29 +122,23 @@ class UserProcessor:
             rules = self.config.get("validation_rules", {})
             min_age = int(rules.get("min_age_years", 0))
             min_posts = int(rules.get("minimum_posts", 0))
-            user_age = record.get("stats", {}).get("age", 0)
-            user_posts = record.get("stats", {}).get("total_posts", 0)
-            if isinstance(user_age, str):
-                user_age = int(user_age)
-            if isinstance(user_posts, str):
-                user_posts = int(user_posts)
+
+            raw_age = record.get("stats", {}).get("age", 0)
+            raw_posts = record.get("stats", {}).get("total_posts", 0)
+
+            user_age: int = int(raw_age) if isinstance(raw_age, int | str) else 0
+            user_posts: int = int(raw_posts) if isinstance(raw_posts, int | str) else 0
             required_fields = rules.get("required_fields", [])
             for field in required_fields:
                 if not self._check_nested_field(record, field):
-                    self.logger.debug(
-                        f"Record missing required field: {field}"
-                    )
+                    self.logger.debug(f"Record missing required field: {field}")
                     return False
-            return user_age >= min_age and user_posts >= min_posts
+            return (user_age >= min_age) and (user_posts >= min_posts)
         except (ValueError, TypeError) as e:
-            self.logger.warning(
-                f"Validation error for record {record.get('id')}: {e}"
-            )
+            self.logger.warning(f"Validation error for record {record.get('id')}: {e}")
             return False
 
-    def _check_nested_field(
-        self, record: dict[str, Any], field_path: str
-    ) -> bool:
+    def _check_nested_field(self, record: dict[str, Any], field_path: str) -> bool:
         """Check if a nested field exists and is not None."""
         current = record
         for part in field_path.split("."):
@@ -171,9 +163,7 @@ class UserProcessor:
                 "processed_timestamp": datetime.now().isoformat(),
             }
         except Exception as e:  # pragma: no cover - defensive
-            self.logger.error(
-                f"Error transforming record {record.get('id')}: {e}"
-            )
+            self.logger.error(f"Error transforming record {record.get('id')}: {e}")
             raise
 
     def _determine_status(self, last_login_str: str) -> str:
@@ -189,14 +179,10 @@ class UserProcessor:
                 return "inactive"
             return "archived"
         except ValueError as e:
-            self.logger.warning(
-                f"Invalid date format '{last_login_str}': {e}"
-            )
+            self.logger.warning(f"Invalid date format '{last_login_str}': {e}")
             return "unknown"
 
-    def process_records(
-        self, filter_by_country: str | None = None
-    ) -> list[dict[str, Any]]:
+    def process_records(self, filter_by_country: str | None = None) -> list[dict[str, Any]]:
         """Process all loaded records with filtering and validation."""
         if not self.records:
             self.logger.warning("No records to process")
@@ -208,17 +194,13 @@ class UserProcessor:
                 if country != filter_by_country:
                     continue
             if not self._validate_record(record):
-                self.logger.debug(
-                    f"Record {record.get('id')} failed validation"
-                )
+                self.logger.debug(f"Record {record.get('id')} failed validation")
                 continue
             try:
                 transformed = self._transform_record(record)
                 processed.append(transformed)
             except Exception as e:  # pragma: no cover - defensive
-                self.logger.error(
-                    f"Failed to transform record {record.get('id')}: {e}"
-                )
+                self.logger.error(f"Failed to transform record {record.get('id')}: {e}")
                 continue
         self.logger.info(f"Processed {len(processed)} records successfully")
         return processed

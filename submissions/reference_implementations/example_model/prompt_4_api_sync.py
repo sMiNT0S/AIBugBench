@@ -6,15 +6,14 @@ Handles synchronization of processed user data with external CRM system via REST
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 import requests
 from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
 
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -39,15 +38,10 @@ def sync_users_to_crm(user_data: list[dict[str, Any]], api_token: str) -> str | 
     api_url = "https://api.crm-system.com/v2/users/sync"
 
     # Prepare headers
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_token}"
-    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_token}"}
 
     # Prepare payload
-    payload = {
-        "users": user_data
-    }
+    payload = {"users": user_data}
 
     try:
         # Log the sync attempt
@@ -59,7 +53,7 @@ def sync_users_to_crm(user_data: list[dict[str, Any]], api_token: str) -> str | 
             api_url,
             headers=headers,
             json=payload,
-            timeout=30  # 30 second timeout
+            timeout=30,  # 30 second timeout
         )
 
         # Check for HTTP errors
@@ -68,10 +62,11 @@ def sync_users_to_crm(user_data: list[dict[str, Any]], api_token: str) -> str | 
         # Success cases (200 OK or 202 Accepted)
         if response.status_code in [200, 202]:
             try:
-                response_data = response.json()
-                job_id = response_data.get('job_id')
+                response_data = cast(dict[str, Any], response.json())
+                raw_job_id = response_data.get("job_id")
+                job_id: str | None = str(raw_job_id) if isinstance(raw_job_id, str | int) else None
 
-                if job_id:
+                if job_id is not None:
                     logger.info(f"Successfully synced users. Job ID: {job_id}")
                     print(f"✅ Sync successful! Job ID: {job_id}")
                     return job_id
@@ -84,6 +79,11 @@ def sync_users_to_crm(user_data: list[dict[str, Any]], api_token: str) -> str | 
                 logger.error(f"Failed to parse JSON response: {e}")
                 print("❌ Error: Could not parse response from CRM system")
                 return None
+        else:
+            # Unexpected status code that's not an error but not 200/202
+            logger.warning(f"Unexpected success status code: {response.status_code}")
+            print(f"⚠️  Warning: Unexpected response status {response.status_code}")
+            return None
 
     except ConnectionError as e:
         # Network connectivity issues
@@ -118,7 +118,7 @@ def sync_users_to_crm(user_data: list[dict[str, Any]], api_token: str) -> str | 
             # Try to get more details from response
             try:
                 error_details = response.json()
-                if 'errors' in error_details:
+                if "errors" in error_details:
                     print(f"   Details: {error_details['errors']}")
             except (ValueError, KeyError) as parse_error:
                 logger.error(f"Failed to parse error details from response: {parse_error}")
@@ -177,7 +177,7 @@ def demo_sync():
             "full_name": "Jane Doe",
             "email": "jane.d@example.com",
             "status": "active",
-            "account_tier": "Gold"
+            "account_tier": "Gold",
         },
         {
             "id": 102,
@@ -185,8 +185,8 @@ def demo_sync():
             "full_name": "John Smith",
             "email": "j.smith@workplace.net",
             "status": "active",
-            "account_tier": "Bronze"
-        }
+            "account_tier": "Bronze",
+        },
     ]
 
     print("CRM Sync Demonstration")
@@ -241,21 +241,11 @@ def main():
             "id": 101,
             "first_name": "Jane",
             "last_name": "Doe",
-            "contact": {
-                "email": "jane.d@example.com",
-                "email_provider": "example.com"
-            },
-            "profile": {
-                "country": "USA",
-                "timezone": "America/New_York"
-            },
-            "stats": {
-                "age": 34,
-                "total_posts": 150,
-                "total_comments": 450
-            },
+            "contact": {"email": "jane.d@example.com", "email_provider": "example.com"},
+            "profile": {"country": "USA", "timezone": "America/New_York"},
+            "stats": {"age": 34, "total_posts": 150, "total_comments": 450},
             "account_tier": "Gold",
-            "status": "active"
+            "status": "active",
         }
     ]
 

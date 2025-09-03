@@ -321,7 +321,7 @@ def check_github_security_config() -> CheckResult:
             "GitHub security config",
             "DEFERRED",
             "basic workflows only (CODEOWNERS optional for private repo)",
-            False
+            False,
         )
     return CheckResult("GitHub security config", "PASS", "basic repo security scaffolding", False)
 

@@ -7,51 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+No changes yet.
+
+## [0.9.0-beta] - 2025-09-03
+
+### Upgrade notes
+
+- Removed legacy path `submissions/template/`; use `submissions/templates/template/`.
+- Deleted scripts: `fix_action_pins.py`, `automate_models.py`, `fix_security_noqa.py`, `validate_security.py`. Use `scripts/pin_actions_to_sha.py`, `scripts/update_requirements_lock.py`, `scripts/security_audit.py`.
+- New comparison directory auto-created: `results/collected-results/`.
+- `validate_docs.py` now depends on `validation/docs_core.py` for command classification.
+
 ### Added
 
 - Canonical template README at `submissions/templates/template/README.md` (centralized instructions; legacy single-level path removed)
 - Roadmap bullet for submission onboarding workflow (template consolidation + validation)
 - Reference implementation hardening: Prompt 1–4 reference files fully cleaned (no blanket suppressions; zero Ruff issues)
-- **SAFETY2.0 comprehensive security implementation**: Complete security hardening with enhanced filesystem confinement, subprocess execution blocking, dynamic code execution blocking (`eval/exec/compile` functions), dangerous import protection (blocking `ctypes/marshal/pickle` modules), Windows Job Objects for real CPU/memory limits, comprehensive bypass prevention measures, pre-release security audit script (`scripts/security_audit.py`) with comprehensive canary testing achieving 16/17 mandatory security checks, PR Security Workflow (`.github/workflows/pr-security.yml`) with automated security checks including Ruff security rules, Bandit analysis, Safety vulnerability scanning, pip-audit checks, and security audit validation, and Hash-Pinned Dependencies (`requirements.lock`) with cryptographic hashes for supply chain integrity via pip-tools including production installation guidance and automated generation script
+- **SAFETY2.0 comprehensive security implementation**: Filesystem confinement, subprocess & dynamic code execution blocking (`eval/exec/compile`), dangerous import protection (`ctypes/marshal/pickle`), Windows Job Objects, bypass prevention, pre-release security audit script (`scripts/security_audit.py`), PR security workflow (`.github/workflows/pr-security.yml`), Safety & pip-audit integration, hash‑pinned dependencies (`requirements.lock`).
+- Missing results directory: Created `results/collected-results/` for benchmark comparison functionality
+- Scripts cleanup: Functional lock updater (`scripts/update_requirements_lock.py`), argparse CLIs for `scripts/compare_benchmarks.py` & enhanced `scripts/pin_actions_to_sha.py` (`--list/--dry-run/--apply`), centralized `classify_command` in `validation/docs_core.py`.
+- Dependency lock enforcement: Added CI `lock-verification` job (pip-tools==7.4.1) to fail when `requirements.lock` is out of sync with `requirements.txt`; PR security workflow installs with `--require-hashes`.
 
 ### Changed
 
 - Consolidated duplicate template directories into single canonical tiered path (`submissions/templates/template/`)
-- Updated all public and internal docs, configs, and workflows to remove legacy `submissions/template/` references (CodeQL config, security workflow, secret/semgrep/yamllint ignores, docs, reports, dependency analysis)
-- Refined `.gitignore` to drop obsolete `.bandit` & `reports/` patterns (moved to local exclude) and track only canonical template path
-- Adjusted `pyproject.toml` (Ruff & mypy excludes) to reflect canonical scaffold and remove legacy exclusions
-- Normalized secret scanning configuration and fixed malformed YAML in `.github/secret-patterns.yml`
-- Simplified `.semgrepignore` comment style and canonicalized paths
-- `setup.py`: removed automatic creation of deprecated `submissions/template/` (now only canonical tiered paths are created)
-- Offline automation script (`scripts/automate_models.py`) now references `submissions/templates/template -> submissions/user_submissions/<model>` path
-- Developer guide updated to use tiered structure paths exclusively and adjusted ordered list formatting to satisfy markdown lint
-- Template README refined (frontmatter retained, extraneous fenced code block removed, scoring link updated to `scoring-methodology.md`)
-- Standardized reference prompt docstrings & logging; removed residual whitespace-only lines and legacy `# noqa` usage
-- **SAFETY2.0 security audit workflow**: Updated `.github/workflows/security-audit.yml` to use Python 3.13 matching development environment and project requirements
-- **SAFETY2.0 sitecustomize enhancement**: Modified `run_python_sandboxed()` method to properly load sitecustomize guards by removing `-I` flag and adding PYTHONPATH configuration
+- Strict-core typing & hygiene pass: centralized result TypedDicts, precise runner/validator signatures, added missing return & generic annotations, queue parameterization, modern isinstance unions, import/order & doc script lint cleanup, safe_print rationalization (no user-visible behavior change intended)
+- Updated docs/configs/workflows to remove legacy `submissions/template/` references
+- Refined `.gitignore` (dropped obsolete `.bandit` & `reports/` patterns)
+- Adjusted `pyproject.toml` excludes to reflect canonical scaffold
+- Normalized secret scanning config and fixed malformed YAML in `.github/secret-patterns.yml`
+- Simplified `.semgrepignore` comments & canonicalized paths
+- `setup.py`: removed automatic creation of deprecated legacy scaffold
+- Developer guide & template README refinements
+- Standardized reference prompt docstrings & logging; removed legacy `# noqa` usage
+- Security audit workflow now on Python 3.13
+- Sitecustomize loading fixed by removing `-I` and setting PYTHONPATH
+- Security rules: removed global S603/S105; replaced with targeted per‑file noqa
+- GitHub Actions maintenance: updated `actions/cache` v4.2.4 (SHA pinned)
+- Scripts refactor: one canonical path per function, argparse adoption, centralized doc classification, improved pre-commit & coverage helpers
+- Continuous quality gates: Ruff 0 issues, mypy strict-core 0 errors, full test suite green (branch coverage enforced)
+- Windows-safe CLI printing stabilized; security banner no longer affects exit codes
 
 ### Removed
 
-- Legacy `submissions/template/` directory and all fallback/deprecation notes (project remains private; no migration layer maintained)
-- Legacy migration compatibility test suite replaced with a minimal canonical layout assertion (`tests/test_migration_compatibility.py`)
-- Archival references to legacy template path in reports and internal dependency analysis docs
-- **SAFETY2.0 diagnostic tools**: Removed temporary `test_subprocess_block.py` diagnostic script after successful subprocess blocking validation
+- Legacy `submissions/template/` directory & deprecation notes
+- Legacy migration compatibility test suite (replaced by minimal canonical layout assertion)
+- Archival legacy path references in reports & internal dependency analysis docs
+- Temporary `test_subprocess_block.py` diagnostic script
+- Duplicate / deprecated / redundant scripts: `scripts/fix_action_pins.py`, `scripts/automate_models.py`, `scripts/fix_security_noqa.py`, `scripts/validate_security.py`
 
 ### Fixed
 
-- Broken/obsolete links pointing to legacy template path across README, troubleshooting, internals, scripts documentation, and audience path diagrams
-- Formatting and structure issues in secret patterns and semgrep ignore files introduced by prior ad-hoc edits
-- Template README previously rendered as plain text (fenced code block wrapper removed; proper markdown now renders)
-- Outdated scoring rubric link (`scoring_rubric.md`) updated to consolidated `scoring-methodology.md`
-- Offline automation script long instruction line wrapped to satisfy Ruff line-length rule
-- Markdown ordered list numbering inconsistency in developer guide corrected
-- **SAFETY2.0 subprocess canary test**: Fixed dynamic subprocess canary test to properly execute within sandbox context using correct `cwd` parameter and sitecustomize loading
-- **SAFETY2.0 import ordering**: Resolved all Ruff import ordering violations and code quality issues across security-enhanced modules
-- **SAFETY2.0 run_safety_check() logic fix**: The function was missing explicit return statements in the non-vulnerability case, causing it to implicitly return None (falsy) instead of True.
+- Broken/obsolete links referencing legacy template path
+- Formatting/structure issues in secret patterns & semgrep ignore files
+- Template README previously rendered as plain text (now proper markdown)
+- Outdated scoring rubric link updated to `scoring-methodology.md`
+- Long instruction line in deprecated automation script (wrapped)
+- Markdown ordered list numbering inconsistency in developer guide
+- Subprocess canary test execution in sandbox (cwd + sitecustomize)
+- Import ordering & code quality issues across security modules
+- `run_safety_check()` missing return path (now explicit true on clean case)
+- Deprecated Actions cache references (now v4.2.4 with SHA)
+- Global security rule suppressions replaced with targeted inline justifications
+- Actions now pinned; comparison & coverage artifacts uploaded
+- Security audit workflow stability; integrated secret & dependency scans
 
 ### Planned
 
-- Post-0.8.0 documentation polish and diagram additions
+- Post-0.9.0 documentation polish & diagrams
 - Tiered submission system documentation (developer guide section)
 - Validation package migration (execution + reporting layers) completion
 - Public documentation deployment enablement (GitHub Pages)

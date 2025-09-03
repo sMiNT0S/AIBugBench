@@ -11,8 +11,11 @@ coverage>=7.0.0,<8.0.0        # Code coverage measurement
 bandit>=1.8.0          # Static security analysis
 safety>=3.0.0          # Known vulnerability scanning  
 pip-audit>=2.0.0       # Dependency vulnerability checking
+pip-tools==7.4.1       # Dependency management
 
 # Code quality and linting
 ruff>=0.1.0            # Fast Python linter
 mypy>=1.0.0            # Type checking
+types-PyYAML>=6.0.0    # Type stubs for PyYAML
+types-requests>=2.32.0 # Type stubs for requests
 yamllint>=1.35.0       # YAML style and schema linting

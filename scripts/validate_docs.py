@@ -25,7 +25,6 @@ Safety Features:
 
 import argparse
 from dataclasses import dataclass, field
-from enum import Enum
 import json
 import logging
 import os
@@ -38,110 +37,22 @@ import sys
 import tempfile
 import time
 
-# New internal module import (extracted core parsing helpers)
-try:  # pragma: no cover - fallback if package not present
-    from validation.docs_core import Platform as CorePlatform  # type: ignore
-except Exception:  # pragma: no cover
-    CorePlatform = None  # type: ignore
-
-
-class Platform(Enum):
-    """Supported platform types for command execution."""
-
-    WINDOWS_CMD = "windows_cmd"
-    WINDOWS_POWERSHELL = "windows_powershell"
-    MACOS_LINUX = "macos_linux"
-
-
-class CommandType(Enum):
-    """Types of commands for safety classification."""
-
-    SAFE = "safe"  # Read-only, non-destructive commands
-    SANDBOX = "sandbox"  # Commands that modify files but can be sandboxed
-    DESTRUCTIVE = "destructive"  # Commands that could damage the system
-    NETWORK = "network"  # Commands that access network resources
+from validation.docs_core import Command, CommandType, Platform
 
 
 @dataclass
-class Command:
-    """Represents a command extracted from documentation."""
+class ExtendedCommand(Command):
+    """Extended command with validation-specific fields."""
 
-    content: str
-    platform: Platform
-    file_path: str
-    line_number: int
-    command_type: CommandType = CommandType.SAFE
     expected_output: str | None = None
     context: str = ""
-
-    def __post_init__(self):
-        """Classify command type based on content."""
-        self.command_type = self._classify_command()
-
-    def _classify_command(self) -> CommandType:
-        """Classify command safety level."""
-        content_lower = self.content.lower()
-
-        # Destructive commands - never run these
-        destructive_patterns = [
-            r"\brm\s+-rf\s+/",
-            r"\bdel\s+/s\s+/q",
-            r"\bformat\s+",
-            r"\bfdisk\s+",
-            r"\bmkfs\.",
-            r"\bdd\s+if=",
-            r"\bshutdown\s+",
-            r"\breboot\s+",
-            r"\bkillall\s+",
-            r"\btaskill\s+/f",
-        ]
-
-        for pattern in destructive_patterns:
-            if re.search(pattern, content_lower):
-                return CommandType.DESTRUCTIVE
-
-        # Network commands
-        network_patterns = [
-            r"\bcurl\s+",
-            r"\bwget\s+",
-            r"\bgit\s+clone\s+https?://",
-            r"\bping\s+",
-            r"\bnslookup\s+",
-        ]
-
-        for pattern in network_patterns:
-            if re.search(pattern, content_lower):
-                return CommandType.NETWORK
-
-        # Sandbox commands - file system modifications that can be isolated
-        sandbox_patterns = [
-            r"\bmkdir\s+",
-            r"\btouch\s+",
-            r"\becho\s+.*>\s*",
-            r"\bcp\s+",
-            r"\bcopy\s+",
-            r"\bxcopy\s+",
-            r"\bmv\s+",
-            r"\bmove\s+",
-            r"\brm\s+[^-]",  # rm without dangerous flags
-            r"\bdel\s+[^/]",  # del without dangerous flags
-            r"\bpython\s+setup\.py",
-            r"\bpip\s+install",
-            r"\bpython\s+.*\.py",
-        ]
-
-        for pattern in sandbox_patterns:
-            if re.search(pattern, content_lower):
-                return CommandType.SANDBOX
-
-        return CommandType.SAFE
 
 
 @dataclass
 class ValidationResult:
     """Results from validating a command."""
 
-    command: Command
+    command: ExtendedCommand
     success: bool
     stdout: str = ""
     stderr: str = ""
@@ -249,7 +160,7 @@ class DocumentationValidator:
         else:
             return Platform.MACOS_LINUX
 
-    def scan_documentation(self) -> list[Command]:
+    def scan_documentation(self) -> list[ExtendedCommand]:
         """Scan all documentation files for commands."""
         commands = []
 
@@ -267,7 +178,7 @@ class DocumentationValidator:
         self.logger.info(f"Total commands found: {len(commands)}")
         return commands
 
-    def _extract_commands_from_file(self, file_path: Path) -> list[Command]:
+    def _extract_commands_from_file(self, file_path: Path) -> list[ExtendedCommand]:
         """Extract commands from a single documentation file."""
         commands = []
 
@@ -301,7 +212,7 @@ class DocumentationValidator:
                             # Look for expected output after the command block
                             expected_output = self._find_expected_output(content, match.end())
 
-                            command = Command(
+                            command = ExtendedCommand(
                                 content=cmd.strip(),
                                 platform=platform,
                                 file_path=str(file_path),
@@ -426,6 +337,7 @@ class DocumentationValidator:
         output_intro_pattern = r"(?i)\*\*expected\s+output\*\*.*?\n"
         match = re.search(output_intro_pattern, remaining_content)
 
+        result = None
         if match:
             # Look for the next code block
             code_block_start = match.end()
@@ -433,9 +345,9 @@ class DocumentationValidator:
 
             output_match = re.search(self.output_pattern, remaining_after_intro, re.DOTALL)
             if output_match:
-                return output_match.group(1).strip()
+                result = output_match.group(1).strip()
 
-        return None
+        return result
 
     def _get_context(self, lines: list[str], line_num: int, context_lines: int) -> str:
         """Get context around a line number."""
@@ -482,7 +394,7 @@ class DocumentationValidator:
 
         return summary
 
-    def _validate_single_command(self, command: Command) -> ValidationResult:
+    def _validate_single_command(self, command: ExtendedCommand) -> ValidationResult:
         """Validate a single command."""
         result = ValidationResult(command=command, success=False)
 
@@ -544,7 +456,7 @@ class DocumentationValidator:
 
         return result
 
-    def _should_skip_command(self, command: Command) -> str | None:
+    def _should_skip_command(self, command: ExtendedCommand) -> str | None:
         """Determine if a command should be skipped."""
         # Skip destructive commands if requested
         if self.skip_destructive and command.command_type == CommandType.DESTRUCTIVE:
@@ -566,7 +478,7 @@ class DocumentationValidator:
 
         return None
 
-    def _get_required_tools(self, command: Command) -> list[str]:
+    def _get_required_tools(self, command: ExtendedCommand) -> list[str]:
         """Get list of tools required by a command."""
         tools = []
         content_lower = command.content.lower()
@@ -646,7 +558,7 @@ class DocumentationValidator:
 
         return sandbox
 
-    def _execute_command(self, command: Command) -> tuple[int, str, str]:
+    def _execute_command(self, command: ExtendedCommand) -> tuple[int, str, str]:
         """Execute a command and return (return_code, stdout, stderr)."""
         # Prepare the command for execution
         if command.platform == Platform.WINDOWS_CMD:
@@ -693,9 +605,7 @@ class DocumentationValidator:
 
         return False
 
-    def generate_report(
-        self, summary: ValidationSummary, output_file: Path | None = None
-    ) -> str:
+    def generate_report(self, summary: ValidationSummary, output_file: Path | None = None) -> str:
         """Generate a detailed validation report."""
         report_lines = []
 
@@ -948,30 +858,27 @@ def main():
     for cmd_type, count in type_counts.items():
         print(f"  {cmd_type.value}: {count}")
 
+    # Handle docs-only mode in one structured exit path to avoid mypy "unreachable"
     if args.docs_only:
         if args.list:
-            for c in commands[:50]:  # limit list for brevity
+            for c in commands[:50]:
                 print(f"[{c.platform.value}] {c.content}")
             if len(commands) > 50:
-                print(f"... and {len(commands)-50} more")
+                print(f"... and {len(commands) - 50} more")
         else:
             print("\n--docs-only specified, skipping command execution.")
+
         if args.json:
-            summary_stub = {
-                "total_commands": len(commands),
-                "by_platform": {p.value: 0 for p in Platform},
-                "by_type": {t.value: 0 for t in CommandType},
-            }
-            for c in commands:
-                summary_stub["by_platform"][c.platform.value] = (
-                    summary_stub["by_platform"].get(c.platform.value, 0) + 1
-                )
-                summary_stub["by_type"][c.command_type.value] = (
-                    summary_stub["by_type"].get(c.command_type.value, 0) + 1
-                )
+            by_platform: dict[str, int] = {p.value: c for p, c in platform_counts.items()}
+            by_type: dict[str, int] = {t.value: c for t, c in type_counts.items()}
+
             json_payload = {
                 "mode": "list" if args.list else "scan",
-                "summary": summary_stub,
+                "summary": {
+                    "total_commands": len(commands),
+                    "by_platform": by_platform,
+                    "by_type": by_type,
+                },
             }
             if args.json_file:
                 try:
@@ -982,6 +889,8 @@ def main():
                 except Exception as e:  # pragma: no cover
                     print(f"Failed writing JSON file: {e}")
             print(json.dumps(json_payload, indent=2))
+
+        # Single exit for this branch prevents mypy false-positive "unreachable"
         return
 
     # Validate commands

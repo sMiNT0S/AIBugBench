@@ -4,6 +4,7 @@ Thin wrappers around functions that currently live in the `scripts/validate_secu
 script so they can be imported and (lightly) unit tested. The goal is to
 incrementally move logic here while keeping the CLI behaviour stable.
 """
+
 from __future__ import annotations
 
 import json

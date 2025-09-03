@@ -24,11 +24,7 @@ from typing import Any
 
 # Platform detection
 CURRENT_PLATFORM = platform.system().lower()
-PLATFORM_MAPPING = {
-    "windows": "windows-latest",
-    "darwin": "macos-latest",
-    "linux": "ubuntu-latest"
-}
+PLATFORM_MAPPING = {"windows": "windows-latest", "darwin": "macos-latest", "linux": "ubuntu-latest"}
 
 
 def safe_print(message: str) -> None:
@@ -37,7 +33,7 @@ def safe_print(message: str) -> None:
         print(message)
     except UnicodeEncodeError:
         # Fallback to ASCII-safe version
-        safe_message = message.encode('ascii', errors='replace').decode('ascii')
+        safe_message = message.encode("ascii", errors="replace").decode("ascii")
         print(safe_message)
 
 
@@ -68,10 +64,10 @@ class PlatformBenchmarkValidator:
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
-                errors='replace',
+                encoding="utf-8",
+                errors="replace",
                 timeout=300,  # 5-minute timeout
-                check=True
+                check=True,
             )
 
             # Calculate execution time
@@ -90,7 +86,7 @@ class PlatformBenchmarkValidator:
                 else:
                     raise FileNotFoundError(f"No results file found in {results_dir}")
 
-            with open(results_file, encoding='utf-8') as f:
+            with open(results_file, encoding="utf-8") as f:
                 benchmark_data = json.load(f)
 
             # Enhance with platform and timing data
@@ -103,7 +99,7 @@ class PlatformBenchmarkValidator:
                 "model_name": model_name,
                 "results": benchmark_data,  # This is the loaded JSON data
                 "stdout": result.stdout,
-                "stderr": result.stderr
+                "stderr": result.stderr,
             }
 
             return platform_results
@@ -112,9 +108,7 @@ class PlatformBenchmarkValidator:
             raise RuntimeError(f"Benchmark timeout after 5 minutes for model: {model_name}") from e
         except subprocess.CalledProcessError as e:
             raise RuntimeError(
-                f"Benchmark failed for model {model_name}:\n"
-                f"stdout: {e.stdout}\n"
-                f"stderr: {e.stderr}"
+                f"Benchmark failed for model {model_name}:\nstdout: {e.stdout}\nstderr: {e.stderr}"
             ) from e
 
     def extract_scores(self, results: dict[str, Any]) -> dict[str, float]:
@@ -149,7 +143,7 @@ class PlatformBenchmarkValidator:
             "model_name": results_list[0]["model_name"],
             "score_comparison": {},
             "performance_stats": {},
-            "inconsistencies": []
+            "inconsistencies": [],
         }
 
         # Extract scores from all platforms
@@ -177,17 +171,19 @@ class PlatformBenchmarkValidator:
             # Check for score inconsistencies (zero tolerance)
             if len(set(prompt_scores.values())) > 1:
                 comparison["status"] = "inconsistent"
-                comparison["inconsistencies"].append({
-                    "prompt": prompt,
-                    "scores": prompt_scores,
-                    "difference": max(prompt_scores.values()) - min(prompt_scores.values())
-                })
+                comparison["inconsistencies"].append(
+                    {
+                        "prompt": prompt,
+                        "scores": prompt_scores,
+                        "difference": max(prompt_scores.values()) - min(prompt_scores.values()),
+                    }
+                )
 
         # Performance analysis
         comparison["performance_stats"] = {
             "execution_times": execution_times,
             "avg_time": sum(execution_times.values()) / len(execution_times),
-            "time_variance": max(execution_times.values()) - min(execution_times.values())
+            "time_variance": max(execution_times.values()) - min(execution_times.values()),
         }
 
         # Check for performance regressions (>20% difference)
@@ -195,13 +191,15 @@ class PlatformBenchmarkValidator:
         for platform, time_val in execution_times.items():
             deviation = abs(time_val - avg_time) / avg_time
             if deviation > 0.20:  # 20% threshold
-                comparison["inconsistencies"].append({
-                    "type": "performance",
-                    "platform": platform,
-                    "deviation_percent": round(deviation * 100, 1),
-                    "execution_time": time_val,
-                    "average_time": avg_time
-                })
+                comparison["inconsistencies"].append(
+                    {
+                        "type": "performance",
+                        "platform": platform,
+                        "deviation_percent": round(deviation * 100, 1),
+                        "execution_time": time_val,
+                        "average_time": avg_time,
+                    }
+                )
 
         return comparison
 
@@ -209,7 +207,7 @@ class PlatformBenchmarkValidator:
         """Save results to file."""
         output_path = self.results_dir / filename
 
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
 
         return output_path
@@ -233,7 +231,7 @@ class PlatformBenchmarkValidator:
                 "expected_score": expected_score,
                 "within_tolerance": abs(total_score - expected_score) <= tolerance,
                 "individual_scores": scores,
-                "full_results": results
+                "full_results": results,
             }
 
             if validation_result["within_tolerance"]:
@@ -258,11 +256,11 @@ class PlatformBenchmarkValidator:
                 "error_message": str(e),
                 "total_score": 0.0,
                 "expected_score": expected_score,
-                "within_tolerance": False
+                "within_tolerance": False,
             }
 
 
-def main():
+def main() -> None:
     """Main entry point for platform validation."""
     project_root = Path(__file__).parent.parent
     validator = PlatformBenchmarkValidator(project_root)

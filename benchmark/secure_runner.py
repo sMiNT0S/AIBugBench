@@ -6,6 +6,7 @@ Phase 1 baseline + Phase 5.5 hardening additions:
     - Isolated Python subprocess helper (-B) with resource limits
     - Original run_with_limits retained for in-process call patterns
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -17,21 +18,40 @@ import subprocess
 import sys
 
 try:  # Windows compatibility: resource not available
-    import resource  # type: ignore[attr-defined]
+    import resource
 except ImportError:  # pragma: no cover - platform specific
-    resource = None  # type: ignore[assignment]
+    resource = None
 
 # Windows Job Objects for real resource limits
 try:  # Windows-specific imports
-    import win32api  # type: ignore[import-untyped]
-    import win32job  # type: ignore[import-untyped]
+    import win32api
+    import win32job
+
     WINDOWS_JOB_SUPPORT = True
 except ImportError:  # pragma: no cover - platform specific
     WINDOWS_JOB_SUPPORT = False
 
+# ---- Platform RLIMIT typing shim (Windows-safe) ----
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Any
+
+try:
+    import resource as _resource  # POSIX only
+except Exception:
+    _resource = None
+
+if TYPE_CHECKING:
+    # Satisfy the type checker; actual values set at runtime below
+    RLIMIT_CPU: int
+    RLIMIT_AS: int
+    RLIMIT_FSIZE: int
+else:
+    RLIMIT_CPU = getattr(_resource, "RLIMIT_CPU", 0) if _resource else 0
+    RLIMIT_AS = getattr(_resource, "RLIMIT_AS", 0) if _resource else 0
+    RLIMIT_FSIZE = getattr(_resource, "RLIMIT_FSIZE", 0) if _resource else 0
+
 import shutil
 import tempfile
-from typing import Any
 
 SENSITIVE_ENV_PATTERNS = [
     "API",
@@ -59,7 +79,7 @@ class SecureRunner:
         self._original_env = os.environ.copy()
 
     @contextmanager
-    def sandbox(self):  # type: ignore[override]
+    def sandbox(self) -> Generator[Any, None, None]:
         """Context manager establishing the sandbox directory and environment."""
         temp_dir = Path(tempfile.mkdtemp(prefix="aibugbench_"))
         sandbox_dir = temp_dir / "sandbox"
@@ -146,9 +166,7 @@ class SecureRunner:
                     "ALLOW_NETWORK = os.environ.get('AIBUGBENCH_ALLOW_NETWORK','0') in "
                     "('1','true','yes','on')"
                 ),
-                (
-                    "SANDBOX_ROOT = pathlib.Path(os.environ.get('AIBUGBENCH_SANDBOX_ROOT','.') )"
-                ),
+                ("SANDBOX_ROOT = pathlib.Path(os.environ.get('AIBUGBENCH_SANDBOX_ROOT','.') )"),
                 "SANDBOX_ROOT = SANDBOX_ROOT.resolve()",
                 "",
                 "# Install security guards using closures to hide real functions",
@@ -222,8 +240,10 @@ class SecureRunner:
                 "",
                 "    def _check_path_or_raise(path, operation='access'):",
                 "        if not _path_inside_sandbox(path):",
-                ("            raise RuntimeError("
-                 "f'filesystem {operation} denied outside sandbox: {path}')"),
+                (
+                    "            raise RuntimeError("
+                    "f'filesystem {operation} denied outside sandbox: {path}')"
+                ),
                 "",
                 "    # Blocking functions",
                 "    def _network_blocked(*a, **k):",
@@ -393,21 +413,21 @@ class SecureRunner:
         memory_mb: planned default; future flag --mem will allow override (512/768/1024).
         """
 
-        def target(queue: multiprocessing.Queue):  # type: ignore[type-arg]
+        def target(queue: multiprocessing.Queue[tuple[str, Any]]) -> None:
             try:
                 # Apply CPU limit
-                if resource is not None and hasattr(resource, "RLIMIT_CPU"):
-                    resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
+                if resource and hasattr(resource, "setrlimit") and hasattr(resource, "RLIMIT_CPU"):
+                    resource.setrlimit(RLIMIT_CPU, (timeout, timeout))
                 # Apply address space (best-effort)
-                if resource is not None and hasattr(resource, "RLIMIT_AS"):
+                if resource and hasattr(resource, "setrlimit") and hasattr(resource, "RLIMIT_AS"):
                     bytes_limit = memory_mb * 1024 * 1024
-                    resource.setrlimit(resource.RLIMIT_AS, (bytes_limit, bytes_limit))
+                    resource.setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))
                 result = func(*args)
                 queue.put(("ok", result))
             except Exception as exc:  # Broad exception boundary acceptable at sandbox edge
                 queue.put(("err", f"{type(exc).__name__}: {exc}"))
 
-        queue: multiprocessing.Queue = multiprocessing.Queue()
+        queue: multiprocessing.Queue[tuple[str, Any]] = multiprocessing.Queue()
         process = multiprocessing.Process(target=target, args=(queue,))
         process.start()
         process.join(timeout=timeout + 5)
@@ -467,18 +487,35 @@ class SecureRunner:
             # POSIX: use traditional rlimits via preexec_fn
             preexec = None
             if resource is not None and hasattr(resource, "setrlimit"):
-                def _limits():  # type: ignore[override]
+
+                def _limits() -> None:
                     with suppress(Exception):
-                        if hasattr(resource, "RLIMIT_CPU"):
-                            resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
-                        if hasattr(resource, "RLIMIT_AS"):
+                        has_setrlimit_cpu = (
+                            resource
+                            and hasattr(resource, "setrlimit")
+                            and hasattr(resource, "RLIMIT_CPU")
+                        )
+                        if has_setrlimit_cpu:
+                            resource.setrlimit(RLIMIT_CPU, (timeout, timeout))  # type: ignore[attr-defined]
+                        has_setrlimit_as = (
+                            resource
+                            and hasattr(resource, "setrlimit")
+                            and hasattr(resource, "RLIMIT_AS")
+                        )
+                        if has_setrlimit_as:
                             bytes_limit = memory_mb * 1024 * 1024
-                            resource.setrlimit(resource.RLIMIT_AS, (bytes_limit, bytes_limit))
-                        if hasattr(resource, "RLIMIT_FSIZE"):
-                            resource.setrlimit(
-                                resource.RLIMIT_FSIZE,
+                            resource.setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))  # type: ignore[attr-defined]
+                        has_setrlimit_fsize = (
+                            resource
+                            and hasattr(resource, "setrlimit")
+                            and hasattr(resource, "RLIMIT_FSIZE")
+                        )
+                        if has_setrlimit_fsize:
+                            resource.setrlimit(  # type: ignore[attr-defined]
+                                RLIMIT_FSIZE,
                                 (10 * 1024 * 1024, 10 * 1024 * 1024),
                             )
+
                 preexec = _limits
 
             return subprocess.run(  # noqa: S603  # Secure sandbox execution
@@ -490,7 +527,7 @@ class SecureRunner:
                 text=True,
                 timeout=timeout,
                 check=False,
-                preexec_fn=preexec,  # type: ignore[arg-type]
+                preexec_fn=preexec,
             )
 
     def _run_with_job_objects(
@@ -525,13 +562,13 @@ class SecureRunner:
 
         # Configure memory and process limits
         info = win32job.QueryInformationJobObject(job, win32job.JobObjectExtendedLimitInformation)
-        info['BasicLimitInformation']['LimitFlags'] |= (
-            win32job.JOB_OBJECT_LIMIT_ACTIVE_PROCESS |
-            win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE |
-            win32job.JOB_OBJECT_LIMIT_PROCESS_MEMORY
+        info["BasicLimitInformation"]["LimitFlags"] |= (
+            win32job.JOB_OBJECT_LIMIT_ACTIVE_PROCESS
+            | win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            | win32job.JOB_OBJECT_LIMIT_PROCESS_MEMORY
         )
-        info['BasicLimitInformation']['ActiveProcessLimit'] = 1
-        info['ProcessMemoryLimit'] = memory_mb * 1024 * 1024
+        info["BasicLimitInformation"]["ActiveProcessLimit"] = 1
+        info["ProcessMemoryLimit"] = memory_mb * 1024 * 1024
         win32job.SetInformationJobObject(job, win32job.JobObjectExtendedLimitInformation, info)
 
         try:

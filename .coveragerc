@@ -1,0 +1,29 @@
+# .coveragerc
+[run]
+branch = True
+parallel = True
+# Limit measurement to the code that matters
+source =
+    benchmark
+    validation
+    run_benchmark.py
+# Don’t accidentally measure generated artifacts or venvs
+omit =
+    venv/*
+    .venv/*
+    **/.tox/*
+    **/.mypy_cache/*
+    **/.pytest_cache/*
+    **/htmlcov/*
+    **/build/*
+    **/dist/*
+    tests/*
+
+[report]
+show_missing = True
+skip_covered = False
+
+[paths]
+# Normalize paths across CI runners if needed later
+source =
+    .

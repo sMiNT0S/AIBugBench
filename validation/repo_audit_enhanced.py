@@ -45,16 +45,16 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from typing import Any
+from typing import Any, TypedDict, cast
 
 try:
     import tomllib  # py311+
 except Exception:  # pragma: no cover - optional
-    tomllib = None  # type: ignore
+    tomllib = None
 try:
-    import yaml  # PyYAML
+    import yaml
 except Exception:  # pragma: no cover - optional
-    yaml = None  # type: ignore
+    yaml = None
 
 DEFAULT_TIMEOUT = float(os.environ.get("AIBB_TIMEOUT", "25"))
 
@@ -162,7 +162,11 @@ def load_toml_file(p: Path) -> dict[str, Any]:
     if tomllib is None or not p.exists():
         return {}
     try:
-        return tomllib.loads(read_text(p))  # type: ignore[arg-type]
+        text = read_text(p)
+        data = tomllib.loads(text)  # module is non-None on this branch
+        if isinstance(data, dict):
+            return cast(dict[str, Any], data)
+        return {}
     except Exception:
         return {}
 
@@ -270,10 +274,7 @@ def docstring_coverage(py_files: list[Path]) -> dict[str, Any]:
         if not node:
             continue
         for ch in ast.walk(node):
-            if isinstance(
-                ch,
-                ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef,
-            ):
+            if isinstance(ch, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
                 total_defs += 1
                 if ast.get_docstring(ch):
                     with_doc += 1
@@ -286,9 +287,9 @@ def extract_version_from_changelog(changelog: str) -> str | None:
     return m.group(1) if m else None
 
 
-def requirements_info(root: Path) -> dict[str, Any]:
+def requirements_info(root: Path) -> RequirementsInfo:
     req = root / "requirements.txt"
-    info = {"exists": req.exists(), "pinned": 0, "total": 0, "lines": []}
+    info: RequirementsInfo = {"exists": req.exists(), "pinned": 0, "total": 0, "lines": []}
     if not req.exists():
         return info
     for line in read_text(req).splitlines():
@@ -308,10 +309,11 @@ def pyproject_info(root: Path) -> dict[str, Any]:
     if not p.exists():
         return info
     data = load_toml_file(p)
-    proj = data.get("project", {})
-    info["version"] = proj.get("version")
-    info["python_requires"] = proj.get("requires-python")
-    info["dependencies"] = proj.get("dependencies", [])
+    proj = cast(dict[str, Any], data.get("project", {}))
+    info["version"] = cast(str | None, proj.get("version"))
+    info["python_requires"] = cast(str | None, proj.get("requires-python"))
+    deps = proj.get("dependencies", [])
+    info["dependencies"] = deps if isinstance(deps, list) else []
     return info
 
 
@@ -325,9 +327,26 @@ def tests_info(root: Path) -> dict[str, Any]:
     return {"count": len(tests), "paths": [str(p) for p in tests]}
 
 
-def ci_info(root: Path) -> dict[str, Any]:
+class CIInfo(TypedDict):
+    exists: bool
+    workflows: list[str]
+    has_matrix: bool
+    tested_os: set[str]
+    tested_py: set[str]
+    missing_permissions: list[str]
+    unversioned_actions: list[str]
+
+
+class RequirementsInfo(TypedDict):
+    exists: bool
+    pinned: int
+    total: int
+    lines: list[str]
+
+
+def ci_info(root: Path) -> CIInfo:
     wf_dir = root / ".github" / "workflows"
-    details = {
+    details: CIInfo = {
         "exists": wf_dir.exists(),
         "workflows": [],
         "has_matrix": False,
@@ -419,9 +438,8 @@ def py_security_lints(py_files: list[Path], allowlist: set[str] | None = None) -
                     )
                     if not has_loader:
                         findings.append(f"{f}: yaml.load without Loader")
-                if (
-                    name in {"subprocess.run", "subprocess.call", "subprocess.Popen"}
-                    and not (waived(src_line) or allowed("subprocess_shell", f))
+                if name in {"subprocess.run", "subprocess.call", "subprocess.Popen"} and not (
+                    waived(src_line) or allowed("subprocess_shell", f)
                 ):
                     for kw in node.keywords or []:
                         if (
@@ -430,9 +448,8 @@ def py_security_lints(py_files: list[Path], allowlist: set[str] | None = None) -
                             and kw.value.value is True
                         ):
                             findings.append(f"{f}: subprocess with shell=True")
-                if (
-                    name in {"pickle.load", "pickle.loads"}
-                    and not (waived(src_line) or allowed("pickle", f))
+                if name in {"pickle.load", "pickle.loads"} and not (
+                    waived(src_line) or allowed("pickle", f)
                 ):
                     findings.append(f"{f}: pickle usage detected")
                 if name in {"eval", "exec"} and not (waived(src_line) or allowed("eval_exec", f)):
@@ -444,13 +461,9 @@ def py_security_lints(py_files: list[Path], allowlist: set[str] | None = None) -
                 line_end = len(txt)
             line = txt[line_start:line_end]
             raw = line.replace(" ", "")
-            if "timeout=" not in line and not (
-                waived(line) or allowed("requests_no_timeout", f)
-            ):
+            if "timeout=" not in line and not (waived(line) or allowed("requests_no_timeout", f)):
                 findings.append(f"{f}: requests call without timeout")
-            if "verify=False" in raw and not (
-                waived(line) or allowed("requests_verify_false", f)
-            ):
+            if "verify=False" in raw and not (waived(line) or allowed("requests_verify_false", f)):
                 findings.append(f"{f}: requests call with verify=False")
     return findings
 
@@ -467,7 +480,8 @@ def secret_scan(files: list[Path], allow_test_noise: bool = True, max_hits: int 
             continue
         for m in SECRET_RE.finditer(txt):
             snippet = m.group(0)
-            if PLACEHOLDER_RE.search(snippet):
+            is_placeholder = PLACEHOLDER_RE.search(snippet) is not None
+            if is_placeholder:
                 continue
             rel = p.as_posix().lower()
             if allow_test_noise and any(
@@ -480,7 +494,7 @@ def secret_scan(files: list[Path], allow_test_noise: bool = True, max_hits: int 
             if line_end == -1:
                 line_end = len(txt)
             line = txt[line_start:line_end].lower()
-            if any(
+            should_skip = any(
                 tag in line
                 for tag in [
                     "# nosec",
@@ -491,11 +505,11 @@ def secret_scan(files: list[Path], allow_test_noise: bool = True, max_hits: int 
                     "mock",
                     "stub",
                 ]
-            ):
-                continue
-            hits.append(f"{p}:{snippet[:120]}")
-            if len(hits) >= max_hits:
-                return hits
+            )
+            if not should_skip:
+                hits.append(f"{p}:{snippet[:120]}")
+                if len(hits) >= max_hits:
+                    return hits
     return hits
 
 
@@ -512,7 +526,7 @@ def list_files(root: Path, exts: tuple[str, ...], include_hidden_dirs: bool = Fa
             if not p.is_file():
                 continue
             rel_parts = p.relative_to(root).parts
-            is_hidden = any(part.startswith('.') and part not in {'.', '..'} for part in rel_parts)
+            is_hidden = any(part.startswith(".") and part not in {".", ".."} for part in rel_parts)
             if is_hidden and not include_hidden_dirs:
                 continue
             if p.suffix.lower() in exts:
@@ -754,7 +768,7 @@ def load_config(repo: Path) -> dict[str, Any]:
         return {}
 
 
-def print_summary(report: dict[str, Any]):
+def print_summary(report: dict[str, Any]) -> None:
     scores = report["scores"]
     weights = report["weights"]
     total = report["total"]
@@ -828,8 +842,7 @@ def _find_repo_root(start: Path) -> Path:
     cur = start.resolve()
     for _ in range(15):  # safety bound
         if any(
-            (cur / marker).exists()
-            for marker in (".git", "pyproject.toml", "requirements.txt")
+            (cur / marker).exists() for marker in (".git", "pyproject.toml", "requirements.txt")
         ):
             return cur
         if cur.parent == cur:
@@ -878,12 +891,14 @@ def main() -> int:
     print_summary(report)
     if args.json:
         try:
-            def ser(o):
+
+            def ser(o: Any) -> Any:
                 if isinstance(o, set):
                     return sorted(o)
                 if isinstance(o, Path):
                     return str(o)
                 return o
+
             Path(args.json).write_text(json.dumps(report, indent=2, default=ser), encoding="utf-8")
             print(f"\nWrote detailed JSON report to {args.json}")
         except Exception as e:  # pragma: no cover

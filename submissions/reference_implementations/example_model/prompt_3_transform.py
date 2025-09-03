@@ -11,14 +11,15 @@ import copy
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+
 def transform_and_enrich_users(user_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Transform and enrich user records.
 
@@ -42,10 +43,10 @@ def transform_and_enrich_users(user_list: list[dict[str, Any]]) -> list[dict[str
             transformed_user = copy.deepcopy(user)
 
             # 1. Standardize IDs - ensure it's an integer
-            user_id = user.get('id')
+            user_id = user.get("id")
             if user_id is not None:
                 try:
-                    transformed_user['id'] = int(user_id)
+                    transformed_user["id"] = int(user_id)
                 except (ValueError, TypeError) as exc:
                     logger.warning(
                         "User at index %s: Could not convert ID '%s' to integer: %s",
@@ -58,14 +59,14 @@ def transform_and_enrich_users(user_list: list[dict[str, Any]]) -> list[dict[str
                 logger.warning(f"User at index {idx}: Missing 'id' field")
 
             # 2. Enrich data - add email_provider to contact dictionary
-            if 'contact' in transformed_user and isinstance(transformed_user['contact'], dict):
-                email = transformed_user['contact'].get('email')
+            if "contact" in transformed_user and isinstance(transformed_user["contact"], dict):
+                email = transformed_user["contact"].get("email")
 
-                if email and isinstance(email, str) and '@' in email:
+                if email and isinstance(email, str) and "@" in email:
                     try:
                         # Extract domain from email
-                        domain = email.split('@')[1]
-                        transformed_user['contact']['email_provider'] = domain
+                        domain = email.split("@")[1]
+                        transformed_user["contact"]["email_provider"] = domain
                         logger.debug(
                             "User %s: Added email provider '%s'", transformed_user.get("id"), domain
                         )
@@ -96,14 +97,14 @@ def transform_and_enrich_users(user_list: list[dict[str, Any]]) -> list[dict[str
                 )
 
             # 3. Add account_tier based on activity
-            transformed_user['account_tier'] = calculate_account_tier(transformed_user)
+            transformed_user["account_tier"] = calculate_account_tier(transformed_user)
 
             # 4. Type correction - ensure age is always an integer
-            if 'stats' in transformed_user and isinstance(transformed_user['stats'], dict):
-                age = transformed_user['stats'].get('age')
+            if "stats" in transformed_user and isinstance(transformed_user["stats"], dict):
+                age = transformed_user["stats"].get("age")
                 if age is not None:
                     try:
-                        transformed_user['stats']['age'] = int(age)
+                        transformed_user["stats"]["age"] = int(age)
                     except (ValueError, TypeError) as exc:
                         logger.warning(
                             "User %s: Could not convert age '%s' to integer: %s",
@@ -112,11 +113,9 @@ def transform_and_enrich_users(user_list: list[dict[str, Any]]) -> list[dict[str
                             exc,
                         )
                         # Remove invalid age rather than keeping bad data
-                        del transformed_user['stats']['age']
+                        del transformed_user["stats"]["age"]
                 else:
-                    logger.warning(
-                        "User %s: Age is missing in stats", transformed_user.get("id")
-                    )
+                    logger.warning("User %s: Age is missing in stats", transformed_user.get("id"))
             else:
                 logger.warning(
                     "User %s: Missing or invalid 'stats' field", transformed_user.get("id")
@@ -124,13 +123,12 @@ def transform_and_enrich_users(user_list: list[dict[str, Any]]) -> list[dict[str
 
             transformed_users.append(transformed_user)
         except Exception as exc:  # pragma: no cover - defensive
-            logger.error(
-                "User at index %s: Unexpected error during transformation: %s", idx, exc
-            )
+            logger.error("User at index %s: Unexpected error during transformation: %s", idx, exc)
             # Still add the user even if transformation partially failed
             transformed_users.append(user)
     logger.info(f"Successfully transformed {len(transformed_users)} users")
     return transformed_users
+
 
 def calculate_account_tier(user: dict[str, Any]) -> str:
     """Calculate account tier based on user activity.
@@ -147,11 +145,11 @@ def calculate_account_tier(user: dict[str, Any]) -> str:
         Account tier as string: "Gold", "Silver", or "Bronze"
     """
     try:
-        stats = user.get('stats', {})
+        stats = user.get("stats", {})
 
         # Safely get posts and comments, converting to int if needed
-        total_posts = stats.get('total_posts', 0)
-        total_comments = stats.get('total_comments', 0)
+        total_posts = stats.get("total_posts", 0)
+        total_comments = stats.get("total_comments", 0)
 
         # Handle string values
         if isinstance(total_posts, str):
@@ -173,6 +171,7 @@ def calculate_account_tier(user: dict[str, Any]) -> str:
         )
     return "Bronze"
 
+
 def load_user_data(file_path: str) -> list[dict[str, Any]]:
     """Load user data from JSON file.
 
@@ -190,13 +189,17 @@ def load_user_data(file_path: str) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(f"Data file not found: {file_path}")
 
-    with path.open('r') as file:
+    with path.open("r") as file:
         data = json.load(file)
 
-    if 'users' not in data:
-        raise ValueError("JSON file missing 'users' key")
+    if not isinstance(data, dict):
+        raise ValueError("Top-level JSON must be an object with a 'users' key")
 
-    return data['users']
+    users_obj = data.get("users")
+    if not isinstance(users_obj, list):
+        raise ValueError("'users' must be a list")
+
+    return cast(list[dict[str, Any]], users_obj)
 
 
 def main():
@@ -206,7 +209,7 @@ def main():
     try:
         # Load the user data
         logger.info("Loading user data from user_data.json...")
-        users = load_user_data('user_data.json')
+        users = load_user_data("user_data.json")
         logger.info(f"Loaded {len(users)} users")
 
         # Transform and enrich the users
@@ -214,21 +217,21 @@ def main():
         transformed_users = transform_and_enrich_users(users)
 
         # Print the results
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("TRANSFORMED AND ENRICHED USER DATA")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
         for user in transformed_users:
             print(f"User ID: {user.get('id')} ({type(user.get('id')).__name__})")
             print(f"  Name: {user.get('first_name')} {user.get('last_name')}")
             print(f"  Account Tier: {user.get('account_tier')}")
 
-            contact = user.get('contact', {})
+            contact = user.get("contact", {})
             print(f"  Email: {contact.get('email')}")
             print(f"  Email Provider: {contact.get('email_provider', 'N/A')}")
 
-            stats = user.get('stats', {})
-            age = stats.get('age')
+            stats = user.get("stats", {})
+            age = stats.get("age")
             print(f"  Age: {age} ({type(age).__name__ if age is not None else 'None'})")
             print(f"  Posts: {stats.get('total_posts')}")
             print(f"  Comments: {stats.get('total_comments')}")
@@ -244,6 +247,7 @@ def main():
         logger.error("JSON parsing error: %s", exc)
     except Exception as exc:  # pragma: no cover - defensive
         logger.error("Unexpected error: %s", exc)
+
 
 if __name__ == "__main__":
     main()

@@ -1,12 +1,14 @@
 """Validators for AI Code Benchmark prompts."""
 
+from collections.abc import Callable
+from functools import wraps
 import importlib.util
 import json
 import os
 from pathlib import Path
 import re
 import tempfile
-from typing import Any
+from typing import Any, Concatenate, TypeVar
 from unittest.mock import Mock, patch
 
 import requests
@@ -14,6 +16,10 @@ import yaml
 from yaml.constructor import ConstructorError
 
 from .secure_runner import SecureRunner
+from .types import PromptResult as ValidationResult
+from .typing_helpers import P, R
+
+Self = TypeVar("Self", bound="PromptValidators")
 
 
 def _sandbox_enabled() -> bool:
@@ -27,72 +33,78 @@ def _sandbox_enabled() -> bool:
     return val not in {"1", "true", "yes", "on"}
 
 
-def sandbox_validator(func):  # type: ignore[override]
-    """Decorator to execute validator logic inside SecureRunner sandbox (Phase 2).
+def run_in_sandbox(
+    fn: Callable[Concatenate[Self, P], R],
+    self: Self,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> R:
+    """Internal helper executing a validator method inside a SecureRunner sandbox.
 
-    - Determines model folder from first Path arg (under submissions/<tier>/<model>/...)
-    - Maps Path args into sandbox copy (sandbox/submission/...)
-    - Temporarily rewires self.test_data_dir to sandbox/test_data if present.
-    Assumptions (documented in developer guide): model path depth = submissions/<tier>/<model>/.
+    Mirrors the prior sandbox logic while remaining reusable and type-safe.
     """
-    def wrapper(self, *args, **kwargs):  # type: ignore[override]
-        if not _sandbox_enabled():
-            return func(self, *args, **kwargs)
-        if not args or not hasattr(args[0], 'parts'):
-            return func(self, *args, **kwargs)
-        first_path = args[0]
-        try:
-            parts = list(first_path.parts)
-            if 'submissions' not in parts:
-                return func(self, *args, **kwargs)
-            idx = parts.index('submissions')
-            # Expect: submissions/<tier>/<model>/...
-            if len(parts) < idx + 3:
-                return func(self, *args, **kwargs)
-            tier = parts[idx + 1]
-            model = parts[idx + 2]
-            model_name = f"{tier}/{model}"
-        except Exception:
-            return func(self, *args, **kwargs)
+    if not _sandbox_enabled():
+        return fn(self, *args, **kwargs)
+    if not args or not hasattr(args[0], "parts"):
+        return fn(self, *args, **kwargs)
+    first_path = args[0]
+    try:
+        parts = list(first_path.parts)
+        if "submissions" not in parts:
+            return fn(self, *args, **kwargs)
+        idx = parts.index("submissions")
+        if len(parts) < idx + 3:
+            return fn(self, *args, **kwargs)
+        tier = parts[idx + 1]
+        model = parts[idx + 2]
+        model_name = f"{tier}/{model}"
+    except Exception:
+        return fn(self, *args, **kwargs)
 
-        sr = SecureRunner(model_name=model_name)
-        with sr.sandbox() as sb_dir:
-            # Remap Path arguments inside sandbox submission root
-            new_args = []
-            submission_root = sb_dir / 'submission'
-            for a in args:
-                if hasattr(a, 'parts') and 'submissions' in getattr(a, 'parts', []):
-                    a_parts = list(a.parts)
-                    try:
-                        a_idx = a_parts.index('submissions')
-                        # Skip submissions/<tier>/<model>
-                        rel = (
-                            Path(*a_parts[a_idx + 3:])
-                            if len(a_parts) > a_idx + 3
-                            else Path(a_parts[-1])
-                        )
-                        sandbox_path = submission_root / rel
-                        new_args.append(sandbox_path)
-                    except Exception:
-                        new_args.append(a)
-                else:
+    sr = SecureRunner(model_name=model_name)
+    with sr.sandbox() as sb_dir:
+        new_args: list[Any] = []
+        submission_root = sb_dir / "submission"
+        for a in args:
+            if hasattr(a, "parts") and "submissions" in getattr(a, "parts", []):
+                a_parts = list(a.parts)
+                try:
+                    a_idx = a_parts.index("submissions")
+                    rel = (
+                        Path(*a_parts[a_idx + 3 :])
+                        if len(a_parts) > a_idx + 3
+                        else Path(a_parts[-1])
+                    )
+                    sandbox_path = submission_root / rel
+                    new_args.append(sandbox_path)
+                except Exception:
                     new_args.append(a)
+            else:
+                new_args.append(a)
 
-            # Swap test_data_dir to sandbox copy if available
-            original_test_data = getattr(self, 'test_data_dir', None)
-            sandbox_test_data = sb_dir / 'test_data'
-            if sandbox_test_data.exists():
-                self.test_data_dir = sandbox_test_data  # type: ignore[attr-defined]
-            try:
-                return func(self, *new_args, **kwargs)
-            finally:
-                if original_test_data is not None:
-                    self.test_data_dir = original_test_data  # type: ignore[attr-defined]
+        original_test_data = getattr(self, "test_data_dir", None)
+        sandbox_test_data = sb_dir / "test_data"
+        if sandbox_test_data.exists():
+            self.test_data_dir = sandbox_test_data
+        try:
+            return fn(self, *new_args, **kwargs)
+        finally:
+            if original_test_data is not None:
+                self.test_data_dir = original_test_data
+
+
+def sandbox_validator(fn: Callable[Concatenate[Self, P], R]) -> Callable[Concatenate[Self, P], R]:
+    """Decorator for PromptValidators instance methods preserving signature & return type."""
+
+    @wraps(fn)
+    def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return run_in_sandbox(fn, self, *args, **kwargs)
+
     return wrapper
 
 
 class UniqueKeyLoader(yaml.SafeLoader):
-    def construct_mapping(self, node, deep=False):
+    def construct_mapping(self, node: yaml.nodes.MappingNode, deep: bool = False) -> dict[Any, Any]:
         mapping = {}
         for key_node, value_node in node.value:
             key = self.construct_object(key_node, deep=deep)
@@ -115,7 +127,7 @@ class ScoringDetail:
         self.earned_points = 0.0
         self.checks = []
 
-    def add_check(self, name: str, passed: bool, points: float, rationale: str = ""):
+    def add_check(self, name: str, passed: bool, points: float, rationale: str = "") -> None:
         """Add a scoring check with detailed rationale."""
         earned = points if passed else 0.0
         self.earned_points += earned
@@ -308,7 +320,8 @@ class PerformanceAnalyzer:
             lines = code.split("\n")
             in_loop = False
             for line in lines:
-                if re.match(r"\s*for\s+", line):
+                is_for_loop = re.match(r"\s*for\s+", line) is not None
+                if is_for_loop:
                     in_loop = True
                 elif in_loop and "+=" in line and ('"' in line or "'" in line):
                     issues.append(
@@ -322,11 +335,12 @@ class PerformanceAnalyzer:
                     in_loop = False
 
         # Inefficient membership testing
-        if re.search(r"if\s+.*\s+in\s+\[.*\]:", code):
+        if re.search(r"if\s+.*\s+in\s+\[.*\]:", code) is not None:
             issues.append(("list_membership", "Use set for membership testing instead of list"))
 
         # Multiple sorts
-        if code.count(".sort(") > 1 or code.count("sorted(") > 1:
+        multiple_sorts = (code.count(".sort(") > 1) or (code.count("sorted(") > 1)
+        if multiple_sorts:
             issues.append(("multiple_sorts", "Multiple sorts detected - consider single sort"))
 
         return issues
@@ -341,8 +355,9 @@ class PerformanceAnalyzer:
             issues.append(("full_file_read", "Consider reading file in chunks for large files"))
 
         # Not using generators where appropriate (simple check)
-        if ("[" in code and " for " in code and " in " in code and "]" in code
-                and len(code) > 500):  # Only flag in larger code
+        if (
+            "[" in code and " for " in code and " in " in code and "]" in code and len(code) > 500
+        ):  # Only flag in larger code
             issues.append(
                 ("list_comprehension", "Consider generator expression for memory efficiency")
             )
@@ -433,7 +448,9 @@ class MaintainabilityAnalyzer:
         for i, line in enumerate(lines):
             # Check for function definition
             func_match = re.match(r"\s*def\s+(\w+)\s*\(", line)
-            if func_match:
+            is_function_def = func_match is not None
+
+            if is_function_def:
                 if in_function:
                     # Check previous function length
                     func_length = i - function_start
@@ -447,28 +464,32 @@ class MaintainabilityAnalyzer:
 
                 in_function = True
                 function_start = i
-                function_name = func_match.group(1)
-            elif (
-                line.strip()
-                and not line.startswith(" ")
-                and not line.startswith("\t")
-                and in_function
-            ):
-                # End of function (non-indented line)
-                func_length = i - function_start
-                if func_length > 20:
-                    issues.append(
-                        (
-                            "long_function",
-                            f"Function '{function_name}' is {func_length} lines (>20)",
+                # Extract function name from match
+                extracted_name = func_match.group(1)
+                function_name = extracted_name
+            else:
+                # Check for end of function (non-indented line)
+                is_non_indented = (
+                    line.strip() and not line.startswith(" ") and not line.startswith("\t")
+                )
+                if is_non_indented and in_function:
+                    # End of function (non-indented line)
+                    func_length = i - function_start
+                    is_long = func_length > 20
+                    if is_long:
+                        issues.append(
+                            (
+                                "long_function",
+                                f"Function '{function_name}' is {func_length} lines (>20)",
+                            )
                         )
-                    )
-                in_function = False
+                    in_function = False
 
         # Check last function if file ends with it
         if in_function:
             func_length = len(lines) - function_start
-            if func_length > 20:
+            is_long = func_length > 20
+            if is_long:
                 issues.append(
                     ("long_function", f"Function '{function_name}' is {func_length} lines (>20)")
                 )
@@ -594,11 +615,12 @@ class MaintainabilityAnalyzer:
 class PromptValidators:
     """Validates solutions for each benchmark prompt."""
 
-    def __init__(self, test_data_dir: Path):
-        self.test_data_dir = test_data_dir
+    def __init__(self, test_data_dir: str | Path, model_name: str = "default"):
+        self.test_data_dir = Path(test_data_dir)  # Convert to Path if string
+        self.model_name = model_name
         self._load_test_data()
 
-    def _load_test_data(self):
+    def _load_test_data(self) -> None:
         """Load test data files."""
         # Load user data
         user_data_path = self.test_data_dir / "user_data.json"
@@ -617,9 +639,10 @@ class PromptValidators:
             self.original_config = None
 
     @sandbox_validator
-    def validate_prompt_1_refactoring(self, solution_file: Path) -> dict[str, Any]:
+    def validate_prompt_1_refactoring(self, solution_file: str | Path) -> ValidationResult:
         """Validate Prompt 1: Code Refactoring & Analysis."""
-        result = {
+        solution_file = Path(solution_file)  # Convert to Path for consistency
+        result: ValidationResult = {
             "passed": False,
             "score": 0,
             "max_score": 25,
@@ -741,7 +764,7 @@ validation_rules:
                     },
                 ]
 
-                def _coerce_users_payload(data):
+                def _coerce_users_payload(data: Any) -> dict[str, Any]:
                     # Accept repo test data if present, but guarantee {"users": [...]} shape
                     if data is None:
                         return {"users": curated_users}
@@ -759,14 +782,14 @@ validation_rules:
 
                 # Run the script inside SecureRunner sandbox for enforced isolation
                 from benchmark.secure_runner import SecureRunner
+
                 runner = SecureRunner(self.model_name, allow_network=False)
                 with runner.sandbox():
                     mem_limit = 512
-                    if (
-                        hasattr(self, "sandbox_owner")
-                        and hasattr(self.sandbox_owner, "sandbox_memory_mb")  # type: ignore[attr-defined]
+                    if hasattr(self, "sandbox_owner") and hasattr(
+                        self.sandbox_owner, "sandbox_memory_mb"
                     ):
-                        mem_limit = getattr(  # type: ignore[attr-defined]
+                        mem_limit = getattr(
                             self.sandbox_owner,
                             "sandbox_memory_mb",
                             512,
@@ -1133,11 +1156,17 @@ validation_rules:
         return result
 
     @sandbox_validator
-    def validate_prompt_2_yaml_json(self, yaml_file: Path, json_file: Path) -> dict[str, Any]:
+    def validate_prompt_2_yaml_json(
+        self, yaml_file: str | Path, json_file: str | Path
+    ) -> ValidationResult:
         """Validate Prompt 2: YAML/JSON Correction with 7-category scoring."""
 
+        # Convert to Path objects for consistency
+        yaml_file = Path(yaml_file)
+        json_file = Path(json_file)
+
         # Initialize result with 7-category structure
-        result = {
+        result: ValidationResult = {
             "passed": False,
             "score": 0,
             "max_score": 25,
@@ -1242,9 +1271,14 @@ validation_rules:
             # Arrays vs scalars (1pt)
             # Check api_keys is list, feature_flags values are proper types
             array_scalar_correct = True
-            if ("api_keys" in yaml_data and "api_keys" in json_data
-                    and not (isinstance(yaml_data["api_keys"], list)
-                             and isinstance(json_data["api_keys"], list))):
+            if (
+                "api_keys" in yaml_data
+                and "api_keys" in json_data
+                and not (
+                    isinstance(yaml_data["api_keys"], list)
+                    and isinstance(json_data["api_keys"], list)
+                )
+            ):
                 array_scalar_correct = False
 
             structure_scoring.add_check(
@@ -1257,7 +1291,7 @@ validation_rules:
         # Category 3: Execution - Cross-format equivalence testing (8pts)
         if yaml_data and json_data:
             # Deep equivalence after normalization (6pts)
-            def normalize_for_comparison(data):
+            def normalize_for_comparison(data: Any) -> Any:
                 """Normalize data for accurate comparison"""
                 if isinstance(data, dict):
                     normalized = {}
@@ -1287,7 +1321,7 @@ validation_rules:
                 normalized_json = normalize_for_comparison(json_data)
 
                 # Deep comparison
-                def deep_compare(obj1, obj2, path=""):
+                def deep_compare(obj1: Any, obj2: Any, path: str = "") -> tuple[bool, str]:
                     if not isinstance(obj1, type(obj2)):
                         return False, f"Type mismatch at {path}: {type(obj1)} vs {type(obj2)}"
 
@@ -1363,7 +1397,7 @@ validation_rules:
                 duplicate_error_msg = str(e)
 
         # Category 4: Quality - Format standards and linting (6pts)
-        quality_checks = {
+        quality_checks: dict[str, dict[str, Any]] = {
             "yaml_indentation": {"passed": True, "points": 2.0, "details": []},
             "json_literals": {"passed": True, "points": 2.0, "details": []},
             "formatting_style": {"passed": True, "points": 1.0, "details": []},
@@ -1431,8 +1465,11 @@ validation_rules:
             expected_integers = [("validation_rules", "min_age_years"), ("server_settings", "port")]
 
             for section, int_key in expected_integers:
-                if (section in json_data and int_key in json_data[section]
-                        and not isinstance(json_data[section][int_key], int)):
+                if (
+                    section in json_data
+                    and int_key in json_data[section]
+                    and not isinstance(json_data[section][int_key], int)
+                ):
                     quality_checks["json_literals"]["passed"] = False
                     quality_checks["json_literals"]["details"].append(
                         f"{section}.{int_key} should be integer, not string"
@@ -1514,11 +1551,13 @@ validation_rules:
         return result
 
     @sandbox_validator
-    def validate_prompt_3_transformation(self, transform_file: Path) -> dict[str, Any]:
+    def validate_prompt_3_transformation(self, transform_file: str | Path) -> ValidationResult:
+        """Validate Prompt 3: Data Transformation."""
+        transform_file = Path(transform_file)  # Convert to Path for consistency
         """Validate Prompt 3: Data Transformation with 7-category scoring."""
 
         # Initialize result with 7-category structure
-        result = {
+        result: ValidationResult = {
             "passed": False,
             "score": 0,
             "max_score": 25,
@@ -1788,7 +1827,7 @@ validation_rules:
                     # Test 4: **BUSINESS RULES VALIDATION** (3pts) - GPT REQUIREMENT:
                     # Rule-based not magic IDs
                     # Define the documented business rules (these should be added to prompt text)
-                    def calculate_expected_tier(posts, comments):
+                    def calculate_expected_tier(posts: int, comments: int) -> str:
                         if posts > 100 and comments > 300:
                             return "Gold"
                         elif posts > 50:
@@ -2081,11 +2120,12 @@ validation_rules:
         return result
 
     @sandbox_validator
-    def validate_prompt_4_api(self, api_file: Path) -> dict[str, Any]:
+    def validate_prompt_4_api(self, api_file: str | Path) -> ValidationResult:
         """Validate Prompt 4: API Integration with behavioral testing."""
+        api_file = Path(api_file)  # Convert to Path for consistency
 
         # Initialize result with 7-category structure
-        result = {
+        result: ValidationResult = {
             "passed": False,
             "score": 0,
             "max_score": 25,
@@ -2527,9 +2567,7 @@ validation_rules:
 
                 # Determine resilience level for better readability
                 resilience_level = (
-                    "Advanced" if retry_score >= 2.0
-                    else "Basic" if retry_score > 0
-                    else "None"
+                    "Advanced" if retry_score >= 2.0 else "Basic" if retry_score > 0 else "None"
                 )
                 performance_scoring.add_check(
                     "retry_resilience",

@@ -141,6 +141,8 @@ def process_records(filename):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
         assert result.returncode == 0
@@ -160,6 +162,8 @@ def process_records(filename):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
         assert result.returncode == 0
@@ -239,6 +243,8 @@ def process_records(filename):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(Path.cwd()),
         )
 
@@ -498,11 +504,12 @@ class TestCLIErrorHandling:
             ],
             text=True,
             capture_output=True,
+            encoding="utf-8",
+            errors="replace",
         )
         assert result.returncode in (0, 1)
-        combined = (result.stdout + result.stderr).lower()
+        combined = ((result.stdout or "") + (result.stderr or "")).lower()
         assert "no" in combined and "model" in combined
         # This is a basic smoke test for output formatting logic
         test_message = "Test benchmark results: 85.5/100"
         print(test_message)  # Should not crash regardless of encoding
-

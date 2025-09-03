@@ -4,6 +4,7 @@ Parsing and classification logic for documentation command blocks. Execution,
 sandboxing, and reporting are handled by higher-level orchestration (no legacy
 script shims retained in this private repository).
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -27,6 +28,65 @@ class CommandType(Enum):
     NETWORK = "network"
 
 
+def classify_command(content: str) -> CommandType:
+    """Classify command safety level."""
+    content_lower = content.lower()
+
+    # Destructive commands - never run these
+    destructive_patterns = [
+        r"\brm\s+-rf\s+/",
+        r"\bdel\s+/s\s+/q",
+        r"\bformat\s+",
+        r"\bfdisk\s+",
+        r"\bmkfs\.",
+        r"\bdd\s+if=",
+        r"\bshutdown\s+",
+        r"\breboot\s+",
+        r"\bkillall\s+",
+        r"\btaskill\s+/f",
+    ]
+
+    for pattern in destructive_patterns:
+        if re.search(pattern, content_lower):
+            return CommandType.DESTRUCTIVE
+
+    # Network commands
+    network_patterns = [
+        r"\bcurl\s+",
+        r"\bwget\s+",
+        r"\bgit\s+clone\s+https?://",
+        r"\bping\s+",
+        r"\bnslookup\s+",
+    ]
+
+    for pattern in network_patterns:
+        if re.search(pattern, content_lower):
+            return CommandType.NETWORK
+
+    # Sandbox commands - file system modifications that can be isolated
+    sandbox_patterns = [
+        r"\bmkdir\s+",
+        r"\btouch\s+",
+        r"\becho\s+.*>\s*",
+        r"\bcp\s+",
+        r"\bcopy\s+",
+        r"\bxcopy\s+",
+        r"\bmv\s+",
+        r"\bmove\s+",
+        r"\brm\s+[^-]",  # rm without dangerous flags
+        r"\bdel\s+[^/]",  # del without dangerous flags
+        r"\bpython\s+setup\.py",
+        r"\bpip\s+install",
+        r"\bpython\s+.*\.py",
+    ]
+
+    for pattern in sandbox_patterns:
+        if re.search(pattern, content_lower):
+            return CommandType.SANDBOX
+
+    return CommandType.SAFE
+
+
 @dataclass
 class Command:
     content: str
@@ -34,6 +94,10 @@ class Command:
     file_path: str
     line_number: int
     command_type: CommandType = CommandType.SAFE
+
+    def __post_init__(self) -> None:
+        """Classify command type based on content."""
+        self.command_type = classify_command(self.content)
 
 
 class DocumentationValidator:
@@ -107,4 +171,4 @@ class DocumentationValidator:
         return any(re.match(p, text) for p in patterns)
 
 
-__all__ = ["Command", "CommandType", "DocumentationValidator", "Platform"]
+__all__ = ["Command", "CommandType", "DocumentationValidator", "Platform", "classify_command"]

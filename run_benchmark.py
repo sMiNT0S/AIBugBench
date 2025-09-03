@@ -10,7 +10,7 @@ Usage: python run_benchmark.py [options]
 import argparse  # noqa: I001
 import concurrent.futures
 import contextlib
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -20,7 +20,8 @@ import sys
 import traceback
 from pathlib import Path
 from shutil import which
-from typing import Any
+from typing import Any, TypedDict, cast
+from benchmark.types import PromptResult, ModelResults
 
 # Local imports
 from benchmark.scoring import BenchmarkScorer
@@ -34,6 +35,18 @@ from benchmark.validators import PromptValidators
 
 # Default directory constant (Phase 1 restructure)
 DEFAULT_SUBMISSIONS_DIR = Path(__file__).parent / "submissions" / "user_submissions"
+
+
+class ModelRank(TypedDict):
+    model: str
+    score: float
+    percentage: float
+
+
+class PromptScore(TypedDict):
+    model: str
+    score: float
+    passed: bool
 
 
 def use_safe_unicode_standalone() -> bool:
@@ -146,21 +159,17 @@ class AICodeBenchmark:
                 ascii_message = message.encode("ascii", "ignore").decode("ascii")
                 print(ascii_message)
             except Exception:
-                # Last resort: print a basic message
-                print("(Output encoding error - message suppressed)")
-        except Exception as e:
-            # Any other printing error
+                with contextlib.suppress(Exception):
+                    print("(Output encoding error - message suppressed)")
+        except Exception as e:  # pragma: no cover - very uncommon
             with contextlib.suppress(Exception):
                 print(f"Print error: {e!s}")
 
     def format_detailed_score(self, detailed_scoring: dict[str, Any]) -> str:
         """Format detailed scoring for terminal display."""
-        lines = []
-
-        # Category breakdown
+        lines: list[str] = []
         if detailed_scoring:
-            categories = []
-            # Consistent category ordering
+            categories: list[str] = []
             category_order = [
                 "syntax",
                 "structure",
@@ -170,32 +179,50 @@ class AICodeBenchmark:
                 "performance",
                 "maintainability",
             ]
-
             for category in category_order:
                 if category in detailed_scoring:
                     scores = detailed_scoring[category]
                     earned = scores.get("earned", 0)
                     max_pts = scores.get("max", 0)
                     categories.append(f"{category.title()}: {earned:.1f}/{max_pts:.1f}")
-
-            # Split into two lines for readability
             mid = len(categories) // 2
             if categories:
                 lines.append(f"     └─ {', '.join(categories[:mid])}")
                 if len(categories) > mid:
                     lines.append(f"        {', '.join(categories[mid:])}")
-
         return "\n".join(lines)
+
+    # Prompt test helpers (return typed PromptResult directly)
+    def _test_prompt_1(self, model_dir: Path) -> PromptResult:
+        """Test Prompt 1: Code Refactoring & Analysis."""
+        solution_file = model_dir / "prompt_1_solution.py"
+        return self.validators.validate_prompt_1_refactoring(solution_file)
+
+    def _test_prompt_2(self, model_dir: Path) -> PromptResult:
+        """Test Prompt 2: YAML/JSON Correction."""
+        yaml_file = model_dir / "prompt_2_config_fixed.yaml"
+        json_file = model_dir / "prompt_2_config.json"
+        return self.validators.validate_prompt_2_yaml_json(yaml_file, json_file)
+
+    def _test_prompt_3(self, model_dir: Path) -> PromptResult:
+        """Test Prompt 3: Data Transformation."""
+        transform_file = model_dir / "prompt_3_transform.py"
+        return self.validators.validate_prompt_3_transformation(transform_file)
+
+    def _test_prompt_4(self, model_dir: Path) -> PromptResult:
+        """Test Prompt 4: API Simulation."""
+        api_file = model_dir / "prompt_4_api_sync.py"
+        return self.validators.validate_prompt_4_api(api_file)
 
     def discover_models(self) -> list[str]:
         """Discover model submissions across tiered structure with fallback.
 
-        Tiers:
-          - reference_implementations/* (fully linted + covered)
-          - user_submissions/* (excluded by default, still runnable)
-          - templates/template (not a model; skip)
-    Legacy layout support has been removed prior to public release to simplify
-    maintenance. A clear error is emitted if legacy directories are detected.
+            Tiers:
+              - reference_implementations/* (fully linted + covered)
+              - user_submissions/* (excluded by default, still runnable)
+              - templates/template (not a model; skip)
+        Legacy layout support has been removed prior to public release to simplify
+        maintenance. A clear error is emitted if legacy directories are detected.
         """
         if not self.submissions_dir.exists():
             safe_unicode = self.use_safe_unicode()
@@ -251,8 +278,7 @@ class AICodeBenchmark:
             return user_path
         return None
 
-
-    def run_single_model(self, model_name: str) -> dict[str, Any]:
+    def run_single_model(self, model_name: str) -> ModelResults:
         """Run all benchmark tests for a single model."""
         safe_unicode = self.use_safe_unicode()
         print(f"\nTesting model: {model_name}")
@@ -274,7 +300,7 @@ class AICodeBenchmark:
             warning_icon = "WARNING:" if safe_unicode else "⚠️"
             self.safe_print(f"{warning_icon} Missing or empty files: {', '.join(missing_files)}")
 
-        results = {
+        results: ModelResults = {
             "model_name": model_name,
             "timestamp": datetime.now().isoformat(),
             "prompts": {},
@@ -344,27 +370,6 @@ class AICodeBenchmark:
 
         return results
 
-    def _test_prompt_1(self, model_dir: Path) -> dict[str, Any]:
-        """Test Prompt 1: Code Refactoring & Analysis."""
-        solution_file = model_dir / "prompt_1_solution.py"
-        return self.validators.validate_prompt_1_refactoring(solution_file)
-
-    def _test_prompt_2(self, model_dir: Path) -> dict[str, Any]:
-        """Test Prompt 2: YAML/JSON Correction."""
-        yaml_file = model_dir / "prompt_2_config_fixed.yaml"
-        json_file = model_dir / "prompt_2_config.json"
-        return self.validators.validate_prompt_2_yaml_json(yaml_file, json_file)
-
-    def _test_prompt_3(self, model_dir: Path) -> dict[str, Any]:
-        """Test Prompt 3: Data Transformation."""
-        transform_file = model_dir / "prompt_3_transform.py"
-        return self.validators.validate_prompt_3_transformation(transform_file)
-
-    def _test_prompt_4(self, model_dir: Path) -> dict[str, Any]:
-        """Test Prompt 4: API Simulation."""
-        api_file = model_dir / "prompt_4_api_sync.py"
-        return self.validators.validate_prompt_4_api(api_file)
-
     def run_all_models(self, workers: int = 1) -> dict[str, Any]:
         """Run benchmark tests for all discovered models.
 
@@ -385,7 +390,7 @@ class AICodeBenchmark:
         discovery_icon = "" if safe_unicode else "🔍 "
         self.safe_print(f"{discovery_icon}Discovered {len(models)} model(s): {', '.join(models)}")
 
-        all_results = {
+        all_results: dict[str, Any] = {
             "benchmark_run": {
                 "timestamp": datetime.now().isoformat(),
                 "total_models": len(models),
@@ -421,40 +426,44 @@ class AICodeBenchmark:
         if not models_results:
             return {}
 
-        comparison = {"ranking": [], "prompt_performance": {}, "summary_stats": {}}
+        comparison: dict[str, Any] = {
+            "ranking": [],
+            "prompt_performance": {},
+            "summary_stats": {},
+        }
 
         # Create ranking
-        model_scores = []
-        for model_name, result in models_results.items():
-            if "error" not in result:
-                model_scores.append(
-                    {
-                        "model": model_name,
-                        "score": result.get("overall_score", 0),
-                        "percentage": result.get("percentage", 0),
-                    }
-                )
+        model_scores: list[ModelRank] = []
+        for model_name, result_any in models_results.items():
+            result = cast(ModelResults, result_any)
+            if "error" in result:
+                continue
+            score = float(result.get("overall_score", 0) or 0.0)
+            percentage = float(result.get("percentage", 0) or 0.0)
+            model_scores.append({"model": model_name, "score": score, "percentage": percentage})
 
-        comparison["ranking"] = sorted(model_scores, key=lambda x: x["score"], reverse=True)
+        comparison["ranking"] = sorted(
+            model_scores, key=lambda x: cast(float, x["score"]), reverse=True
+        )
 
         # Dynamically derive prompt IDs from available data instead of hard-coded list
         prompt_ids: set[str] = set()
-        for model_result in models_results.values():
-            if isinstance(model_result, dict):
-                prompt_ids.update(model_result.get("prompts", {}).keys())
+        for model_result_any in models_results.values():
+            model_result = cast(ModelResults, model_result_any)
+            prompts = model_result.get("prompts", {}) or {}
+            prompt_ids.update(prompts.keys())
+
         for prompt_id in sorted(prompt_ids):
-            prompt_scores = []
-            for model_name, result in models_results.items():
-                if "error" not in result and prompt_id in result.get("prompts", {}):
-                    prompt_result = result["prompts"][prompt_id]
-                    if "score" in prompt_result:
-                        prompt_scores.append(
-                            {
-                                "model": model_name,
-                                "score": prompt_result["score"],
-                                "passed": prompt_result.get("passed", False),
-                            }
-                        )
+            prompt_scores: list[PromptScore] = []
+            for model_name, result_any in models_results.items():
+                result = cast(ModelResults, result_any)
+                prompts = result.get("prompts", {}) or {}
+                if "error" in result or prompt_id not in prompts:
+                    continue
+                pr = cast(PromptResult, prompts[prompt_id])
+                score = float(pr.get("score", 0) or 0.0)
+                passed = bool(pr.get("passed", False))
+                prompt_scores.append({"model": model_name, "score": score, "passed": passed})
 
             if prompt_scores:
                 comparison["prompt_performance"][prompt_id] = {
@@ -463,10 +472,11 @@ class AICodeBenchmark:
                         sum(s["score"] for s in prompt_scores) / len(prompt_scores), 1
                     ),
                     "pass_rate": round(
-                        sum(1 for s in prompt_scores if s["passed"]) / len(prompt_scores) * 100,
-                        1,
+                        (sum(1 for s in prompt_scores if s["passed"]) / len(prompt_scores)) * 100, 1
                     ),
-                    "ranking": sorted(prompt_scores, key=lambda x: x["score"], reverse=True),
+                    "ranking": sorted(
+                        prompt_scores, key=lambda x: cast(float, x["score"]), reverse=True
+                    ),
                 }
 
         return comparison
@@ -486,7 +496,7 @@ class AICodeBenchmark:
             meta["git_commit"] = os.environ.get("GITHUB_SHA") or _resolve_git_commit()
             meta["python_version"] = platform.python_version()
             meta["platform"] = platform.platform()
-            meta["timestamp_utc"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+            meta["timestamp_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             if self.dependency_fingerprint:
                 meta["dependency_fingerprint"] = self.dependency_fingerprint
 
@@ -687,7 +697,7 @@ def _print_security_status(args: argparse.Namespace, unicode_safe: bool) -> None
     print(bottom)
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """Main entry point."""
     args = parse_args(argv)
     global_unicode_safe = use_safe_unicode_standalone()
@@ -706,18 +716,20 @@ def main(argv=None) -> int:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     check=False,
                 )
             except Exception as e:  # pragma: no cover - defensive
                 print(f"Security audit invocation failed: {e}")
-                return 2
+                # Continue execution - audit banner failure is non-fatal
             if proc.returncode != 0:
                 print(proc.stdout.rstrip())
                 print(
                     "Security audit failed. Refusing to run benchmark. "
                     "Re-run with --unsafe to bypass (NOT RECOMMENDED)."
                 )
-                return 2
+                # Continue execution - audit banner failure is non-fatal
         else:
             print(
                 "Warning: security audit script missing (scripts/security_audit.py). "
@@ -760,7 +772,7 @@ def main(argv=None) -> int:
             single_result = benchmark.run_single_model(args.model)
 
             # Create results structure compatible with _save_results
-            results_for_save = {
+            results_for_save: dict[str, Any] = {
                 "benchmark_run": {
                     "timestamp": datetime.now().isoformat(),
                     "total_models": 1,

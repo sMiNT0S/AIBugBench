@@ -20,10 +20,7 @@ class TestRunner:
         self.test_data_dir = test_data_dir
 
     def run_python_script(
-        self,
-        script_path: Path,
-        args: list | None = None,
-        timeout: int = 30
+        self, script_path: Path, args: list[str] | None = None, timeout: int = 30
     ) -> dict[str, Any]:
         """Run a Python script and capture output."""
         if args is None:
@@ -59,9 +56,7 @@ class TestRunner:
 
         except subprocess.TimeoutExpired:
             result["timeout"] = True
-            result["stderr"] = (
-                f"Script execution timed out after {timeout} seconds"
-            )
+            result["stderr"] = f"Script execution timed out after {timeout} seconds"
         except Exception as e:
             result["stderr"] = f"Execution error: {e!s}"
 
@@ -69,9 +64,7 @@ class TestRunner:
 
     def create_temp_config(self, config_content: str) -> str:
         """Create a temporary config file for testing."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as temp_file:
             temp_file.write(config_content)
             return temp_file.name
 

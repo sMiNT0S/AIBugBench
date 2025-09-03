@@ -8,7 +8,7 @@ from typing import Any
 class BenchmarkScorer:
     """Handles scoring and grading for the benchmark."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.grade_thresholds = {
             "A+": 95,
             "A": 90,

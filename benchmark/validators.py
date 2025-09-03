@@ -1389,7 +1389,7 @@ validation_rules:
         if yaml_file.exists():
             try:
                 with open(yaml_file, encoding="utf-8") as f:
-                    yaml.load(f, Loader=UniqueKeyLoader)  # nosec B506 - deliberate for testing
+                    yaml.load(f, Loader=UniqueKeyLoader)  # nosec B506
                 # If load succeeds, no duplicates
             except ConstructorError as e:
                 yaml_has_duplicates = True
@@ -1416,7 +1416,7 @@ validation_rules:
         if yaml_has_duplicates and yaml_file.exists():
             try:
                 with open(yaml_file, encoding="utf-8") as f:
-                    yaml.load(f, Loader=UniqueKeyLoader)  # nosec B506 - deliberate for testing
+                    yaml.load(f, Loader=UniqueKeyLoader)  # nosec B506
             except ConstructorError as e:
                 # Use the exception to enrich details so Ruff is happy and users see why it failed
                 quality_checks["no_duplication"]["details"].append(str(e))

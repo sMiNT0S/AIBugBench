@@ -227,7 +227,7 @@ pip install bandit pip-audit safety ruff
 ruff check . --select S
 bandit -r . -f json
 pip-audit
-safety check
+safety scan --file=requirements.lock
 python scripts/security_audit.py
 ```
 
@@ -238,7 +238,7 @@ pip install bandit pip-audit safety ruff
 ruff check . --select S
 bandit -r . -f json
 pip-audit
-safety check
+safety scan --file=requirements.lock
 python scripts/security_audit.py
 ```
 

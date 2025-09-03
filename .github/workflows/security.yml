@@ -253,10 +253,10 @@ jobs:
         run: |
           pip install safety==3.6.1 pip-audit==2.9.0
 
-      - name: Run Safety check on dependencies
+      - name: Run Safety scan on dependencies
         run: |
           pip install -r requirements.txt
-          safety check --json > safety-report.json || echo "Safety scan completed"
+          safety scan --file=requirements.lock --json > safety-report.json || echo "Safety scan completed"
           cat safety-report.json
 
       - name: Run pip-audit for comprehensive dependency analysis

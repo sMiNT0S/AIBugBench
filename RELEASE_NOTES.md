@@ -1,4 +1,65 @@
-# Release Notes for v0.7.0-beta
+# Release Notes for v0.9.0-beta
+
+## AIBugBench v0.9.0-beta – Security Hardening & Reproducibility
+
+**Release Date:** September 3, 2025  
+**Type:** Beta Release  
+**Focus:** SAFETY2.0, script consolidation, dependency integrity, typing hygiene, CI enforcement
+
+### Highlights
+
+- SAFETY2.0 hardening finalized (sandbox guards, Windows Job Objects, import gate) and security audit workflow stable
+- Script consolidation & argparse adoption (single canonical tools) + new lock-verification CI gate
+- Dependency integrity: hash‑pinned `requirements.lock` enforced; pip-tools upgraded to `>=7.5.0` for pip 24 compatibility
+- Type hygiene: strict-core typing cleanup; new `benchmark/types.py` & `benchmark/typing_helpers.py`
+- README & badges overhaul; dependency lock documentation; tiered validation & security badges added
+- Results comparison directory: `results/collected-results/` + atomic write model
+
+### Upgrade Notes
+
+- Legacy `submissions/template/` removed (use `submissions/templates/template/`)
+- Deleted scripts: `fix_action_pins.py`, `automate_models.py`, `fix_security_noqa.py`, `validate_security.py`
+- Replacements:
+  - Action pinning: `scripts/pin_actions_to_sha.py`
+  - Lock generation: `scripts/update_requirements_lock.py`
+
+### Added
+
+- `SAFETY.md` threat model & guarantees
+- CI lock-verification job (fails on stale `requirements.lock`)
+- `pin_actions_to_sha.py` CLI (list / dry-run / apply)
+- `update_requirements_lock.py` utility
+
+### Changed
+
+- Security audit & PR security workflows expanded; actions pinned to SHAs
+- Strict-core mypy pass (0 errors) and Ruff 0 issues baseline established
+- Windows-safe printing stabilized; security banner no longer alters exit codes
+
+### Removed
+
+- Redundant / obsolete scripts & legacy migration tests
+
+### Fixed
+
+- Link & config inconsistencies
+- Secret pattern formatting
+- Import ordering
+- `run_safety_check()` return path
+
+### Security / CI
+
+- Hash enforcement in PR security job; Safety & pip-audit integrated
+- Artifact uploads: coverage, consistency, security reports
+
+### Internal
+
+- Centralized `classify_command` in `validation/docs_core.py`
+- Refactored validators & runner signatures for clarity
+
+---
+
+## Release Notes for v0.7.0-beta
 
 ## AIBugBench v0.7.0-beta - Complete Code Quality Transformation
 
@@ -6,11 +67,11 @@
 **Type:** Beta Release  
 **Scope:** Code Quality & Infrastructure Modernization
 
-### 🎯 Major Achievements
+### Major Achievements
 
 This release represents a comprehensive code quality transformation that achieved **zero lint violations** across the entire codebase while maintaining 100% backward compatibility.
 
-### ✨ What's New
+### What's New
 
 #### Infrastructure Enhancements
 
@@ -33,7 +94,7 @@ This release represents a comprehensive code quality transformation that achieve
 - **Line Length Compliance**: Intelligent string breaking and f-string optimization
 - **Whitespace Cleanup**: Eliminated all trailing whitespace and formatting inconsistencies
 
-### 🔧 Technical Details
+### Technical Details
 
 **Files Enhanced:**
 
@@ -45,12 +106,12 @@ This release represents a comprehensive code quality transformation that achieve
 
 **Validation Results:**
 
-- ✅ Benchmark Score: 92.17/100 baseline maintained
-- ✅ Zero Breaking Changes: Complete API compatibility
-- ✅ All Tests Passing: Setup script and functionality validated
-- ✅ Zero Lint Issues: Complete code quality compliance
+- Benchmark Score: 92.17/100 baseline maintained
+- Zero Breaking Changes: Complete API compatibility
+- All Tests Passing: Setup script and functionality validated
+- Zero Lint Issues: Complete code quality compliance
 
-### 🚀 What's Next
+### What's Next
 
 This release establishes a solid foundation for future development with:
 
@@ -59,7 +120,7 @@ This release establishes a solid foundation for future development with:
 - Modern Python standards compliance
 - Enhanced maintainability
 
-### 📥 Installation
+### Installation
 
 ```bash
 git clone https://github.com/sMiNT0S/AIBugBench.git
@@ -79,11 +140,11 @@ python run_benchmark.py --model example_model
 
 Status: In development (Phase 2 tasks pending: UX polish, docs alignment, threshold evaluation)
 
-## 🔄 Summary
+## Summary
 
 Introduces enforced tiered submissions layout (reference_implementations/, templates/, user_submissions/), removes legacy fallback + strict mode complexity, adds deterministic discovery summary, and expands targeted tests & security validation.
 
-## ✅ Key Changes (High-Level Narrative)
+## Key Changes (High-Level Narrative)
 
 - Enforced tiered structure with single discovery path (simpler mental model & reduced branching logic)
 - Hard failure on legacy flat layout (clear migration guidance; avoids silent ambiguity)
@@ -91,7 +152,7 @@ Introduces enforced tiered submissions layout (reference_implementations/, templ
 - Security validation of all tiers (Bandit clean scans) after restructure
 - Coverage uplift to ~61.8% (gate remains 60% pending UX/doc polish)
 
-## 🧪 Testing & Quality
+## Testing & Quality
 
 | Area | Before | After | Notes |
 |------|--------|-------|-------|
@@ -101,7 +162,7 @@ Introduces enforced tiered submissions layout (reference_implementations/, templ
 | Coverage % | ~57% | ~61.8% | Potential bump to 62–63% |
 | Bandit tier scan findings | N/A | 0 | All tiers clean |
 
-## 🚨 Error/Status Messages (Canonical Forms)
+## Error/Status Messages (Canonical Forms)
 
 | Context | Example Output | User Action |
 |---------|----------------|------------|
@@ -110,26 +171,26 @@ Introduces enforced tiered submissions layout (reference_implementations/, templ
 | Missing template | `Discovered models: reference=X user=Y templates=MISSING` | Recreate template (`create_submission_template`) |
 | Legacy layout | SystemExit with migration block starting `Legacy submissions layout detected (e.g. submissions/example_model).` | Migrate (see troubleshooting) |
 
-## 🔐 Security Posture
+## Security Posture
 
 - Legacy path ambiguity eliminated (no mixed-mode behavior)
 - Tiers enable differentiated policy & scanning (future flexibility)
 - Clean Bandit scans across tiers (reference, templates, user submissions)
 
-## 📄 Documentation Work (In Progress)
+## Documentation Work (In Progress)
 
 - Troubleshooting updated with tiered error taxonomy
 - CHANGELOG includes migration removal + test expansion notes
 - Remaining: README/QUICKSTART cross-links to new troubleshooting section; finalize Common Issues references
 
-## 🎯 Pending Decisions
+## Pending Decisions
 
 | Decision | Rationale | Current Leaning |
 |----------|-----------|-----------------|
 | Coverage gate raise to 62–63% | Consolidate gains; low risk | Adopt after docs polish |
 | Keep separate Release Notes vs rely solely on CHANGELOG | Release notes = narrative & curated highlights; CHANGELOG = exhaustive | Keep both (concise RN + detailed changelog) |
 
-## 📌 Why Keep Release Notes When CHANGELOG Exists?
+## Why Keep Release Notes When CHANGELOG Exists?
 
 Purpose split:
 
@@ -138,14 +199,14 @@ Purpose split:
 
 Retention Criteria: Maintain release notes if we continue publishing narrative guidance or aggregated migration advisories. If future cycles become routine with minimal narrative shifts, we can consolidate.
 
-## 🔜 Next Steps (GPT-5 Phase 2)
+## Next Steps (GPT-5 Phase 2)
 
 1. Integrate error taxonomy references into README & QUICKSTART
 2. Finalize coverage gate decision & update CI config if adopted
 3. Add release diff summary to comparison chart artifact docs
 4. Tag v0.8.0-beta once above complete
 
-## ⬆️ Upgrade from v0.7.x Notes
+## Upgrade from v0.7.x Notes
 
 If coming from a pre-tier version (≤0.7.x):
 
@@ -162,7 +223,7 @@ Discovered models: reference=1 user=0 templates=OK
 
 Legacy flat layout without migration now aborts—follow troubleshooting if encountered.
 
-## 🧾 Coverage Gate Update
+## Coverage Gate Update
 
 CI coverage threshold raised to 62% (was 60%). If local runs fail:
 

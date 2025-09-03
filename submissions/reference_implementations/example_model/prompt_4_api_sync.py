@@ -194,13 +194,13 @@ def demo_sync():
 
     # Scenario 1: Successful sync
     print("\n1. Testing successful sync:")
-    api_token = "demo-token-12345-fake"  # noqa: S105  # nosec B 105 # Test token for example code
+    api_token = "demo-token-12345-fake"  # noqa: S105  # nosec B105
     job_id = sync_users_to_crm(sample_users, api_token)
     print(f"   Returned job_id: {job_id}")
 
     # Scenario 2: Invalid token
     print("\n2. Testing with invalid token:")
-    invalid_token = "fake-invalid-token"  # noqa: S105  # nosec B105 # Fake token for testing
+    invalid_token = "fake-invalid-token"  # noqa: S105  # nosec B105
     job_id = sync_users_to_crm(sample_users, invalid_token)
     print(f"   Returned job_id: {job_id}")
 

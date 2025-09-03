@@ -1,0 +1,4 @@
+# Normalize line endings for lock and text config files
+requirements.lock text eol=lf
+requirements-dev.lock text eol=lf
+*.py text eol=lf

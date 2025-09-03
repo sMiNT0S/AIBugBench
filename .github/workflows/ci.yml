@@ -351,8 +351,8 @@ jobs:
         run: bandit -r . -ll --configfile pyproject.toml -f json -o bandit-report.json --version
         continue-on-error: true
       
-      - name: Run safety check
-        run: safety check --json > safety-report.json
+      - name: Run safety scan
+        run: safety scan --file=requirements.lock --json > safety-report.json || echo "safety scan fallback"
         continue-on-error: true
       - name: Run internal security audit
         run: python scripts/security_audit.py --json --output audit.json

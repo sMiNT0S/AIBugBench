@@ -100,3 +100,6 @@ status/
 
 # Documentation artifacts (exclude planning docs)
 docs_private/
+scripts/audit_local.json
+audit_local.json
+.mypy_report/index.txt

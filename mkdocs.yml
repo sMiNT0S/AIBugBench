@@ -38,20 +38,20 @@ nav:
   - User Guide: user-guide.md
   - Developer Guide: developer-guide.md
   - Reference:
-    - API Reference: api-reference.md
-    - Scoring Methodology: scoring-methodology.md
-    - Architecture: architecture.md
+      API Reference: api-reference.md
+      Scoring Methodology: scoring-methodology.md
+      Architecture: architecture.md
   - Troubleshooting:
-    - Troubleshooting Guide: troubleshooting.md
-    - Sabotage Notes: sabotage-notes.md
+      Troubleshooting Guide: troubleshooting.md
+      Sabotage Notes: sabotage-notes.md
   - Project:
-    - Contributing: contributing.md
-    - Code of Conduct: code-of-conduct.md
-    - Security Policy: security.md
-    - License: license.md
-    - Changelog: https://github.com/sMiNT0S/AIBugBench/blob/main/CHANGELOG.md
+      Contributing: contributing.md
+      Code of Conduct: code-of-conduct.md
+      Security Policy: security.md
+      License: license.md
+      Changelog: https://github.com/sMiNT0S/AIBugBench/blob/main/CHANGELOG.md
   - Internal:
-    - Overview: INTERNALS.md
+      Overview: INTERNALS.md
   - Validation Package README: internal/validation-readme.md
   - Scripts README: internal/scripts-readme.md
   - Submissions README: internal/submissions-readme.md

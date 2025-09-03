@@ -7,7 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No changes yet.
+### Infrastructure
+
+- **Pre-commit pipeline stabilization**: Fixed malformed `.pre-commit-config.yaml` structure consolidating all local hooks under single `repo: local` block
+- **Smoke test isolation**: Added `scripts/smoke_pytest_wrapper.py` for artifact-isolated test execution with environment variable cascade (`AIB_RESULTS_DIR`, `AIB_ARTIFACT_DIR`, `AIBUGBENCH_ARTIFACT_DIR`)
+- **Pytest coverage conflict resolution**: Created minimal `scripts/pytest_smoke.ini` to bypass global coverage plugin conflicts in smoke tests while preserving full coverage in CI
+- **Artifact redirection framework**: Enhanced platform validator and benchmark runner to honor environment-based artifact redirection preventing pre-commit working tree mutations
+- **CI/CD workflow hardening**: Updated multiple GitHub Actions workflows for YAML compliance, security improvements, and cross-platform compatibility
+
+### Documentation
+
+- **scripts/README.md enhancement**: Added documentation for `yaml_ducttape.ps1` (YAML formatting automation) and `update_requirements_lock.py` (dependency drift detection)
+- **CONTRIBUTING.md workflow section**: Added comprehensive section on CI automation, pre-commit hooks setup, and development workflow patterns
+
+### Developer Tooling
+
+- **File normalization**: Multiple `.gitattributes`, `.yamllint.yml`, and workflow files updated for consistent formatting and compliance
+- **Cross-platform compatibility**: Enhanced Windows Job Objects with graceful fallback when pywin32 unavailable, maintaining execution with reduced guarantees
+- **Build artifact management**: Expanded `.gitignore` patterns for comprehensive build artifact, sandbox, and temporary file isolation
+
+### Security
+
+- **Dependency integrity**: Updated requirements lock files with proper hash verification and normalized compilation headers
+- **Workflow security hardening**: Enhanced GitHub Actions workflows with improved permission models and security scanning integration
+
+### Quality Assurance
+
+- **Test coverage improvements**: Multiple test compliance fixes for CI and pre-commit compatibility
+- **Code formatting consistency**: Broad formatting normalization across configuration files, workflows, and Python modules
+- **Type safety enhancements**: Additional mypy compatibility improvements and type annotation corrections
+
+### Impact
+
+This release establishes reliable, fast, isolated pre-commit execution patterns and comprehensive CI/CD workflow foundations. All behavioral functionality remains unchanged while significantly improving developer workflow stability and artifact management.
 
 ## [0.9.0-beta] - 2025-09-03
 

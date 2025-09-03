@@ -101,7 +101,21 @@ class AICodeBenchmark:
         disable_metadata: bool | None = None,
     ):
         self.submissions_dir = Path(submissions_dir)
-        self.results_dir = Path(results_dir)
+        # Results directory override precedence (environment first, then arg)
+        # Allows tooling (e.g., pre-commit smoke tests) to redirect all artifact writes
+        # away from the working tree. Chosen variable cascade:
+        # 1. AIB_RESULTS_DIR (explicit path)
+        # 2. AIB_ARTIFACT_DIR or AIBUGBENCH_ARTIFACT_DIR root + '/results'
+        # 3. CLI / function argument (results_dir)
+        env_results = os.getenv("AIB_RESULTS_DIR")
+        env_artifact_root = os.getenv("AIB_ARTIFACT_DIR") or os.getenv("AIBUGBENCH_ARTIFACT_DIR")
+        if env_results and env_results.strip():
+            chosen_results = Path(env_results.strip())
+        elif env_artifact_root and env_artifact_root.strip():
+            chosen_results = Path(env_artifact_root.strip()) / "results"
+        else:
+            chosen_results = Path(results_dir)
+        self.results_dir = chosen_results
         self.test_data_dir = Path("test_data")
         # Cache run start timestamp (per-run directory)
         self.run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

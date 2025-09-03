@@ -42,8 +42,17 @@ class PlatformBenchmarkValidator:
 
     def __init__(self, project_root: Path):
         self.project_root = project_root
-        self.results_dir = project_root / "ci_results"
-        self.results_dir.mkdir(exist_ok=True)
+        # Allow override of artifact directory (e.g. pre-commit smoke tests) to
+        # avoid creating tracked files in repo root.
+        override_root = os.environ.get("AIB_ARTIFACT_DIR") or os.environ.get(
+            "AIBUGBENCH_ARTIFACT_DIR"
+        )
+        if override_root:
+            base_results_dir = Path(override_root).expanduser().resolve()
+        else:
+            base_results_dir = project_root / "ci_results"
+        base_results_dir.mkdir(parents=True, exist_ok=True)
+        self.results_dir = base_results_dir
 
     def run_single_benchmark(self, model_name: str) -> dict[str, Any]:
         """Run benchmark for a single model and capture results."""
@@ -52,11 +61,21 @@ class PlatformBenchmarkValidator:
         # Record start time for performance monitoring
         start_time = time.time()
 
-        # Ensure results directory exists
-        (self.project_root / "results").mkdir(exist_ok=True)
+        # Ensure results directory exists (respect override for main results if provided)
+        override_main = os.environ.get("AIB_RESULTS_DIR")
+        if override_main:
+            main_results_dir = Path(override_main).expanduser().resolve()
+        else:
+            main_results_dir = self.project_root / "results"
+        main_results_dir.mkdir(parents=True, exist_ok=True)
 
         # Run benchmark command
-        cmd = [sys.executable, "run_benchmark.py", "--model", model_name]
+        cmd = [
+            sys.executable,
+            "run_benchmark.py",
+            "--model",
+            model_name,
+        ]
 
         try:
             result = subprocess.run(  # noqa: S603  # Intentional for platform validation
@@ -74,11 +93,11 @@ class PlatformBenchmarkValidator:
             execution_time = time.time() - start_time
 
             # Load results from JSON file - check multiple possible locations
-            results_file = self.project_root / "results" / "latest_results.json"
+            results_file = main_results_dir / "latest_results.json"
 
             if not results_file.exists():
                 # Try the timestamped format
-                results_dir = self.project_root / "results"
+                results_dir = main_results_dir
                 timestamped_files = list(results_dir.glob("results_*.json"))
                 if timestamped_files:
                     # Use the most recent one

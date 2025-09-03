@@ -2,7 +2,7 @@ name: Docs
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,8 @@ jobs:
     permissions:
       contents: read  # explicit job-level; top-level already restricts
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # Updated to v5 (Node 24 runtime; requires runner >= 2.327.1)
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        # Updated to v5 (Node 24 runtime; requires runner >= 2.327.1)
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: "3.x"

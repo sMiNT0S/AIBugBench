@@ -15,6 +15,7 @@ from typing import Any
 
 DEFAULT_TOL = 0.01
 
+
 def _parse() -> tuple[Path, float]:
     p = argparse.ArgumentParser()
     p.add_argument("--dir", default="./collected-results")

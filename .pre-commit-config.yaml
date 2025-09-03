@@ -1,0 +1,104 @@
+# Pre-commit hook configuration for AIBugBench
+# Install & activate:
+#   pip install pre-commit
+#   pre-commit install --hook-type pre-commit
+# (Optional) first run on entire repo:
+#   pre-commit run --all-files
+# Update pinned hook revisions:
+#   pre-commit autoupdate
+
+# Global ignore (regex, repo-root anchored)
+exclude: |
+  (?x)^(
+      \.git/
+    | \.mypy_cache/
+    | \.pytest_cache/
+    | \.ruff_cache/
+    | __pycache__/
+    | \.tox/
+    | \.eggs/
+    | venv/|\.venv/
+    | env/|\.env/
+    | build/|dist/
+    | site/|htmlcov/|coverage/
+  )
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        exclude: "^(tests/|submissions/)"
+      - id: ruff-format
+        exclude: "^(tests/|submissions/)"
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        files: \.(ya?ml)$
+        exclude: ^(venv|.git|.ruff_cache|submissions/|.mypy_cache|.pytest_cache|node_modules|dist|build|__pycache__)/
+        args: ["-c", ".yamllint.yml"]
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args:
+          [
+            "-r",
+            ".",
+            "-ll",
+            "--configfile",
+            "pyproject.toml",
+            "-x",
+            "tests,submissions",
+          ]
+        pass_filenames: false
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        # run against specific project code, not tests or submissions
+        args:
+          - --no-error-summary
+          - benchmark
+          - validation
+          - run_benchmark.py
+          - scripts
+        pass_filenames: false
+        additional_dependencies:
+          - types-PyYAML>=6.0.0
+          - types-requests>=2.32.0
+        exclude: "^(tests/|submissions/)"
+
+  # Local/system hooks (use your current Python; no bash required)
+  - repo: local
+    hooks:
+      - id: lock-sync-check
+        name: Check requirements.lock is up to date
+        entry: python scripts/update_requirements_lock.py --check
+        language: system
+        pass_filenames: false
+        files: "^requirements\\.txt$"
+      - id: lock-sync-check-dev
+        name: Check requirements-dev.lock is up to date
+        entry: python scripts/update_requirements_lock.py --check --dev
+        language: system
+        pass_filenames: false
+        files: "^requirements-dev\\.txt$"
+
+      - id: smoke-pytest
+        name: Smoke tests (subset)
+        entry: python scripts/smoke_pytest_wrapper.py
+        language: system
+        pass_filenames: false
+
+      - id: docs-toc-check
+        name: README TOC freshness
+        entry: python scripts/update_readme_toc.py --check
+        language: system
+        pass_filenames: false
+        files: "^README\\.md$"

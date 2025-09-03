@@ -2,15 +2,15 @@ name: PR Security Checks
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
 
 env:
-  BANDIT_VERSION: '1.8.6'
+  BANDIT_VERSION: "1.8.6"
 
 jobs:
   security-checks:
@@ -22,7 +22,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
-          python-version: '3.13'
+          python-version: "3.13"
       - name: Install dev dependencies with hash verification (pinned security tools)
         run: |
           python -m pip install --upgrade pip
@@ -49,4 +49,10 @@ jobs:
 
       - name: Fail if security audit fails
         run: |
-          python -c "import json,sys,pathlib;d=json.loads(pathlib.Path('audit.json').read_text());o=bool(d.get('ok'));print('Security Audit OK:',o);sys.exit(0 if o else 1)"
+          python - <<'PY'
+          import json, sys, pathlib
+          data = json.loads(pathlib.Path('audit.json').read_text())
+          ok = bool(data.get('ok'))
+          print('Security Audit OK:', ok)
+          sys.exit(0 if ok else 1)
+          PY

@@ -3,7 +3,7 @@
 
 exclude_dirs:
   - '.venv'
-  - 'venv' 
+  - 'venv'
   - '__pycache__'
   - '.git'
   - 'test_data'  # Exclude test data which may contain intentional security patterns

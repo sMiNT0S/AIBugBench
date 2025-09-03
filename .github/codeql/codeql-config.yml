@@ -35,14 +35,14 @@ query-filters:
         - "benchmark/validators.py"
         - "benchmark/runner.py"
     reason: "Subprocess usage is intentional for test execution validation"
-  
+
   # Allow custom YAML loader for duplicate detection
   - exclude:
       id: py/unsafe-deserialization
       paths:
         - "benchmark/validators.py"
     reason: "UniqueKeyLoader is custom implementation for YAML duplicate detection"
-  
+
   # Allow hardcoded credentials in test context
   - exclude:
       id: py/hardcoded-credentials
@@ -57,10 +57,10 @@ build-mode: none
 database:
   # Use additional queries for comprehensive security analysis
   finalize-database: true
-  
+
   # Custom query selection for Python security analysis
   query-selection:
     - "Security"
     - "Correctness"
-    - "Performance" 
+    - "Performance"
     - "Maintainability"

@@ -37,6 +37,8 @@ We currently support only the latest released (or main branch if unreleased) ver
 
 ## 2. Threat Model & Scope
 
+For the detailed sandbox mechanics and enforcement rationale, see the complementary hardening document [`SAFETY.md`](SAFETY.md). A forward-looking roadmap of deferred and planned controls lives in the README's [Scope & Limitations](README.md#scope--limitations) section.
+
 Although the benchmark is “mostly offline,” risk still exists:
 
 - Executing untrusted model/submission code (file system, environment, potential network egress)
@@ -56,7 +58,7 @@ Execution & Quality Gates:
 - **Process execution blocking**: Complete subprocess isolation blocking all process spawning (subprocess.run/call/Popen, os.system, os.exec*/spawn*/fork* family)
 - **Dynamic code execution protection**: Blocks eval(), exec(), compile() and dangerous imports (ctypes, marshal, pickle)
 - **Filesystem confinement**: Path validation preventing access outside sandbox boundaries with guards on open(), os.remove(), shutil.* operations
-- **Windows Job Objects**: Platform-specific CPU/memory limits via pywin32 for real resource control (vs no-op resource module)
+- **Windows Job Objects**: Hard CPU/memory limits via Job Object assignment when pywin32 available (soft timeout-only fallback when not)
 - Zero Ruff lint errors policy (style + selected security rules)
 - ≥60% test coverage with focused unit tests around validators and runners
 - Platform validation to detect cross-run or cross-platform drift
@@ -103,7 +105,7 @@ The benchmark includes a comprehensive `SecureRunner` sandbox that:
 - Prevents dynamic code execution (eval/exec/compile)
 - Restricts filesystem access to sandbox boundaries
 - Implements resource limits (CPU, memory, file size)
-- Uses Windows Job Objects for real limits on Windows platforms
+- Uses Windows Job Objects for real limits on Windows platforms when pywin32 is available (otherwise timeout + process tree cleanup only)
 
 **Technical Implementation Details:**
 
@@ -265,7 +267,7 @@ python scripts/security_audit.py
 - ✅ Consolidated safe subprocess wrapper (complete blocking implemented)
 - ✅ PR security automation with comprehensive security checks
 - ✅ Hash-pinned dependencies with cryptographic integrity verification
-- ✅ Windows Job Objects for real resource limits
+- ✅ Windows Job Objects for real resource limits when pywin32 available (fallback preserves execution with reduced guarantees)
 - ✅ Dynamic code execution and dangerous import protection
 
 ## 13. Contact & Questions

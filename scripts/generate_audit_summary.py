@@ -6,6 +6,7 @@ Usage:
 
 Writes audit_summary.md and appends to $GITHUB_STEP_SUMMARY if present.
 """
+
 from __future__ import annotations
 
 import json
@@ -48,6 +49,7 @@ def main(path: str) -> int:
         with open(summary_path, "a", encoding="utf-8") as fh:  # pragma: no cover - env dep
             fh.write("\n".join(lines) + "\n")
     return 0
+
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else "audit.json"))

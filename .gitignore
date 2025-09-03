@@ -68,6 +68,56 @@ ci_results/
 platform_validation_*.json
 build/*.txt
 warn-*.txt
+benchmark_artifacts/
+.git/precommit_artifacts/
+precommit_artifacts/
+smoke_artifacts/
+smoke_tmp/
+smoke_logs/
+*.smoke.log
+*.smoke.tmp
+
+# Additional benchmark / run outputs
+benchmark_run_*/
+run_outputs/
+run_logs/
+*.run.log
+*.benchmark.log
+*.benchmark.json
+benchmark_tmp/
+
+# Transient JSON/YAML artifacts not meant for version control
+*_temp_result.json
+*_temp_results.json
+*_temp.yaml
+temp_results_*.json
+intermediate_results_*.json
+
+# Sandbox / isolation directories
+aib_sandbox_*/
+sandbox_*/
+tmp_sandbox_*/
+
+# Security / audit ephemeral (keep canonical final reports)
+audit.json
+audit_summary.md
+bandit-report.json
+safety-report.json
+semgrep-secrets.json
+trufflehog-results.json
+
+# Coverage & pytest extra outputs (already partially covered)
+.pytest_cache/
+coverage_html/
+coverage_json/
+coverage_tmp/
+*.lcov
+
+# Misc debug artifacts
+debug_*.log
+trace_*.log
+profiling_*/
+profile_*.dat
 
 # Generated Files and Executables
 *.spec

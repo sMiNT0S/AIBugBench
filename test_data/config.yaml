@@ -1,7 +1,5 @@
 # yaml-language-server: $schema=
 # yamllint disable
-# yaml-language-server: $schema=
-# yamllint disable
 # Configuration file for the data processor script
 # Contains paths, rules, and feature flags.
 
@@ -9,12 +7,12 @@ use_legacy_paths: 'true'
 
 paths:
     data_source: /srv/data/production/users.json
- legacy_data_source: ./user_data.json  # Note: This is a relative path
-    log_file: /var/log/processor.log
+  legacy_data_source: ./user_data.json  # Note: This is a relative path
+     log_file: /var/log/processor.log
 
 # Validation rules for user records
 validation_rules:
-    min_age_years: "21" # Must be of legal age
+    min_age_years:"21" # Must be of legal age
     minimum_posts: 5
     # a required_fields section was here, but removed for now
     required_fields:

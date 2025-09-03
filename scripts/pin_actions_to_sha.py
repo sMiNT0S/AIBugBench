@@ -22,10 +22,12 @@ ACTION_PINS = {
     ),
 }
 
+
 def _rewrite(content: str) -> str:
     for tag, pin in ACTION_PINS.items():
         content = re.sub(re.escape(tag), pin, content)
     return content
+
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser()
@@ -54,6 +56,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"🔎 would update {fp} (use --apply)")
     print(f"Done. {changed} file(s) {'updated' if a.apply else 'needing update'}.")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

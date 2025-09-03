@@ -5,10 +5,29 @@ ignore: |
   test_data/
   submissions/templates/template/
   submissions/example_model/
+  venv/
+  .git/
+  .ruff_cache/
+  .mypy_cache/
+  .pytest_cache/
+  node_modules/
+  dist/
+  build/
+  __pycache__/
+  site-packages/
 
 rules:
   line-length:
     max: 120
+    allow-non-breakable-words: true
+    level: warning
+
   document-start: disable
+
   truthy:
     allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: false
+
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 2

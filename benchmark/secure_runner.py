@@ -572,19 +572,44 @@ class SecureRunner:
         win32job.SetInformationJobObject(job, win32job.JobObjectExtendedLimitInformation, info)
 
         try:
-            # Start process and assign to job
-            # Note: We use subprocess.run but could enhance with job assignment
-            # For now, this provides the Job Object infrastructure
-            return subprocess.run(  # noqa: S603  # Job object controlled execution
+            # Start process (creation flags ensure handle inheritance is possible)
+            proc = subprocess.Popen(  # noqa: S603  # Job object controlled execution
                 cmd,
                 cwd=str(cwd) if cwd else None,
                 env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                timeout=timeout,
-                check=False,
             )
+            job_assigned = True
+            try:
+                win32job.AssignProcessToJobObject(
+                    job,
+                    win32api.OpenProcess(0x1F0FFF, False, proc.pid),
+                )
+            except Exception as assign_exc:  # pragma: no cover - defensive fallback
+                job_assigned = False
+                # Soft fallback: continue without hard job object limits rather than failing CI
+                with suppress(Exception):
+                    # If assignment failed early keep process running; no blind terminate
+                    pass
+                sys.stderr.write(
+                    "[sandbox] job object assignment failed; fallback to normal process: "
+                    f"{assign_exc}\n"
+                )
+            try:
+                stdout, _ = proc.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired as exc:
+                with suppress(Exception):
+                    proc.terminate()
+                raise TimeoutError(f"Execution exceeded {timeout}s limit (job object)") from exc
+            if not job_assigned:
+                # We still return the output but note lack of enforced hard limits
+                stdout = (
+                    stdout + "\n[sandbox] WARNING: Job Object limits not enforced; "
+                    "running under standard process limits."
+                )
+            return subprocess.CompletedProcess(cmd, proc.returncode, stdout, None)
         finally:
             # Clean up job object
             with suppress(Exception):

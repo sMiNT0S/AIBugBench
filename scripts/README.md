@@ -297,6 +297,42 @@ This will show:
 - Why specific commands were skipped or failed
 - Detailed execution logs for troubleshooting
 
+## Other Utility Scripts
+
+### yaml_ducttape.ps1
+
+A PowerShell script that scans the repository for yamllint errors and warnings, then applies safe automatic fixes.
+
+**Features:**
+
+- Scans entire repository for YAML formatting issues
+- Applies safe fixes automatically (indentation, spacing, line endings)
+- Lists optional fixes that require manual review
+- Preserves file content and structure integrity
+
+**Usage:**
+
+```powershell
+./yaml_ducttape.ps1
+```
+
+### update_requirements_lock.py
+
+Utility script that detects differences between requirements files and their locked versions.
+
+**Features:**
+
+- Compares `requirements.txt` vs `requirements.lock`
+- Compares `requirements-dev.txt` vs `requirements-dev.lock`
+- Reports version mismatches and missing dependencies
+- Helps maintain dependency synchronization
+
+**Usage:**
+
+```bash
+python scripts/update_requirements_lock.py
+```
+
 ### Security Considerations
 
 ### Incremental Refactor Note

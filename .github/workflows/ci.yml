@@ -1,14 +1,14 @@
 name: CI
 
 env:
-  PYTHON_DEFAULT_VERSION: '3.12'
-  BANDIT_VERSION: '1.8.6'
-  RUFF_VERSION: '0.5.5'
-  MYPY_VERSION: '1.11.2'
-  PYTEST_VERSION: '8.3.2'
-  PYTEST_COV_VERSION: '5.0.0'
-  COVERAGE_VERSION: '7.6.1'
-  SAFETY_VERSION: '3.2.5'
+  PYTHON_DEFAULT_VERSION: "3.12"
+  BANDIT_VERSION: "1.8.6"
+  RUFF_VERSION: "0.5.5"
+  MYPY_VERSION: "1.11.2"
+  PYTEST_VERSION: "8.3.2"
+  PYTEST_COV_VERSION: "5.0.0"
+  COVERAGE_VERSION: "7.6.1"
+  SAFETY_VERSION: "3.2.5"
 
 on:
   push:
@@ -19,7 +19,6 @@ on:
 # (Moved to top-level env block)
 
 jobs:
-
   lock-verification:
     name: Dependency Lock Verification
     permissions:
@@ -47,13 +46,15 @@ jobs:
         run: |
           set -e
           if ! diff -u requirements.lock new.requirements.lock > lock.diff || [ -s lock.diff ]; then
-            echo "❌ requirements.lock is out of date with requirements.txt" >&2
-            echo "Run: pip install 'pip-tools>=7.5.0' && python -m piptools compile --generate-hashes -o requirements.lock requirements.txt" >&2
+            echo "requirements.lock is out of date with requirements.txt" >&2
+            echo "To regenerate lock file run:" >&2
+            echo "  pip install 'pip-tools>=7.5.0'" >&2
+            echo "  python -m piptools compile --generate-hashes -o requirements.lock requirements.txt" >&2
             echo "--- Diff (expected no output) ---" >&2
             cat lock.diff >&2 || true
             exit 1
           fi
-          echo "✅ requirements.lock matches requirements.txt"
+          echo "requirements.lock matches requirements.txt"
       - name: Summary
         if: always()
         run: |
@@ -77,7 +78,7 @@ jobs:
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          install-dev: 'true'
+          install-dev: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -95,7 +96,13 @@ jobs:
           python -m mypy ./benchmark ./validation ./run_benchmark.py --no-error-summary
       - name: "mypy (latest runtime: 3.13 types)"
         run: |
-          python -m mypy ./benchmark ./validation ./run_benchmark.py --no-error-summary --python-version 3.13 --cache-dir .mypy_cache/py313
+          python -m mypy \
+            ./benchmark \
+            ./validation \
+            ./run_benchmark.py \
+            --no-error-summary \
+            --python-version 3.13 \
+            --cache-dir .mypy_cache/py313
       - name: Format check with ruff
         run: ruff format --check .
 
@@ -113,7 +120,7 @@ jobs:
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          install-test: 'true'
+          install-test: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -121,7 +128,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
-      
+
       - name: Run tests (branch coverage unified)
         run: |
           coverage erase
@@ -162,7 +169,7 @@ jobs:
           path: htmlcov
           if-no-files-found: warn
           retention-days: 7
-  # Detect presence of Codecov secret without job-level env
+      # Detect presence of Codecov secret without job-level env
       - name: Detect Codecov token
         shell: bash
         run: |
@@ -195,7 +202,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           - os: ubuntu-latest
             platform_name: linux
@@ -212,7 +219,7 @@ jobs:
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: ${{ matrix.python-version }}
-          install-test: 'true'
+          install-test: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -234,7 +241,7 @@ jobs:
           echo "Full suite failed; executing minimal import smoke test for diagnostics..."
           pytest tests/test_imports.py -v --tb=short || true
           echo "Primary test suite failure retained (job will fail)."
-      
+
       - name: Validate test data structure
         shell: bash
         run: |
@@ -242,12 +249,12 @@ jobs:
           test -f test_data/process_records.py
           test -f test_data/user_data.json
           test -f test_data/config.yaml
-          echo "✅ Test data validation passed"
-      
+          echo "Test data validation passed"
+
       - name: Run platform-specific benchmark validation
         run: python benchmark/platform_validator.py
         continue-on-error: true
-      
+
       - name: Collect benchmark artifacts
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         if: always()
@@ -305,14 +312,14 @@ jobs:
                   data = json.load(f)
               print(f'- **Platform:** {data.get(\"platform\", \"unknown\")}')
               print(f'- **Score:** {data.get(\"total_score\", 0):.2f}/100')
-              print(f'- **Within Tolerance:** {data.get(\"within_tolerance\", False)}')
+              print(f'- **Within Tolerance:** {data.get(\"within_tolerance\", false)}')
               if 'full_results' in data and 'execution_time' in data['full_results']:
                   print(f'- **Execution Time:** {data[\"full_results\"][\"execution_time\"]:.2f}s')
               " >> consistency_report.md
               echo "" >> consistency_report.md
             done
           else
-            echo "⚠️ No platform validation results found" >> consistency_report.md
+            echo "No platform validation results found" >> consistency_report.md
           fi
 
       - name: Upload consistency report
@@ -337,7 +344,7 @@ jobs:
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          install-security: 'true'
+          install-security: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
@@ -345,12 +352,12 @@ jobs:
           key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
-      
+
       - name: Run bandit security scan
         # Use pyproject.toml configuration for consistent exclusions (pinned version)
         run: bandit -r . -ll --configfile pyproject.toml -f json -o bandit-report.json --version
         continue-on-error: true
-      
+
       - name: Run safety scan
         run: safety scan --file=requirements.lock --json > safety-report.json || echo "safety scan fallback"
         continue-on-error: true
@@ -366,8 +373,7 @@ jobs:
       - name: Generate security audit summary
         if: always()
         run: python scripts/generate_audit_summary.py audit.json || true
-      
-      
+
       - name: Upload security reports
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         if: always()

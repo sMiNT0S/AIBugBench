@@ -360,7 +360,7 @@ class DocumentationValidator:
 
         return "\n".join(context_block)
 
-    def validate_commands(self, commands: list[Command]) -> ValidationSummary:
+    def validate_commands(self, commands: list[ExtendedCommand]) -> ValidationSummary:
         """Validate all extracted commands."""
         summary = ValidationSummary()
         summary.total_commands = len(commands)

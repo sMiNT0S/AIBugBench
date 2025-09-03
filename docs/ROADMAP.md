@@ -76,6 +76,11 @@ Optional Tooling:
 - Cached artifact layer & incremental scoring
 - Attestation + supply chain SLSA level improvements
 
+### Exploratory / Future Ideas
+
+- **Universal Code Runner Mode**: Optional "open" execution path that accepts arbitrary user/LLM code (outside curated prompt set) and applies a broadened heuristic + dynamic test harness (syntactic safety, structural complexity metrics, runtime behavior probes). Goal: let users drop in any snippet/project and receive a normalized multi‑category score while preserving existing security guarantees. Requires: generic fixture injection, adaptive timeout scaling, and pluggable metric registry.
+- **Adaptive Scoring & Prompt Experiment Harness**: Framework to define custom scoring profiles (weighting, category enable/disable, experimental metrics) and batch‑evaluate multiple prompt variants against the same base model. Produces comparative deltas (baseline vs variant) to quantify prompt engineering impact. Includes JSON schema for custom metrics and optional statistical stability (N-run variance) overlay.
+
 ## Principles
 
 - Prioritize scoring correctness over peripheral tooling

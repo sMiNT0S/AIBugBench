@@ -38,6 +38,15 @@ Thank you for your interest in contributing to AIBugBench! This document provide
    pip install ruff pytest
    ```
 
+4. **Set up pre-commit hooks (recommended)**:
+
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+   This will run automated checks (linting, type checking, smoke tests) before each commit.
+
 ### Running Tests and Linting
 
 Before submitting any changes, ensure your code passes all checks:
@@ -52,6 +61,23 @@ pytest -q
 # Run repository audit (enhanced)
 python validation/repo_audit_enhanced.py --path . --json audit_report.json
 ```
+
+### Development Workflow
+
+The project uses extensive CI automation and pre-commit hooks:
+
+- **Pre-commit hooks**: Run linting, type checking, and smoke tests before commits
+- **CI Pipeline**: Comprehensive validation including security scans, multi-platform tests, and coverage analysis
+- **Dependency locks**: Hash-verified requirements for reproducible builds
+
+If pre-commit hooks are installed, they will automatically:
+
+- Run Ruff for code formatting and linting
+- Execute MyPy type checking on core modules
+- Run Bandit security analysis
+- Validate YAML formatting
+- Execute smoke tests to ensure basic functionality
+- Check requirements lock file synchronization
 
 ## Pull Request Process
 

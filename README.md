@@ -10,51 +10,88 @@
 [![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
 ![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
 
-## Badge Meanings & Local Reproduction
-
-| Badge | Meaning | How to Reproduce Locally |
-|-------|---------|--------------------------|
-| CI | Lint (ruff) + tests (pytest) pass | `pytest -q` then `ruff check .` |
-| Test Coverage | Coverage job in `ci.yml` meets threshold (>=62% default) | `pwsh scripts/test_with_coverage.ps1` |
-| Security Audit | Fast static/config audit (`security-audit.yml`) passes | (auto in workflow) |
-| Security Analysis | Full security suite (`security.yml`: bandit, secrets, pins) passes | `bandit -r . -ll` (plus internal scripts) |
-| Tiered Validation | Structural & doc validators succeed | (workflow: `tiered-validation.yml`) |
-| Type Checking | Core modules mypy-clean under strict-core profile | `mypy benchmark run_benchmark.py` |
-
 ## Welcome to AIBugBench
 
-So... you decided to vibe-code a weekend project, and now your personal API key is public. How tragic. Next time, run it here first.
+So… you vibe coded a weekend project and shipped it. Bold move. Before you crown an LLM your new teammate, see how it behaves under **the same** set of tasks.
 
-AIBugBench is a comprehensive benchmark for testing AI-generated code across 7 quality categories. Because trusting AI with your codebase should come with receipts.
+AIBugBench evaluates AI-generated code on four **prewritten prompts** and fixed test fixtures. You paste the model’s output, it runs **locally** in a sandbox, and you get a scorecard across seven quality dimensions. Comparable, repeatable, receipts—not vibes.
 
-### What This Does
+### What This Is
 
-- **Benchmark AI Models:** Test how well LLMs write secure, correct, and maintainable code
-- **Catch Security Issues:** Find API key leaks, SQL injections, and other oopsies before production
-- **Regression Testing:** Ensure your fine-tuned model didn't forget how to code
-- **Compare Models:** Side-by-side scoring to pick the least dangerous option
-- **Validate Improvements:** Prove your prompt engineering actually works
+- **Model behavior benchmark:** How different LLMs handle the *same* four curated prompts + deterministic fixtures under controlled conditions.
+- **Regression detector:** Track model versions / prompt policies over time and catch “it used to work” moments (baseline vs new output diffs).
+- **Safety lens:** Static + dynamic sandbox guardrails (dangerous imports, subprocess, network, filesystem). Runtime canaries verify those controls each run (they validate the sandbox, not the scoring logic).
+- **Apples-to-apples:** Fixed prompts + fixed harness = comparable results across models and runs (scoring stable across versions).
+- **Seven-dimension scorecard:** Correctness, safety, readability, efficiency, robustness, portability, maintainability.
+
+### What This Is *Not*
+
+- A scanner/tester for your whole codebase  
+- A magic prompt tuner for your app  
+- Proof your production is “secure”  
+(It’s a benchmark. Use it to compare and monitor models, not to bless arbitrary code.)
+
+### How It Works (TL;DR)
+
+1. Pick your model(s) of choice, e.g. GPT5 Thinking 'vs' Opus 4.1, see how they compare over the same tasks.  
+2. Run the **four provided prompts** after providing deliberately malformed/fussy test data.  
+3. Paste the outputs into AIBugBench.  
+4. It executes locally in a guarded sandbox and scores the results.  
+5. You get a readable scorecard + artifacts for diffs and regressions.
+
+Run it to choose saner defaults, catch regressions early, and keep your future “oops, API key” moments in the hypothetical.
 
 ## Quick Start (60 seconds)
 
 ```bash
 git clone https://github.com/sMiNT0S/AIBugBench.git && cd AIBugBench
 python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt && python setup.py
+# Install pinned, hash‑verified runtime deps
+pip install --require-hashes -r requirements.lock
+# (Optional) developer tooling (hash‑verified)
+pip install --require-hashes -r requirements-dev.lock
+# If you just modified dev deps and need to refresh the lock:
+# pip install -r requirements-dev.txt && python scripts/update_requirements_lock.py
 python run_benchmark.py --model example_model
 ```
 
+## Table of Contents
+
+<!-- TOC_START -->
+
+- [Welcome to AIBugBench](#welcome-to-aibugbench)
+  - [What This Is](#what-this-is)
+  - [What This Is *Not*](#what-this-is-not)
+  - [How It Works (TL;DR)](#how-it-works-tldr)
+- [Quick Start (60 seconds)](#quick-start-60-seconds)
+- [Security at a glance](#security-at-a-glance)
+- [Navigation](#navigation)
+- [Common Tasks](#common-tasks)
+  - [Notes](#notes)
+- [Resources](#resources)
+- [Dependency Locks (pip-tools)](#dependency-locks-pip-tools)
+  - [Developer Tooling Lock](#developer-tooling-lock)
+- [Scope & Limitations](#scope--limitations)
+- [Result Metadata & Privacy](#result-metadata--privacy)
+- [Performance & Concurrency](#performance--concurrency)
+- [Results Layout (v0.8.1+)](#results-layout-v081)
+- [Badge Meanings & Local Reproduction](#badge-meanings--local-reproduction)
+<!-- TOC_END -->
+
 ## Security at a glance
 
-- Runs model-generated Python in a **separate child process**
-- Enforced guards: **no eval/exec/compile**, **no subprocess**, **no network**, **sandboxed filesystem**
-- Import gate: bans `ctypes`, `pickle`, `marshal`; blocks `importlib.reload`
-- Pre-run **security audit** must pass locally and in CI
-- Ephemeral workdir per run; outputs harvested, temp wiped
-- POSIX: rlimits; Windows: watchdog today, **Job Objects coming** for hard caps
-- Opt-out: `--unsafe` (loud, logged)
+- Execution isolation via `SecureRunner` sandbox (temp working dir, cleanup on exit)
+- Runtime guards: block **eval/exec/compile**, **subprocess**, **dangerous imports** (`ctypes`, `pickle`, `marshal`, etc.)
+- Network egress blocked by default (socket overrides); explicit opt-in flags: `--allow-network` / `--unsafe`
+- Filesystem mediation: guarded open/remove/copy + path validation (temp scope)
+- Resource limits: POSIX rlimits (CPU / memory / file size); Windows Job Objects when pywin32 present (soft timeout-only fallback if unavailable)
+- Environment scrubbing: sensitive pattern filtering + controlled rebuild (full whitelist hardening deferred)
+- Dynamic canaries (CPU loop, network, subprocess, spawn, dynamic code, dangerous imports, filesystem) validate static heuristics each audit run
+- Mandatory security audit (`scripts/security_audit.py`) integrated in CI; produces JSON artifact and pass/fail gating
+- Explicit failure isolation: banner honesty check ensures claims match enforced controls
+- Opt-out: `--unsafe` (loudly logged + reduces guardrails for comparative analysis only)
 
-See `SAFETY.md` for the full threat model, guarantees, and verification steps.
+Full threat model & roadmap: see [`SAFETY.md`](SAFETY.md) and [`SECURITY.md`](SECURITY.md).
 
 ## Navigation
 
@@ -63,22 +100,26 @@ See `SAFETY.md` for the full threat model, guarantees, and verification steps.
 **Model Developers:** [Developer Guide](docs/developer-guide.md) - Add and test AI models  
 **Contributors:** [Architecture](docs/architecture.md) & [Contributing](CONTRIBUTING.md) - Understand and extend the codebase  
 
-## FAQ
+## Common Tasks
 
-**How do I run tests quickly?**  
-`python -m pytest -q` (fast logic run, no coverage)
+| Task | Command / Action |
+|------|------------------|
+| Fast test run | `pytest -q` |
+| Full coverage run | `pwsh scripts/test_with_coverage.ps1` |
+| Type checking (strict core) | `mypy benchmark validation run_benchmark.py --no-error-summary` |
+| Lint & format check | `ruff check . && ruff format --check .` |
+| Security audit (local) | `python scripts/security_audit.py --json` |
+| Dependency lock update | `python scripts/update_requirements_lock.py` |
+| Rebuild clean venv (Windows) | `Remove-Item -Recurse -Force venv; python -m venv venv; ./venv/Scripts/Activate.ps1` |
+| Install deps (prod) | `pip install --require-hashes -r requirements.lock` |
+| Install dev tooling | `pip install --require-hashes -r requirements-dev.lock` |
+| Add model (example) | Copy `submissions/reference_implementations/example_model` → new folder & adapt |
+| Pre-commit hooks | `pip install pre-commit && pre-commit install` (uses `.pre-commit-config.yaml`) |
 
-**How do I get full coverage locally?**  
-`pwsh scripts/test_with_coverage.ps1` (erases old data, runs with thresholds)
+### Notes
 
-**Why was coverage removed from default pytest.ini?**  
-To avoid branch/statement mixing errors and speed up iteration; CI & the coverage script enforce thresholds.
-
-**How do I rebuild a clean environment?**  
-`Remove-Item -Recurse -Force venv; python -m venv venv; ./venv/Scripts/Activate.ps1; pip install -r requirements.txt -r requirements-dev.txt`
-
-**How do I prevent accidental empty files?**  
-Copy `scripts/pre_commit_template.sh` to `.git/hooks/pre-commit` and make it executable.
+- Coverage thresholds enforced in CI; local full run is optional unless changing scoring / sandbox.
+- Use the lock file for reproducible installs; `requirements.txt` lists only direct top-level deps.
 
 ## Resources
 
@@ -95,9 +136,9 @@ Copy `scripts/pre_commit_template.sh` to `.git/hooks/pre-commit` and make it exe
 
 **Requirements:** Python 3.10+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
 
-## Dependency Lock (pip-tools)
+## Dependency Locks (pip-tools)
 
-Locked deps live in `requirements.lock` (hashes enforced in PR security workflow).
+Locked runtime deps live in `requirements.lock` (hashes enforced in PR security workflow). Developer tooling (linters, type checkers, test utilities, security scanners) is separately pinned in `requirements-dev.lock` to decouple supply‑chain drift from runtime evaluation.
 
 Update flow:
 
@@ -114,9 +155,56 @@ Update flow:
 
 CI enforcement: the `lock-verification` job recompiles when `requirements.txt` changes and fails if `requirements.lock` is out of sync.
 
+### Developer Tooling Lock
+
+Flow mirrors the runtime lock but sources `requirements-dev.txt`:
+
+1. Edit `requirements-dev.txt` (add/remove tools — keep only necessary dev/test/security utilities).
+2. Rebuild lock (same interpreter version):
+
+   ```bash
+   pip install "pip-tools>=7.5.0"
+   python -m piptools compile --generate-hashes -o requirements-dev.lock requirements-dev.txt
+   ```
+
+3. Install with hashes: `pip install --require-hashes -r requirements-dev.lock`
+4. Commit both `requirements-dev.txt` and `requirements-dev.lock` together.
+
+Rationale:
+
+- Keeps transient tooling bumps from invalidating benchmark reproducibility
+- Allows security scanners / linters to update independently of runtime dependency graph
+- Hardened installs (hashes) even for local CI parity.
+
 ## Scope & Limitations
 
-This beta focuses on deterministic scoring accuracy and reproducible results. It does NOT sandbox untrusted submission code yet—run only trusted code. Advanced isolation, fuzz stress, and provenance (SBOM/signing) are deferred and tracked in the roadmap.
+Current release scope (0.x beta):
+
+Implemented:
+
+- Deterministic scoring & comparison output (timestamped results directories)
+- Sandbox enforcement (process isolation helpers, filesystem guard, dynamic canaries)
+- Resource limits (POSIX rlimits; Windows Job Objects when pywin32 available)
+- Dynamic code / subprocess / dangerous import blocking
+- Python-level network egress blocking (socket denial unless `--allow-network`)
+- Strict environment whitelist (minimal allow-list rebuild of env)
+- Hash-pinned dependency supply-chain integrity
+- Security + dependency audit workflows
+
+Deferred (tracked in ROADMAP):
+
+- Container / namespace isolation (bwrap / nsjail / docker) for defense-in-depth
+- OS / kernel-level network isolation (firewall / namespaces) beyond Python socket guards
+- SBOM + artifact signing
+- Automated PR-tier sandbox fuzz stress harness
+- Optional Semgrep ruleset integration
+- Public CodeQL adoption (post public repo / GHAS availability)
+
+Out of Scope (near-term):
+
+- Multi-language model execution
+- GPU / accelerator resource accounting
+- Distributed execution orchestration
 
 ## Result Metadata & Privacy
 
@@ -165,3 +253,14 @@ results/
 ```
 
 Key advantages: atomic writes (no partial files), historical retention, dynamic prompt support (new prompts auto appear in comparison data).
+
+## Badge Meanings & Local Reproduction
+
+| Badge | Meaning | How to Reproduce Locally |
+|-------|---------|--------------------------|
+| CI | Lint (ruff) + tests (pytest) pass | `pytest -q` then `ruff check .` |
+| Test Coverage | Coverage job in `ci.yml` meets threshold (>=62% default) | `pwsh scripts/test_with_coverage.ps1` |
+| Security Audit | Fast static/config audit (`security-audit.yml`) passes | (auto in workflow) |
+| Security Analysis | Full security suite (`security.yml`: bandit, secrets, pins) passes | `bandit -r . -ll` (plus internal scripts) |
+| Tiered Validation | Structural & doc validators succeed | (workflow: `tiered-validation.yml`) |
+| Type Checking | Core modules mypy-clean under strict-core profile | `mypy benchmark run_benchmark.py` |

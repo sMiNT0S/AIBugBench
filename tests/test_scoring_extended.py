@@ -3,6 +3,7 @@
 Covers: calculate_grade boundaries, feedback summary branches, improvement suggestions,
 model comparison, and badge generation.
 """
+
 import pytest
 
 from benchmark.scoring import BenchmarkScorer
@@ -12,10 +13,24 @@ from benchmark.scoring import BenchmarkScorer
 @pytest.mark.parametrize(
     "percentage,expected",
     [
-        (96, "A+"), (95, "A+"), (92, "A"), (90, "A"), (87, "A-"), (85, "A-"),
-        (82, "B+"), (80, "B+"), (77, "B"), (75, "B"), (72, "B-"), (70, "B-"),
-        (67, "C+"), (65, "C+"), (60, "C"), (59.9, "F"), (10, "F")
-    ]
+        (96, "A+"),
+        (95, "A+"),
+        (92, "A"),
+        (90, "A"),
+        (87, "A-"),
+        (85, "A-"),
+        (82, "B+"),
+        (80, "B+"),
+        (77, "B"),
+        (75, "B"),
+        (72, "B-"),
+        (70, "B-"),
+        (67, "C+"),
+        (65, "C+"),
+        (60, "C"),
+        (59.9, "F"),
+        (10, "F"),
+    ],
 )
 def test_calculate_grade_boundaries(percentage, expected):
     scorer = BenchmarkScorer()
@@ -30,7 +45,7 @@ def test_feedback_summary_strengths_and_weaknesses():
         "prompts": {
             "prompt_1": {"score": 22, "max_score": 25},  # 88% -> strength
             "prompt_2": {"score": 10, "max_score": 25},  # 40% -> weakness
-            "prompt_3": {"error": "Runtime failure"},     # error branch
+            "prompt_3": {"error": "Runtime failure"},  # error branch
             "prompt_4": {"score": 15, "max_score": 25},  # 60% -> neutral
         },
     }

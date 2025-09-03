@@ -2,6 +2,7 @@
 
 These are non-blocking in CI (continue-on-error job).
 """
+
 from __future__ import annotations
 
 from pathlib import Path

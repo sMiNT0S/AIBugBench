@@ -6,6 +6,7 @@ Ensures that:
 - When include_hidden_dirs=True both hidden dirs and hidden files are included
 - Explicit SKIP_DIRS are always skipped
 """
+
 from pathlib import Path
 
 import pytest

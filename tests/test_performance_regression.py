@@ -37,7 +37,9 @@ class TestPerformanceRegression:
             model = ref_impl / f"reference_model_{i}"
             model.mkdir()
             for j in range(5):  # 5 files per model
-                (model / f"prompt_{j}_solution.py").write_text(f"# Reference model {i} solution {j}")
+                (model / f"prompt_{j}_solution.py").write_text(
+                    f"# Reference model {i} solution {j}"
+                )
 
         # Create user submissions (50 models)
         user_subs = submissions / "user_submissions"
@@ -60,6 +62,7 @@ class TestPerformanceRegression:
 
     def test_directory_scanning_performance(self, large_submissions_structure):
         """Test directory scanning performance with tiered structure."""
+
         def scan_submissions_directory(submissions_dir):
             """Scan submissions directory and return all models."""
             start_time = time.time()
@@ -71,14 +74,14 @@ class TestPerformanceRegression:
             if ref_impl.exists():
                 for model_dir in ref_impl.iterdir():
                     if model_dir.is_dir():
-                        models.append(('reference', model_dir.name, model_dir))
+                        models.append(("reference", model_dir.name, model_dir))
 
             # Scan user submissions
             user_subs = submissions_dir / "user_submissions"
             if user_subs.exists():
                 for model_dir in user_subs.iterdir():
                     if model_dir.is_dir():
-                        models.append(('user', model_dir.name, model_dir))
+                        models.append(("user", model_dir.name, model_dir))
 
             scan_time = time.time() - start_time
             return models, scan_time
@@ -90,8 +93,8 @@ class TestPerformanceRegression:
         assert len(models) == 55, f"Expected 55 models, found {len(models)}"
 
         # Verify both types found
-        ref_models = [m for m in models if m[0] == 'reference']
-        user_models = [m for m in models if m[0] == 'user']
+        ref_models = [m for m in models if m[0] == "reference"]
+        user_models = [m for m in models if m[0] == "user"]
         assert len(ref_models) == 5
         assert len(user_models) == 50
 
@@ -103,26 +106,26 @@ class TestPerformanceRegression:
             """Load metadata for all models (simulating benchmark preparation)."""
             metadata = {}
 
-            for tier in ['reference_implementations', 'user_submissions']:
+            for tier in ["reference_implementations", "user_submissions"]:
                 tier_dir = submissions_dir / tier
                 if tier_dir.exists():
                     for model_dir in tier_dir.iterdir():
                         if model_dir.is_dir():
                             model_metadata = {
-                                'name': model_dir.name,
-                                'path': str(model_dir),
-                                'files': [],
-                                'size': 0
+                                "name": model_dir.name,
+                                "path": str(model_dir),
+                                "files": [],
+                                "size": 0,
                             }
 
-                            for file_path in model_dir.glob('*.py'):
+                            for file_path in model_dir.glob("*.py"):
                                 file_info = {
-                                    'name': file_path.name,
-                                    'size': file_path.stat().st_size,
-                                    'content_preview': file_path.read_text()[:100]
+                                    "name": file_path.name,
+                                    "size": file_path.stat().st_size,
+                                    "content_preview": file_path.read_text()[:100],
                                 }
-                                model_metadata['files'].append(file_info)
-                                model_metadata['size'] += file_info['size']
+                                model_metadata["files"].append(file_info)
+                                model_metadata["size"] += file_info["size"]
 
                             metadata[f"{tier}/{model_dir.name}"] = model_metadata
 
@@ -151,25 +154,21 @@ class TestPerformanceRegression:
                 start_time = time.time()
 
                 models = []
-                for tier in ['reference_implementations', 'user_submissions']:
+                for tier in ["reference_implementations", "user_submissions"]:
                     tier_dir = submissions_dir / tier
                     if tier_dir.exists():
                         for model_dir in tier_dir.iterdir():
                             if model_dir.is_dir():
                                 # Simulate some work
-                                file_count = len(list(model_dir.glob('*.py')))
-                                models.append({
-                                    'tier': tier,
-                                    'name': model_dir.name,
-                                    'files': file_count
-                                })
+                                file_count = len(list(model_dir.glob("*.py")))
+                                models.append(
+                                    {"tier": tier, "name": model_dir.name, "files": file_count}
+                                )
 
                 scan_time = time.time() - start_time
-                results.append({
-                    'thread_id': thread_id,
-                    'models_found': len(models),
-                    'scan_time': scan_time
-                })
+                results.append(
+                    {"thread_id": thread_id, "models_found": len(models), "scan_time": scan_time}
+                )
 
             except Exception as e:
                 errors.append(f"Thread {thread_id}: {e}")
@@ -178,8 +177,7 @@ class TestPerformanceRegression:
         threads = []
         for i in range(5):
             thread = threading.Thread(
-                target=concurrent_scanner,
-                args=(large_submissions_structure, i)
+                target=concurrent_scanner, args=(large_submissions_structure, i)
             )
             threads.append(thread)
             thread.start()
@@ -193,26 +191,25 @@ class TestPerformanceRegression:
         assert len(results) == 5, f"Expected 5 results, got {len(results)}"
 
         # All threads should find same number of models
-        model_counts = [r['models_found'] for r in results]
-        assert all(count == 55 for count in model_counts), f"Inconsistent model counts: {model_counts}"
+        model_counts = [r["models_found"] for r in results]
+        assert all(count == 55 for count in model_counts), (
+            f"Inconsistent model counts: {model_counts}"
+        )
 
         # Performance should be reasonable
-        scan_times = [r['scan_time'] for r in results]
+        scan_times = [r["scan_time"] for r in results]
         max_scan_time = max(scan_times)
         assert max_scan_time < 2.0, f"Concurrent scan time {max_scan_time:.3f}s too slow"
 
     def test_file_io_performance(self, large_submissions_structure):
         """Test file I/O performance with new directory structure."""
+
         def benchmark_file_operations(submissions_dir, num_iterations=100):
             """Benchmark file operations."""
-            times = {
-                'read_operations': [],
-                'stat_operations': [],
-                'glob_operations': []
-            }
+            times = {"read_operations": [], "stat_operations": [], "glob_operations": []}
 
             # Get list of all Python files
-            all_files = list(submissions_dir.rglob('*.py'))
+            all_files = list(submissions_dir.rglob("*.py"))
 
             for i in range(num_iterations):
                 if i >= len(all_files):
@@ -223,17 +220,17 @@ class TestPerformanceRegression:
                 # Time file read operation
                 start = time.time()
                 content = file_path.read_text()
-                times['read_operations'].append(time.time() - start)
+                times["read_operations"].append(time.time() - start)
 
                 # Time file stat operation
                 start = time.time()
                 stat_info = file_path.stat()
-                times['stat_operations'].append(time.time() - start)
+                times["stat_operations"].append(time.time() - start)
 
                 # Time glob operation on parent directory
                 start = time.time()
-                glob_results = list(file_path.parent.glob('*.py'))
-                times['glob_operations'].append(time.time() - start)
+                glob_results = list(file_path.parent.glob("*.py"))
+                times["glob_operations"].append(time.time() - start)
 
             return times
 
@@ -259,22 +256,22 @@ class TestPerformanceRegression:
             for _ in range(10):  # 10 iterations
                 models = []
 
-                for tier in ['reference_implementations', 'user_submissions']:
+                for tier in ["reference_implementations", "user_submissions"]:
                     tier_dir = large_submissions_structure / tier
                     if tier_dir.exists():
                         for model_dir in tier_dir.iterdir():
                             if model_dir.is_dir():
                                 # Simulate loading model information
                                 model_info = {
-                                    'name': model_dir.name,
-                                    'files': list(model_dir.glob('*.py')),
-                                    'metadata': {}
+                                    "name": model_dir.name,
+                                    "files": list(model_dir.glob("*.py")),
+                                    "metadata": {},
                                 }
 
                                 # Read some file content
-                                for file_path in model_info['files'][:2]:  # Limit to first 2 files
+                                for file_path in model_info["files"][:2]:  # Limit to first 2 files
                                     content = file_path.read_text()
-                                    model_info['metadata'][file_path.name] = len(content)
+                                    model_info["metadata"][file_path.name] = len(content)
 
                                 models.append(model_info)
 
@@ -306,6 +303,7 @@ class TestPerformanceRegression:
             for existing in user_subs.iterdir():
                 if existing.is_dir():
                     import shutil
+
                     shutil.rmtree(existing)
 
             # Create specified number of models
@@ -324,20 +322,24 @@ class TestPerformanceRegression:
 
             discovery_time = time.time() - start_time
 
-            performance_data.append({
-                'model_count': count,
-                'discovery_time': discovery_time,
-                'models_found': len(models_found)
-            })
+            performance_data.append(
+                {
+                    "model_count": count,
+                    "discovery_time": discovery_time,
+                    "models_found": len(models_found),
+                }
+            )
 
         # Verify scalability
         for data in performance_data:
             # Discovery time should scale roughly linearly
-            time_per_model = data['discovery_time'] / data['model_count']
-            assert time_per_model < 0.01, f"Time per model ({time_per_model:.4f}s) too high for {data['model_count']} models"
+            time_per_model = data["discovery_time"] / data["model_count"]
+            assert time_per_model < 0.01, (
+                f"Time per model ({time_per_model:.4f}s) too high for {data['model_count']} models"
+            )
 
             # Should find all models
-            assert data['models_found'] == data['model_count']
+            assert data["models_found"] == data["model_count"]
 
     def test_performance_comparison_old_vs_new(self, tmp_path):
         """Compare performance between old flat structure and new tiered structure."""
@@ -396,7 +398,9 @@ class TestPerformanceRegression:
         assert time_ratio < 2.0, f"New structure {time_ratio:.2f}x slower than old structure"
 
         # Both should be fast
-        assert old_time < 0.1 and new_time < 0.1, f"Discovery times too slow: old={old_time:.3f}s, new={new_time:.3f}s"
+        assert old_time < 0.1 and new_time < 0.1, (
+            f"Discovery times too slow: old={old_time:.3f}s, new={new_time:.3f}s"
+        )
 
 
 class TestPerformanceMonitoring:
@@ -416,7 +420,7 @@ class TestPerformanceMonitoring:
 
         # Create minimal working solutions
         solutions = {
-            "prompt_1_solution.py": '''
+            "prompt_1_solution.py": """
 def process_records(filename):
     import json
     try:
@@ -424,17 +428,17 @@ def process_records(filename):
             return json.load(f)
     except:
         return []
-            ''',
+            """,
             "prompt_2_config.json": '{"test": true}',
-            "prompt_2_config_fixed.yaml": 'test: true',
-            "prompt_3_transform.py": '''
+            "prompt_2_config_fixed.yaml": "test: true",
+            "prompt_3_transform.py": """
 def transform_and_enrich_users(users):
     return users
-            ''',
-            "prompt_4_api_sync.py": '''
+            """,
+            "prompt_4_api_sync.py": """
 def sync_users_to_crm(users, token):
     return None
-            '''
+            """,
         }
 
         for filename, content in solutions.items():
@@ -447,11 +451,11 @@ def sync_users_to_crm(users, token):
 
             # Simulate validation steps
             validations = [
-                ('file_exists', 0.001),
-                ('syntax_check', 0.005),
-                ('import_test', 0.010),
-                ('function_test', 0.020),
-                ('scoring', 0.050)
+                ("file_exists", 0.001),
+                ("syntax_check", 0.005),
+                ("import_test", 0.010),
+                ("function_test", 0.020),
+                ("scoring", 0.050),
             ]
 
             results = {}
@@ -471,6 +475,7 @@ def sync_users_to_crm(users, token):
     @pytest.mark.slow
     def test_resource_monitoring_during_execution(self, tmp_path):
         """Test resource monitoring during benchmark execution."""
+
         def monitor_resources(duration_seconds=2):
             """Monitor CPU and memory usage."""
             process = psutil.Process(os.getpid())
@@ -479,10 +484,10 @@ def sync_users_to_crm(users, token):
             start_time = time.time()
             while time.time() - start_time < duration_seconds:
                 sample = {
-                    'timestamp': time.time(),
-                    'cpu_percent': process.cpu_percent(),
-                    'memory_mb': process.memory_info().rss / 1024 / 1024,
-                    'open_files': len(process.open_files())
+                    "timestamp": time.time(),
+                    "cpu_percent": process.cpu_percent(),
+                    "memory_mb": process.memory_info().rss / 1024 / 1024,
+                    "open_files": len(process.open_files()),
                 }
                 samples.append(sample)
                 time.sleep(0.1)
@@ -493,9 +498,9 @@ def sync_users_to_crm(users, token):
         samples = monitor_resources(1.0)  # Monitor for 1 second
 
         # Analyze resource usage
-        cpu_usage = [s['cpu_percent'] for s in samples if s['cpu_percent'] > 0]
-        memory_usage = [s['memory_mb'] for s in samples]
-        max_open_files = max(s['open_files'] for s in samples)
+        cpu_usage = [s["cpu_percent"] for s in samples if s["cpu_percent"] > 0]
+        memory_usage = [s["memory_mb"] for s in samples]
+        max_open_files = max(s["open_files"] for s in samples)
 
         # Resource usage should be reasonable
         if cpu_usage:  # Only check if CPU data available
@@ -511,17 +516,17 @@ def sync_users_to_crm(users, token):
         """Test detection of performance regressions."""
         # Simulate performance baseline and current measurements
         baseline_metrics = {
-            'directory_scan_time': 0.050,
-            'model_validation_time': 0.200,
-            'memory_usage_mb': 45.0,
-            'cpu_usage_percent': 25.0
+            "directory_scan_time": 0.050,
+            "model_validation_time": 0.200,
+            "memory_usage_mb": 45.0,
+            "cpu_usage_percent": 25.0,
         }
 
         current_metrics = {
-            'directory_scan_time': 0.055,  # 10% increase
-            'model_validation_time': 0.310,  # 55% increase - regression!
-            'memory_usage_mb': 48.0,  # 6% increase
-            'cpu_usage_percent': 27.0  # 8% increase
+            "directory_scan_time": 0.055,  # 10% increase
+            "model_validation_time": 0.310,  # 55% increase - regression!
+            "memory_usage_mb": 48.0,  # 6% increase
+            "cpu_usage_percent": 27.0,  # 8% increase
         }
 
         def detect_regressions(baseline, current, threshold=0.20):
@@ -534,12 +539,14 @@ def sync_users_to_crm(users, token):
                 if baseline_value > 0:
                     change_ratio = (current_value - baseline_value) / baseline_value
                     if change_ratio > threshold:
-                        regressions.append({
-                            'metric': metric,
-                            'baseline': baseline_value,
-                            'current': current_value,
-                            'change_percent': change_ratio * 100
-                        })
+                        regressions.append(
+                            {
+                                "metric": metric,
+                                "baseline": baseline_value,
+                                "current": current_value,
+                                "change_percent": change_ratio * 100,
+                            }
+                        )
 
             return regressions
 
@@ -547,5 +554,5 @@ def sync_users_to_crm(users, token):
 
         # Should detect the validation time regression
         assert len(regressions) == 1
-        assert regressions[0]['metric'] == 'model_validation_time'
-        assert regressions[0]['change_percent'] > 50
+        assert regressions[0]["metric"] == "model_validation_time"
+        assert regressions[0]["change_percent"] > 50

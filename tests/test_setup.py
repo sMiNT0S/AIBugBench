@@ -25,15 +25,17 @@ class TestSetupFunctionality:
         prompts_dir = temp_dir / "prompts"
         prompts_dir.mkdir()
 
-        with patch('pathlib.Path', return_value=prompts_dir.parent), \
-             patch('pathlib.Path.cwd', return_value=temp_dir):
+        with (
+            patch("pathlib.Path", return_value=prompts_dir.parent),
+            patch("pathlib.Path.cwd", return_value=temp_dir),
+        ):
             # Mock Path behavior for the specific paths we need
             def mock_path(path_str):
                 if path_str == "prompts":
                     return prompts_dir
                 return Path(path_str)
 
-            with patch('setup.Path', side_effect=mock_path):
+            with patch("setup.Path", side_effect=mock_path):
                 # Run the function
                 result = create_ai_prompt_file()
 
@@ -71,7 +73,10 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch('setup.Path', side_effect=mock_path), patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with (
+            patch("setup.Path", side_effect=mock_path),
+            patch("sys.stdout", new_callable=StringIO) as mock_stdout,
+        ):
             result = create_ai_prompt_file()
             assert result == existing_content
             output = mock_stdout.getvalue()
@@ -92,7 +97,7 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch('setup.Path', side_effect=mock_path):
+        with patch("setup.Path", side_effect=mock_path):
             # Create the file
             result = create_ai_prompt_file()
 
@@ -103,7 +108,7 @@ class TestSetupFunctionality:
                 "[CHART] SCORING SYSTEM:",
                 "[WRENCH] THE CHALLENGES:",
                 "[BULB] SUCCESS TIPS:",
-                "Ready to showcase your coding skills?"
+                "Ready to showcase your coding skills?",
             ]
 
             for section in required_sections:
@@ -114,7 +119,7 @@ class TestSetupFunctionality:
                 "Code Refactoring",
                 "Data Format Conversion",
                 "Data Transformation",
-                "API Integration"
+                "API Integration",
             ]
 
             for challenge in challenges:
@@ -135,7 +140,7 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch('setup.Path', side_effect=mock_path):
+        with patch("setup.Path", side_effect=mock_path):
             # This should fail because prompts directory doesn't exist
             with pytest.raises(FileNotFoundError):
                 create_ai_prompt_file()
@@ -149,7 +154,7 @@ class TestSetupFunctionality:
             assert ai_prompt_path.exists()
             assert "Welcome to AIBugBench!" in result
 
-    @patch('setup.use_safe_unicode')
+    @patch("setup.use_safe_unicode")
     def test_unicode_fallback_modes(self, mock_safe_unicode, temp_dir):
         """Test that setup works in both Unicode and safe modes."""
         # Import setup module
@@ -166,8 +171,10 @@ class TestSetupFunctionality:
 
         # Test safe mode (Windows fallback)
         mock_safe_unicode.return_value = True
-        with patch('setup.Path', side_effect=mock_path), \
-             patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with (
+            patch("setup.Path", side_effect=mock_path),
+            patch("sys.stdout", new_callable=StringIO) as mock_stdout,
+        ):
             result = create_ai_prompt_file()
 
             # Verify safe mode output
@@ -182,8 +189,10 @@ class TestSetupFunctionality:
 
         # Test Unicode mode
         mock_safe_unicode.return_value = False
-        with patch('setup.Path', side_effect=mock_path), \
-             patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with (
+            patch("setup.Path", side_effect=mock_path),
+            patch("sys.stdout", new_callable=StringIO) as mock_stdout,
+        ):
             result = create_ai_prompt_file()
 
             # Verify Unicode mode output
@@ -206,7 +215,7 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch('setup.Path', side_effect=mock_path):
+        with patch("setup.Path", side_effect=mock_path):
             # Run setup function (simulating setup behavior)
             create_ai_prompt_file()
 
@@ -222,6 +231,4 @@ class TestSetupFunctionality:
             with open(ai_prompt_path, encoding="utf-8") as f:
                 content = f.read()
             assert len(content) > 100, "prompts/ai_prompt.md must contain substantial content"
-            assert (
-                "AIBugBench" in content
-            ), "prompts/ai_prompt.md must contain AIBugBench reference"
+            assert "AIBugBench" in content, "prompts/ai_prompt.md must contain AIBugBench reference"

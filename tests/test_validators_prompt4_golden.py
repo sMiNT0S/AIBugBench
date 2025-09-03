@@ -3,6 +3,7 @@
 Ensures a well-structured implementation with headers, bearer token, timeout,
 basic retry/backoff hint, and docstring achieves a passing score >= threshold.
 """
+
 from __future__ import annotations
 
 import pytest

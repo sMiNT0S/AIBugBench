@@ -1,4 +1,5 @@
 """Tests for reference implementations (Phase 3)."""
+
 from __future__ import annotations
 
 import json
@@ -82,4 +83,3 @@ class TestReferenceImplementations:
                             f"Unexpected noqa in {py}:{line_num}: {line.strip()}\n"
                             f"Only security-specific noqa comments are allowed in reference implementations"
                         )
-

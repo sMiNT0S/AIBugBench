@@ -12,21 +12,23 @@ import run_benchmark
 class StubBenchmark:
     """Lightweight stub to avoid running full benchmark during CLI flag tests."""
 
-    def __init__(self, submissions_dir: str, results_dir: str, disable_metadata: bool | None = None):  # type: ignore[unused-ignore]
+    def __init__(
+        self, submissions_dir: str, results_dir: str, disable_metadata: bool | None = None
+    ):
         self.results_dir = results_dir  # minimal usage
         self.submissions_dir = submissions_dir
 
     def run_single_model(self, model_name: str) -> dict[str, Any]:
         return {"model_name": model_name, "overall_score": 0, "total_possible": 0, "prompts": {}}
 
-    def _generate_comparison(self, models: dict[str, Any]) -> dict[str, Any]:  # type: ignore[unused-ignore]
+    def _generate_comparison(self, models: dict[str, Any]) -> dict[str, Any]:
         return {"ranking": []}
 
-    def _save_results(self, results: dict[str, Any]) -> None:  # type: ignore[unused-ignore]
+    def _save_results(self, results: dict[str, Any]) -> None:
         return None
 
 
-def _patch_benchmark(monkeypatch):  # type: ignore
+def _patch_benchmark(monkeypatch):
     monkeypatch.setattr(run_benchmark, "AICodeBenchmark", StubBenchmark)
 
 
@@ -136,7 +138,7 @@ def test_trusted_model_skips_confirmation(monkeypatch, capsys, tmp_path):
     assert os.environ.get("AIBUGBENCH_UNSAFE") == "true"
 
 
-def teardown_module(module):  # type: ignore[unused-ignore]
+def teardown_module(module):
     """Cleanup env vars set during tests to avoid bleed into other tests."""
     for var in ["AIBUGBENCH_UNSAFE", "AIBUGBENCH_ALLOW_NETWORK"]:
         os.environ.pop(var, None)

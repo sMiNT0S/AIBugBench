@@ -1,4 +1,5 @@
 """Unit tests for `benchmark.runner.TestRunner` focusing on error/timeout paths."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -40,13 +41,15 @@ def test_run_python_script_exception(runner: TestRunner, temp_dir: Path):
 def test_run_python_script_timeout(runner: TestRunner, temp_dir: Path):
     # Create a script that sleeps longer than the timeout
     script = temp_dir / "sleep.py"
-    script.write_text(textwrap.dedent(
-        """
+    script.write_text(
+        textwrap.dedent(
+            """
         import time
         time.sleep(2)
         print('done')
         """
-    ))
+        )
+    )
     start = time.time()
     result = runner.run_python_script(script, timeout=1)
     elapsed = time.time() - start

@@ -2,6 +2,7 @@
 
 Focused on pure logic methods (no actual benchmark subprocess execution).
 """
+
 from __future__ import annotations
 
 import json
@@ -30,10 +31,7 @@ def _sample_benchmark_results(model_name: str, prompt_scores: dict[str, float]) 
         "results": {
             "models": {
                 model_name: {
-                    "prompts": {
-                        prompt: {"score": score}
-                        for prompt, score in prompt_scores.items()
-                    }
+                    "prompts": {prompt: {"score": score} for prompt, score in prompt_scores.items()}
                 }
             }
         },

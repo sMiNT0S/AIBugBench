@@ -4,6 +4,7 @@ Covers core variants for each prompt while reducing repetition found in original
 `test_validators.py`. Kept original file for full coverage; this focuses on
 succinct signal and faster feedback.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -74,6 +75,7 @@ def test_prompt2_parametric(validators_fixture, temp_dir, name, yaml_text, json_
     json_file = temp_dir / f"p2_{name}.json"
     yaml_file.write_text(yaml_text)
     import json as _json
+
     json_file.write_text(_json.dumps(json_obj))
     result = validators_fixture.validate_prompt_2_yaml_json(yaml_file, json_file)
     assert result["passed"] is should_pass
@@ -134,7 +136,7 @@ def transform_users(users):
     file_path = temp_dir / "p3_simple.py"
     file_path.write_text(code)
 
-    with patch('json.load', return_value=[{"id": 1}, {"id": 0}]):
+    with patch("json.load", return_value=[{"id": 1}, {"id": 0}]):
         result = validators_fixture.validate_prompt_3_transformation(file_path)
     assert "detailed_scoring" in result
     assert result["score"] >= 0

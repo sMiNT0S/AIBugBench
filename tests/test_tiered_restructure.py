@@ -62,15 +62,9 @@ def test_reference_validation(tiered_submissions: Path):
 
 def test_model_discovery_across_tiers(tiered_submissions: Path):
     ref_models = [
-        p
-        for p in (tiered_submissions / "reference_implementations").glob("*/")
-        if p.is_dir()
+        p for p in (tiered_submissions / "reference_implementations").glob("*/") if p.is_dir()
     ]
-    user_models = [
-        p
-        for p in (tiered_submissions / "user_submissions").glob("*/")
-        if p.is_dir()
-    ]
+    user_models = [p for p in (tiered_submissions / "user_submissions").glob("*/") if p.is_dir()]
     assert len(ref_models) == 1
     assert ref_models[0].name == "example_model"
     assert user_models == []

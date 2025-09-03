@@ -1,4 +1,5 @@
 """Unit tests for `benchmark.utils` covering error/edge cases."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -45,14 +46,8 @@ def test_get_model_statistics_empty():
 def test_get_model_statistics_populated():
     results = {
         "models": {
-            "m1": {
-                "percentage": 80,
-                "prompts": {"prompt_1": {"score": 20, "passed": True}}
-            },
-            "m2": {
-                "percentage": 60,
-                "prompts": {"prompt_1": {"score": 15, "passed": True}}
-            },
+            "m1": {"percentage": 80, "prompts": {"prompt_1": {"score": 20, "passed": True}}},
+            "m2": {"percentage": 60, "prompts": {"prompt_1": {"score": 15, "passed": True}}},
             "m3": {"error": "failed"},  # should count as failure
         }
     }

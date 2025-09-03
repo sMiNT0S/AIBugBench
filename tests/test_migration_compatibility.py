@@ -14,7 +14,9 @@ class TestTieredStructure:
         (subs / "reference_implementations" / "example_model").mkdir(parents=True)
         (subs / "templates" / "template").mkdir(parents=True)
         (subs / "user_submissions").mkdir(parents=True)
-        (subs / "reference_implementations" / "example_model" / "prompt_1_solution.py").write_text("# ok")
+        (subs / "reference_implementations" / "example_model" / "prompt_1_solution.py").write_text(
+            "# ok"
+        )
         return subs
 
     def test_structure_exists(self, tiered_structure):
@@ -24,5 +26,6 @@ class TestTieredStructure:
         # Legacy directories must not exist
         assert not (tiered_structure / "template").exists()
         assert not any(
-            p.name == "template" and p.parent == tiered_structure for p in tiered_structure.iterdir()
+            p.name == "template" and p.parent == tiered_structure
+            for p in tiered_structure.iterdir()
         )

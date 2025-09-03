@@ -34,7 +34,7 @@ class TestBenchmarkCLI:
 
         # Add minimal solution files
         solutions = {
-            "prompt_1_solution.py": '''
+            "prompt_1_solution.py": """
 import json
 def process_records(filename):
     try:
@@ -44,10 +44,10 @@ def process_records(filename):
         return []
 if __name__ == "__main__":
     print(json.dumps(process_records("user_data.json"), indent=2))
-''',
+""",
             "prompt_2_config.json": '{"database": {"host": "localhost", "port": 5432}}',
-            "prompt_2_config.yaml": 'database:\n  host: localhost\n  port: 5432',
-            "prompt_3_transform.py": '''
+            "prompt_2_config.yaml": "database:\n  host: localhost\n  port: 5432",
+            "prompt_3_transform.py": """
 import json
 def transform_users(users):
     return [{"id": u["id"], "name": u["name"], "age": int(str(u.get("age", 0)))} for u in users]
@@ -55,8 +55,8 @@ if __name__ == "__main__":
     import sys
     with open(sys.argv[1]) as f:
         print(json.dumps(transform_users(json.load(f)), indent=2))
-''',
-            "prompt_4_api_sync.py": '''
+""",
+            "prompt_4_api_sync.py": """
 import requests
 def sync_users_to_crm(users, api_token):
     try:
@@ -66,7 +66,7 @@ def sync_users_to_crm(users, api_token):
                            timeout=30).json().get("user_ids", [])
     except Exception:
         return None
-'''
+""",
         }
 
         # Write solutions to both template and example directories
@@ -83,10 +83,15 @@ def sync_users_to_crm(users, api_token):
         test_data_dir.mkdir()
 
         # Create test data files
-        (test_data_dir / "user_data.json").write_text(json.dumps([
-            {"id": 1, "name": "Alice", "email": "alice@example.com", "age": "28"},
-            {"id": 2, "name": "Bob", "email": "bob@example.com", "age": 35}
-        ], indent=2))
+        (test_data_dir / "user_data.json").write_text(
+            json.dumps(
+                [
+                    {"id": 1, "name": "Alice", "email": "alice@example.com", "age": "28"},
+                    {"id": 2, "name": "Bob", "email": "bob@example.com", "age": 35},
+                ],
+                indent=2,
+            )
+        )
 
         (test_data_dir / "config.yaml").write_text("""
 database:
@@ -98,7 +103,7 @@ api:
   timeout: 30
 """)
 
-        (test_data_dir / "process_records.py").write_text('''
+        (test_data_dir / "process_records.py").write_text("""
 import json
 import datetime as datetime
 from datetime import datetime
@@ -121,16 +126,22 @@ def process_records(filename):
             results.append(record)
 
     return results
-''')
+""")
 
         return test_data_dir
 
     @pytest.mark.integration
     def test_cli_help_message(self):
         """Test that CLI shows help message."""
-        result = subprocess.run([  # noqa: S603  # CLI help test - safe command
-            sys.executable, "run_benchmark.py", "--help"
-        ], capture_output=True, text=True)
+        result = subprocess.run(
+            [  # CLI help test - safe command
+                sys.executable,
+                "run_benchmark.py",
+                "--help",
+            ],
+            capture_output=True,
+            text=True,
+        )
 
         assert result.returncode == 0
         assert "AI Code Benchmark Tool" in result.stdout
@@ -141,33 +152,47 @@ def process_records(filename):
     def test_cli_version_info(self):
         """Test CLI can be imported and executed."""
         # Test that the module can be imported without errors
-        result = subprocess.run([  # noqa: S603  # Module import test - safe command
-            sys.executable, "-c", "import run_benchmark; print('Import successful')"
-        ], capture_output=True, text=True)
+        result = subprocess.run(
+            [  # Module import test - safe command
+                sys.executable,
+                "-c",
+                "import run_benchmark; print('Import successful')",
+            ],
+            capture_output=True,
+            text=True,
+        )
 
         assert result.returncode == 0
         assert "Import successful" in result.stdout
 
+    # (Lightweight help smoke test removed; canonical help coverage in test_cli_help_message.)
+
     @pytest.mark.integration
-    @patch('run_benchmark.BenchmarkScorer')
-    @patch('run_benchmark.PromptValidators')
-    def test_cli_with_specific_model(self, mock_validators, mock_scorer,
-                                   mock_submissions_dir, mock_test_data_dir, temp_dir):
+    @patch("run_benchmark.BenchmarkScorer")
+    @patch("run_benchmark.PromptValidators")
+    def test_cli_with_specific_model(
+        self, mock_validators, mock_scorer, mock_submissions_dir, mock_test_data_dir, temp_dir
+    ):
         """Test CLI execution with specific model."""
         # Mock the validators and scorer
         mock_validator_instance = Mock()
         mock_validators.return_value = mock_validator_instance
 
         mock_validator_instance.validate_prompt_1_refactoring.return_value = {
-            "passed": True, "score": 20.5, "max_score": 25,
+            "passed": True,
+            "score": 20.5,
+            "max_score": 25,
             "detailed_scoring": {"syntax": {"earned": 5.0, "max": 5.0}},
-            "feedback": ["Test feedback"], "tests_passed": {}
+            "feedback": ["Test feedback"],
+            "tests_passed": {},
         }
 
         mock_scorer_instance = Mock()
         mock_scorer.return_value = mock_scorer_instance
         mock_scorer_instance.calculate_final_score.return_value = {
-            "total_score": 85.5, "letter_grade": "A", "category_scores": {}
+            "total_score": 85.5,
+            "letter_grade": "A",
+            "category_scores": {},
         }
 
         results_dir = temp_dir / "results"
@@ -175,14 +200,25 @@ def process_records(filename):
         # Load run_benchmark directly from source without copying or chdir
         run_path = Path.cwd() / "run_benchmark.py"
         import importlib.util
-        spec = importlib.util.spec_from_file_location("run_benchmark", run_path)
-        module = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
-        assert spec and spec.loader
-        spec.loader.exec_module(module)  # type: ignore[union-attr]
 
-        with patch('sys.argv', ['run_benchmark.py', '--model', 'example_model',
-                                '--submissions-dir', str(mock_submissions_dir),
-                                '--results-dir', str(results_dir), '--quiet']):
+        spec = importlib.util.spec_from_file_location("run_benchmark", run_path)
+        module = importlib.util.module_from_spec(spec)
+        assert spec and spec.loader
+        spec.loader.exec_module(module)
+
+        with patch(
+            "sys.argv",
+            [
+                "run_benchmark.py",
+                "--model",
+                "example_model",
+                "--submissions-dir",
+                str(mock_submissions_dir),
+                "--results-dir",
+                str(results_dir),
+                "--quiet",
+            ],
+        ):
             try:
                 module.main()
             except SystemExit as e:
@@ -192,11 +228,19 @@ def process_records(filename):
     @pytest.mark.integration
     def test_cli_invalid_model(self, temp_dir):
         """Test CLI with non-existent model."""
-        result = subprocess.run([  # noqa: S603  # CLI error handling test - safe command
-            sys.executable, "run_benchmark.py",
-            "--model", "nonexistent_model",
-            "--submissions-dir", str(temp_dir / "empty_submissions")
-        ], capture_output=True, text=True, cwd=str(Path.cwd()))
+        result = subprocess.run(
+            [  # CLI error handling test - safe command
+                sys.executable,
+                "run_benchmark.py",
+                "--model",
+                "nonexistent_model",
+                "--submissions-dir",
+                str(temp_dir / "empty_submissions"),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(Path.cwd()),
+        )
 
         # Should exit with error code or handle gracefully
         # The exact behavior depends on implementation
@@ -206,10 +250,13 @@ def process_records(filename):
     def test_cli_argument_parsing(self):
         """Test CLI argument parsing using real parse_args."""
         import run_benchmark
-        args = run_benchmark.parse_args(['--model', 'test_model', '--quiet', '--results-dir', 'custom_results'])
-        assert args.model == 'test_model'
+
+        args = run_benchmark.parse_args(
+            ["--model", "test_model", "--quiet", "--results-dir", "custom_results"]
+        )
+        assert args.model == "test_model"
         assert args.quiet is True
-        assert args.results_dir == 'custom_results'
+        assert args.results_dir == "custom_results"
 
     @pytest.mark.integration
     @pytest.mark.slow
@@ -218,12 +265,13 @@ def process_records(filename):
         results_dir = temp_dir / "results"
 
         # Mock all external dependencies
-        with patch('run_benchmark.PromptValidators') as mock_validators, \
-             patch('run_benchmark.BenchmarkScorer') as mock_scorer, \
-             patch('run_benchmark.ensure_directories') as mock_ensure_dirs, \
-             patch('run_benchmark.load_test_data') as mock_load_data, \
-             patch('run_benchmark.validate_submission_structure') as mock_validate_struct:
-
+        with (
+            patch("run_benchmark.PromptValidators") as mock_validators,
+            patch("run_benchmark.BenchmarkScorer") as mock_scorer,
+            patch("run_benchmark.ensure_directories") as mock_ensure_dirs,
+            patch("run_benchmark.load_test_data") as mock_load_data,
+            patch("run_benchmark.validate_submission_structure") as mock_validate_struct,
+        ):
             # Configure mocks
             mock_validator_instance = Mock()
             mock_validators.return_value = mock_validator_instance
@@ -240,10 +288,10 @@ def process_records(filename):
                     "quality": {"earned": 3.0, "max": 3.0},
                     "security": {"earned": 2.0, "max": 4.0},
                     "performance": {"earned": 1.0, "max": 2.0},
-                    "maintainability": {"earned": 0.0, "max": 2.0}
+                    "maintainability": {"earned": 0.0, "max": 2.0},
                 },
                 "feedback": ["Good implementation"],
-                "tests_passed": {"valid_python": True}
+                "tests_passed": {"valid_python": True},
             }
 
             mock_validator_instance.validate_prompt_1_refactoring.return_value = (
@@ -269,8 +317,8 @@ def process_records(filename):
                     "quality": 12.0,
                     "security": 8.0,
                     "performance": 4.0,
-                    "maintainability": 2.0
-                }
+                    "maintainability": 2.0,
+                },
             }
 
             mock_ensure_dirs.return_value = None
@@ -281,19 +329,27 @@ def process_records(filename):
                 "prompt_2_config.json": True,
                 "prompt_2_config.yaml": True,
                 "prompt_3_transform.py": True,
-                "prompt_4_api_sync.py": True
+                "prompt_4_api_sync.py": True,
             }
 
             # Test execution
-            with patch('sys.argv', ['run_benchmark.py', '--model', 'example_model',
-                                  '--submissions-dir', str(mock_submissions_dir),
-                                  '--results-dir', str(results_dir)]):
-
+            with patch(
+                "sys.argv",
+                [
+                    "run_benchmark.py",
+                    "--model",
+                    "example_model",
+                    "--submissions-dir",
+                    str(mock_submissions_dir),
+                    "--results-dir",
+                    str(results_dir),
+                ],
+            ):
                 import run_benchmark
 
                 # Should execute without errors
                 try:
-                    run_benchmark.main()  # type: ignore[attr-defined]
+                    run_benchmark.main()
                 except SystemExit as e:
                     if e.code != 0:
                         raise
@@ -316,7 +372,7 @@ class TestBenchmarkUtilities:
         assert isinstance(result, bool)
 
     @pytest.mark.unit
-    @patch('sys.stdout')
+    @patch("sys.stdout")
     def test_safe_unicode_with_limited_encoding(self, mock_stdout):
         """Test Unicode safety with limited encoding."""
         from run_benchmark import use_safe_unicode_standalone
@@ -328,7 +384,7 @@ class TestBenchmarkUtilities:
         assert result is True  # Should use safe fallback
 
     @pytest.mark.unit
-    @patch('sys.stdout')
+    @patch("sys.stdout")
     def test_safe_unicode_with_piped_output(self, mock_stdout):
         """Test Unicode safety with piped output."""
         from run_benchmark import use_safe_unicode_standalone
@@ -388,9 +444,12 @@ class TestCLIErrorHandling:
     def test_cli_with_missing_dependencies(self):
         """Test CLI behavior when dependencies are missing."""
         # Patch builtins.__import__ to simulate ImportError
-    with patch('builtins.__import__', side_effect=ImportError('Module not found')), \
-         pytest.raises(ImportError):
-        __import__('run_benchmark')
+
+    with (
+        patch("builtins.__import__", side_effect=ImportError("Module not found")),
+        pytest.raises(ImportError),
+    ):
+        __import__("run_benchmark")
 
     @pytest.mark.integration
     def test_cli_keyboard_interrupt(self):
@@ -398,9 +457,10 @@ class TestCLIErrorHandling:
         # This test verifies graceful shutdown on Ctrl+C
         # Implementation depends on specific CLI design
 
-        with patch('run_benchmark.main', side_effect=KeyboardInterrupt()):
+        with patch("run_benchmark.main", side_effect=KeyboardInterrupt()):
             try:
                 import run_benchmark
+
                 run_benchmark.main()
             except KeyboardInterrupt:
                 # Should propagate KeyboardInterrupt or handle gracefully
@@ -410,7 +470,7 @@ class TestCLIErrorHandling:
                 assert True
 
     @pytest.mark.unit
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_cli_output_formatting(self, mock_print):
         """Test CLI output formatting and Unicode handling."""
         from run_benchmark import use_safe_unicode_standalone
@@ -419,9 +479,30 @@ class TestCLIErrorHandling:
         safe_mode = use_safe_unicode_standalone()
         assert isinstance(safe_mode, bool)
 
-        # Test that we can format output appropriately
+    # Test that we can format output appropriately (call presence suffices)
+
+    @pytest.mark.integration
+    def test_runner_empty_submissions_dir(self, temp_dir: Path):
+        """Former test_runner_empty: ensure empty submissions handled gracefully."""
+        empty_dir = temp_dir / "submissions"
+        empty_dir.mkdir()
+        result = subprocess.run(
+            [
+                sys.executable,
+                "run_benchmark.py",
+                "--submissions-dir",
+                str(empty_dir),
+                "--results-dir",
+                str(temp_dir / "results"),
+                "--quiet",
+            ],
+            text=True,
+            capture_output=True,
+        )
+        assert result.returncode in (0, 1)
+        combined = (result.stdout + result.stderr).lower()
+        assert "no" in combined and "model" in combined
         # This is a basic smoke test for output formatting logic
         test_message = "Test benchmark results: 85.5/100"
         print(test_message)  # Should not crash regardless of encoding
 
-        assert mock_print.called

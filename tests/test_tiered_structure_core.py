@@ -139,7 +139,6 @@ class TestTieredStructureCore:
         captured = capsys.readouterr()
         assert "No models found in submissions directory" in captured.out
 
-
     def test_model_path_resolution_priority(self, temp_submissions_dir):
         """Test model path resolution follows correct priority order."""
         # Create model with same name in multiple locations
@@ -160,7 +159,164 @@ class TestTieredStructureCore:
 
         # Remove reference model, should find user model
         import shutil
+
         shutil.rmtree(ref_dir / "test_model")
 
         resolved_path = benchmark._resolve_model_path("test_model")
         assert "user_submissions" in str(resolved_path)
+
+    # ---- Consolidated former phase2 tests below (discovery summary & legacy edge cases) ----
+
+    def _make_basic_tiered(self, base: Path, with_template: bool = True) -> None:
+        (base / "reference_implementations").mkdir()
+        (base / "user_submissions").mkdir()
+        templates_dir = base / "templates"
+        templates_dir.mkdir()
+        if with_template:
+            (templates_dir / "template").mkdir()
+
+    def test_discovery_summary_line(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir)
+        (temp_submissions_dir / "reference_implementations" / "ref_model").mkdir()
+        (temp_submissions_dir / "user_submissions" / "user_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert sorted(models) == ["ref_model", "user_model"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=1 user=1 templates=OK" in out
+
+    def test_missing_template_marker(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir, with_template=False)
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        bench.discover_models()
+        out = capsys.readouterr().out
+        assert "templates=MISSING" in out
+
+    def test_discovery_multiple_models_format(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir)
+        ref_dir = temp_submissions_dir / "reference_implementations"
+        user_dir = temp_submissions_dir / "user_submissions"
+        for name in ["model_a", "model_b", "model_c"]:
+            (ref_dir / name).mkdir()
+        for name in ["user_x", "user_y"]:
+            (user_dir / name).mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert sorted(models) == ["model_a", "model_b", "model_c", "user_x", "user_y"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=3 user=2 templates=OK" in out
+
+    def test_discovery_single_model_format(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir)
+        (temp_submissions_dir / "reference_implementations" / "solo_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == ["solo_model"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=1 user=0 templates=OK" in out
+
+    def test_edge_case_templates_dir_missing(self, capsys, temp_submissions_dir):
+        # Only reference + user, no templates dir
+        (temp_submissions_dir / "reference_implementations").mkdir()
+        (temp_submissions_dir / "user_submissions").mkdir()
+        (temp_submissions_dir / "reference_implementations" / "test_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == ["test_model"]
+        out = capsys.readouterr().out
+        assert "templates=MISSING" in out
+
+    def test_edge_case_empty_reference_implementations(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir)
+        (temp_submissions_dir / "user_submissions" / "user_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == ["user_model"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=0 user=1 templates=OK" in out
+
+    def test_edge_case_empty_user_submissions(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir)
+        (temp_submissions_dir / "reference_implementations" / "ref_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == ["ref_model"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=1 user=0 templates=OK" in out
+
+    def test_edge_case_user_submissions_dir_missing(self, capsys, temp_submissions_dir):
+        (temp_submissions_dir / "reference_implementations").mkdir()
+        (temp_submissions_dir / "templates").mkdir()
+        (temp_submissions_dir / "templates" / "template").mkdir()
+        (temp_submissions_dir / "reference_implementations" / "ref_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == ["ref_model"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=1 user=0 templates=OK" in out
+
+    def test_edge_case_reference_implementations_dir_missing(self, capsys, temp_submissions_dir):
+        (temp_submissions_dir / "user_submissions").mkdir()
+        (temp_submissions_dir / "templates").mkdir()
+        (temp_submissions_dir / "templates" / "template").mkdir()
+        (temp_submissions_dir / "user_submissions" / "user_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == ["user_model"]
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=0 user=1 templates=OK" in out
+
+    def test_edge_case_all_tiers_empty(self, capsys, temp_submissions_dir):
+        self._make_basic_tiered(temp_submissions_dir, with_template=False)
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert models == []
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=0 user=0 templates=MISSING" in out
+
+    def test_legacy_error_message_completeness(self, temp_submissions_dir):
+        # Legacy structure present (no tiered dirs)
+        (temp_submissions_dir / "example_model").mkdir()
+        (temp_submissions_dir / "template").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        with pytest.raises(SystemExit) as exc_info:
+            bench.discover_models()
+        error_msg = str(exc_info.value)
+        assert error_msg.startswith("Legacy submissions layout detected")
+        assert "Legacy support was removed before public release" in error_msg
+        assert "Please migrate to:" in error_msg
+        assert "reference_implementations/example_model" in error_msg
+        assert "templates/template" in error_msg
+        assert "user_submissions" in error_msg
+
+    def test_legacy_error_message_example_only(self, temp_submissions_dir):
+        (temp_submissions_dir / "example_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        with pytest.raises(SystemExit) as exc_info:
+            bench.discover_models()
+        error_msg = str(exc_info.value)
+        assert "Legacy submissions layout detected" in error_msg
+        assert "reference_implementations/example_model" in error_msg
+
+    def test_legacy_error_message_template_only(self, temp_submissions_dir):
+        (temp_submissions_dir / "template").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        with pytest.raises(SystemExit) as exc_info:
+            bench.discover_models()
+        error_msg = str(exc_info.value)
+        assert "Legacy submissions layout detected" in error_msg
+        assert "templates/template" in error_msg
+
+    def test_mixed_legacy_and_tiered_no_error(self, capsys, temp_submissions_dir):
+        # Both legacy & tiered structure present -> tiered takes precedence
+        (temp_submissions_dir / "example_model").mkdir()
+        (temp_submissions_dir / "template").mkdir()
+        self._make_basic_tiered(temp_submissions_dir)
+        (temp_submissions_dir / "reference_implementations" / "new_model").mkdir()
+        bench = AICodeBenchmark(str(temp_submissions_dir), "results")
+        models = bench.discover_models()
+        assert "new_model" in models
+        assert "example_model" not in models
+        assert "template" not in models
+        out = capsys.readouterr().out
+        assert "Discovered models: reference=1 user=0 templates=OK" in out

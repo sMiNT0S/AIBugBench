@@ -4,6 +4,7 @@
 Avoids dynamic exec() and only inspects the imported class for a few expected
 methods. This keeps lint noise minimal while providing a quick sanity check.
 """
+
 from __future__ import annotations
 
 import inspect

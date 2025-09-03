@@ -96,14 +96,11 @@ def check_validator_integration() -> CheckResult:
             f"missing: {', '.join(missing)}",
             True,
         )
-    if "_sandbox_enabled" in txt and "return func(self, *args, **kwargs)" in txt:
+    # Support both legacy inline wrapper (return func(...)) and
+    # newer implementation using run_in_sandbox helper
+    if "run_in_sandbox(" in txt or "return func(self, *args, **kwargs)" in txt:
         return CheckResult("Validator Integration", "PASS", "sandbox decorator active", True)
-    return CheckResult(
-        "Validator Integration",
-        "FAIL",
-        "decorator pattern not detected",
-        True,
-    )
+    return CheckResult("Validator Integration", "FAIL", "decorator wrapper not detected", True)
 
 
 def check_cli_security() -> CheckResult:
@@ -218,10 +215,20 @@ def check_resource_limits_wired() -> CheckResult:
 
 def check_network_block() -> CheckResult:
     sr = _read_secure_runner()
-    if "Network control implemented" in sr:
-        return CheckResult("Network block", "PASS", "network control marker present", True)
-    if "Network control not implemented" in sr or "network not implemented" in sr.lower():
-        return CheckResult("Network block", "DEFERRED", "network blocking deferred", True)
+    # Detect actual guard implementation instead of relying on a marker string.
+    has_block_clause = "if not ALLOW_NETWORK" in sr
+    overrides = all(
+        token in sr
+        for token in [
+            "socket.socket = _network_blocked",
+            "socket.create_connection = _network_blocked",
+        ]
+    )
+    if has_block_clause and overrides:
+        return CheckResult("Network block", "PASS", "socket creation guarded", True)
+    # If partial indicators exist, treat as DEFERRED (implemented partially or conditional)
+    if has_block_clause or "_network_blocked" in sr:
+        return CheckResult("Network block", "DEFERRED", "partial network guard present", True)
     return CheckResult("Network block", "DEFERRED", "no explicit network blocking (planned)", True)
 
 

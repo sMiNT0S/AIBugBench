@@ -43,15 +43,10 @@ jobs:
 
       - name: Security Audit Script
         run: |
-          python scripts/security_audit.py --json > audit.json
-          cat audit.json
+          python scripts/security_audit.py --json --output audit.json || true
+          cat audit.json || true
+        continue-on-error: true
 
       - name: Fail if security audit fails
         run: |
-          python -c "
-          import json, sys, pathlib
-          data = json.loads(pathlib.Path('audit.json').read_text())
-          ok = bool(data.get('ok'))
-          print('Security Audit OK:', ok)
-          sys.exit(0 if ok else 1)
-          "
+          python -c "import json,sys,pathlib;d=json.loads(pathlib.Path('audit.json').read_text());o=bool(d.get('ok'));print('Security Audit OK:',o);sys.exit(0 if o else 1)"

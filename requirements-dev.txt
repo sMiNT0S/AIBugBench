@@ -8,7 +8,7 @@ pytest-mock>=3.10.0           # Mock fixtures for pytest
 coverage>=7.0.0,<8.0.0        # Code coverage measurement
 
 # Security tools
-bandit>=1.8.0          # Static security analysis
+bandit==1.8.6          # Static security analysis (pinned for CI consistency)
 safety>=3.0.0          # Known vulnerability scanning  
 pip-audit>=2.0.0       # Dependency vulnerability checking
 pip-tools==7.4.1       # Dependency management

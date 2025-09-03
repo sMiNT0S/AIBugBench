@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  BANDIT_VERSION: '1.8.6'
+
 jobs:
   security-checks:
     runs-on: ubuntu-latest
@@ -20,23 +23,19 @@ jobs:
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: '3.13'
-
-      - name: Install dev dependencies with hash verification
+      - name: Install dev dependencies with hash verification (pinned security tools)
         run: |
           python -m pip install --upgrade pip
           pip install pip-tools==7.4.1
-          # Install main dependencies with hash verification
           pip install --require-hashes -r requirements.lock
-          # Install dev dependencies (could add hashes here too)
           pip install -r requirements-dev.txt
+          pip install bandit==${{ env.BANDIT_VERSION }}
 
       - name: Ruff Security Rules (S rules)
-        run: |
-          ruff check --select=S .
+        run: ruff check --select=S .
 
-      - name: Bandit Security Analysis
-        run: |
-          bandit -r . -ll --configfile pyproject.toml
+      - name: Bandit Security Analysis (pinned)
+        run: bandit -r . -ll --configfile pyproject.toml
 
       - name: pip-audit Vulnerability Check
         run: |

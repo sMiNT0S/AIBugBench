@@ -16,6 +16,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.12'
+  BANDIT_VERSION: '1.8.6'
 
 jobs:
   tier1-reference:
@@ -31,10 +32,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies
+      - name: Install dependencies (pinned security tools)
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+          pip install bandit==${{ env.BANDIT_VERSION }}
 
       - name: Lint reference
         run: |
@@ -65,10 +67,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies
+      - name: Install dependencies (pinned security tools)
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+          pip install bandit==${{ env.BANDIT_VERSION }}
 
       - name: Basic checks
         run: |

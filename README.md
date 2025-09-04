@@ -1,15 +1,14 @@
 # AIBugBench
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://python.org)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
 [![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
-[![Test Coverage](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
 [![Security Analysis](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml)
 [![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
 ![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
 
-## Welcome to AIBugBench
+## Welcome to AIBugBench - note; on the slight offchance this repo gains some attention when i'm away for vacation, repo is read only for now after silent public switch
 
 So… you vibe coded a weekend project and shipped it. Bold move. Before you crown an LLM your new teammate, see how it behaves under **the same** set of tasks.
 

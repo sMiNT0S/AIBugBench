@@ -82,13 +82,13 @@ repos:
         entry: python scripts/update_requirements_lock.py --check
         language: system
         pass_filenames: false
-        files: "^requirements\\.txt$"
+        always_run: true
       - id: lock-sync-check-dev
         name: Check requirements-dev.lock is up to date
         entry: python scripts/update_requirements_lock.py --check --dev
         language: system
         pass_filenames: false
-        files: "^requirements-dev\\.txt$"
+        always_run: true
 
       - id: smoke-pytest
         name: Smoke tests (subset)

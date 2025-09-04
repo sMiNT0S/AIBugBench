@@ -5,7 +5,6 @@
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
 [![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
 [![Test Coverage](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
-[![Security Audit](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security-audit.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security-audit.yml)
 [![Security Analysis](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml)
 [![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
 ![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
@@ -16,7 +15,7 @@ So… you vibe coded a weekend project and shipped it. Bold move. Before you cro
 
 AIBugBench evaluates AI-generated code on four **prewritten prompts** and fixed test fixtures. You paste the model’s output, it runs **locally** in a sandbox, and you get a scorecard across seven quality dimensions. Comparable, repeatable, receipts—not vibes.
 
-### What This Is
+### What this is
 
 - **Model behavior benchmark:** How different LLMs handle the *same* four curated prompts + deterministic fixtures under controlled conditions.
 - **Regression detector:** Track model versions / prompt policies over time and catch “it used to work” moments (baseline vs new output diffs).
@@ -24,7 +23,7 @@ AIBugBench evaluates AI-generated code on four **prewritten prompts** and fixed 
 - **Apples-to-apples:** Fixed prompts + fixed harness = comparable results across models and runs (scoring stable across versions).
 - **Seven-dimension scorecard:** Correctness, safety, readability, efficiency, robustness, portability, maintainability.
 
-### What This Is *Not*
+### What this is *not*
 
 - A scanner/tester for your whole codebase  
 - A magic prompt tuner for your app  
@@ -60,8 +59,8 @@ python run_benchmark.py --model example_model
 <!-- TOC_START -->
 
 - [Welcome to AIBugBench](#welcome-to-aibugbench)
-  - [What This Is](#what-this-is)
-  - [What This Is *Not*](#what-this-is-not)
+  - [What this is](#what-this-is)
+  - [What this is *not*](#what-this-is-not)
   - [How It Works (TL;DR)](#how-it-works-tldr)
 - [Quick Start (60 seconds)](#quick-start-60-seconds)
 - [Security at a glance](#security-at-a-glance)

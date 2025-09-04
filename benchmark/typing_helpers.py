@@ -16,7 +16,7 @@ R = TypeVar("R")
 T = TypeVar("T")  # instance type for methods (self), if needed
 
 
-def preserve_sig(  # noqa: UP047
+def preserve_sig(
     fn: Callable[P, R],
 ) -> Callable[P, R]:
     """No-op decorator that preserves the wrapped function's signature for type checkers."""
@@ -28,7 +28,7 @@ def preserve_sig(  # noqa: UP047
     return wrapper
 
 
-def typed_factory(  # noqa: UP047
+def typed_factory(
     factory: Callable[..., Callable[P, R]],
 ) -> Callable[..., Callable[P, R]]:
     """Identity helper to keep readable types on decorator factories."""

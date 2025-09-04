@@ -14,7 +14,7 @@ import tempfile
 try:  # packaging is a pip-tools dependency; required for strict version gate
     from packaging.version import Version
 except Exception:  # pragma: no cover
-    Version = None  # type: ignore[misc]  # Runtime fallback for missing packaging
+    Version = None  # Runtime fallback for missing packaging
 
 ROOT = Path(__file__).resolve().parent.parent
 REQ_RUNTIME = ROOT / "requirements.txt"
@@ -150,8 +150,7 @@ def main() -> int:
         "--no-allow-unsafe",
         action="store_true",
         help=(
-            "Exclude unsafe packages (pip, setuptools, wheel). "
-            "Default: include for reproducibility"
+            "Exclude unsafe packages (pip, setuptools, wheel). Default: include for reproducibility"
         ),
     )
     parser.add_argument(

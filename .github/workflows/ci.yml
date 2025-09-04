@@ -3,7 +3,7 @@ name: CI
 env:
   PYTHON_DEFAULT_VERSION: "3.13"
   BANDIT_VERSION: "1.8.6"
-  RUFF_VERSION: "0.5.5"
+  RUFF_VERSION: "0.12.11"  # Upgraded to align with local environment (supports UP047 rule)
   MYPY_VERSION: "1.11.2"
   PYTEST_VERSION: "8.3.2"
   PYTEST_COV_VERSION: "5.0.0"

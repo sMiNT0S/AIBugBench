@@ -25,7 +25,7 @@ exclude: |
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.7
+    rev: v0.12.1
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -79,13 +79,13 @@ repos:
     hooks:
       - id: lock-sync-check
         name: Check requirements.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check --allow-unsafe
+        entry: python scripts/update_requirements_lock.py --check
         language: system
         pass_filenames: false
         always_run: true
       - id: lock-sync-check-dev
         name: Check requirements-dev.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check --dev --allow-unsafe
+        entry: python scripts/update_requirements_lock.py --check --dev
         language: system
         pass_filenames: false
         always_run: true

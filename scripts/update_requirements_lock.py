@@ -66,10 +66,10 @@ def _rewrite_header(lock_path: Path, req_name: str, allow_unsafe: bool = True) -
         f"{' --allow-unsafe' if allow_unsafe else ''}"
         f" --generate-hashes --output-file={CANONICAL_OUTPUT_NAME} {req_name}\n"
     )
-    for i, line in enumerate(lines):
+    for _idx, line in enumerate(lines):
         if line.startswith("#    pip-compile"):
             if line != desired:
-                lines[i] = desired
+                lines[_idx] = desired
                 lock_path.write_text("".join(lines), encoding="utf-8")
             break
 
@@ -101,6 +101,42 @@ def _strip_platform_specific(lock_path: Path) -> None:
     lock_path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
+def _dedupe_provenance(lock_path: Path) -> None:
+    """Remove redundant provenance lines like '# via -r requirements.txt'.
+
+    On some platforms (observed on Windows) pip-compile emits an extra line
+    `# via -r requirements.txt` immediately following an existing
+    `# via <package>` provenance comment for the same requirement. On Linux
+    (CI) only the more specific `# via <package>` line is produced. This
+    causes deterministic drift in the lock verification job. We normalize by
+    dropping the generic root file provenance when it directly follows *any*
+    other provenance comment line. (If a requirement is *directly* specified
+    in requirements.txt and has no other provenance, pip-compile will emit
+    only the `# via -r requirements.txt` line and we retain it.)
+    """
+    try:
+        lines = lock_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    except FileNotFoundError:  # pragma: no cover
+        return
+    out: list[str] = []
+    for _i, line in enumerate(lines):
+        if line.strip() == "# via -r requirements.txt":
+            # Look backwards for previous non-empty, non-hash lines pertaining to provenance
+            j = len(out) - 1
+            while j >= 0 and out[j].strip() == "":
+                j -= 1
+            if (
+                j >= 0
+                and out[j].lstrip().startswith("# via ")
+                and out[j].strip() != "# via -r requirements.txt"
+            ):
+                # Skip redundant generic provenance
+                continue
+        out.append(line)
+    if out != lines:
+        lock_path.write_text("".join(out), encoding="utf-8")
+
+
 def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bool) -> int:
     """Run pip-tools compile producing the given output path for req file.
 
@@ -129,6 +165,7 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
         _rewrite_header(output, req.name, allow_unsafe=allow_unsafe)
         if strip_platform:
             _strip_platform_specific(output)
+    _dedupe_provenance(output)
     return rc
 
 

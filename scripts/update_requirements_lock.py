@@ -22,6 +22,11 @@ LOCK_RUNTIME = ROOT / "requirements.lock"
 REQ_DEV = ROOT / "requirements-dev.txt"
 LOCK_DEV = ROOT / "requirements-dev.lock"
 
+# Canonical ephemeral output name used in CI diff job. We embed this in the
+# header even though the committed file is requirements.lock so that local
+# runs and CI produce byte-identical files.
+CANONICAL_OUTPUT_NAME = "new.requirements.lock"
+
 
 def run(cmd: list[str]) -> int:
     return subprocess.call(cmd, cwd=str(ROOT))  # noqa
@@ -42,27 +47,61 @@ def _require_modern_piptools() -> str | None:
         return None
 
 
-def _rewrite_header(
-    lock_path: Path, lock_name: str, req_name: str, allow_unsafe: bool = False
-) -> None:
-    """Normalize header comment to canonical relative form for stable diffs."""
+def _rewrite_header(lock_path: Path, req_name: str, allow_unsafe: bool = True) -> None:
+    """Normalize header comment to canonical form used by CI.
+
+    CI generates an ephemeral file via:
+        pip-compile --allow-unsafe --generate-hashes \
+            --output-file=new.requirements.lock requirements.txt
+
+    We intentionally mirror this exact command (argument ordering included)
+    inside the committed lock for deterministic diffs.
+    """
     try:
         lines = lock_path.read_text(encoding="utf-8").splitlines(keepends=True)
     except FileNotFoundError:
         return
+    desired = (
+        f"#    pip-compile"
+        f"{' --allow-unsafe' if allow_unsafe else ''}"
+        f" --generate-hashes --output-file={CANONICAL_OUTPUT_NAME} {req_name}\n"
+    )
     for i, line in enumerate(lines):
-        if line.startswith("#    pip-compile "):
-            base_cmd = "pip-compile --generate-hashes"
-            if allow_unsafe:
-                base_cmd += " --allow-unsafe"
-            desired = f"#    {base_cmd} --output-file={lock_name} {req_name}\n"
+        if line.startswith("#    pip-compile"):
             if line != desired:
                 lines[i] = desired
                 lock_path.write_text("".join(lines), encoding="utf-8")
             break
 
 
-def compile_lock(req: Path, output: Path, lock_name: str, allow_unsafe: bool) -> int:
+def _strip_platform_specific(lock_path: Path) -> None:
+    """Remove platform-specific requirement blocks for deterministic cross-OS locks.
+
+    Currently we strip any requirement line containing ' ; sys_platform == "win32"'.
+    We also remove its following indented hash lines. This allows generating the
+    authoritative lock on Windows without reintroducing Windows-only packages
+    that CI (Linux) would omit, preventing perpetual churn.
+    """
+    try:
+        lines = lock_path.read_text(encoding="utf-8").splitlines()
+    except FileNotFoundError:
+        return
+    out: list[str] = []
+    skip_hashes = False
+    for line in lines:
+        if skip_hashes:
+            if line.startswith("    --hash="):
+                continue  # still part of skipped block
+            else:
+                skip_hashes = False
+        if ' ; sys_platform == "win32"' in line:
+            skip_hashes = True  # drop this requirement & its hash lines
+            continue
+        out.append(line)
+    lock_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bool) -> int:
     """Run pip-tools compile producing the given output path for req file.
 
     Uses relative requirement filename (stable across platforms) and injects a
@@ -80,21 +119,16 @@ def compile_lock(req: Path, output: Path, lock_name: str, allow_unsafe: bool) ->
             file=sys.stderr,
         )
         return 4
-    cmd: list[str] = [
-        sys.executable,
-        "-m",
-        "piptools",
-        "compile",
-        "--generate-hashes",
-        "-o",
-        str(output),
-        req.name,
-    ]
+    cmd: list[str] = [sys.executable, "-m", "piptools", "compile"]
     if allow_unsafe:
+        # ordering chosen to match committed header (allow-unsafe precedes generate-hashes)
         cmd.append("--allow-unsafe")
+    cmd.extend(["--generate-hashes", "-o", str(output), req.name])
     rc = run(cmd)
     if rc == 0:
-        _rewrite_header(output, lock_name, req.name, allow_unsafe)
+        _rewrite_header(output, req.name, allow_unsafe=allow_unsafe)
+        if strip_platform:
+            _strip_platform_specific(output)
     return rc
 
 
@@ -113,9 +147,17 @@ def main() -> int:
         help="Operate on requirements-dev.txt / requirements-dev.lock instead of runtime",
     )
     parser.add_argument(
-        "--allow-unsafe",
+        "--no-allow-unsafe",
         action="store_true",
-        help="Include unsafe packages (pip, setuptools, wheel) in lock file",
+        help=(
+            "Exclude unsafe packages (pip, setuptools, wheel). "
+            "Default: include for reproducibility"
+        ),
+    )
+    parser.add_argument(
+        "--keep-platform-markers",
+        action="store_true",
+        help="Do not strip platform-specific (e.g. win32) requirement blocks",
     )
     args = parser.parse_args()
 
@@ -146,13 +188,14 @@ def main() -> int:
             )
             return 2
 
-    # Use --allow-unsafe if explicitly passed, or default to True for dev
-    allow_unsafe = args.allow_unsafe or args.dev
+    # Canonical policy: always include unsafe packages to avoid resolver drift.
+    allow_unsafe = not args.no_allow_unsafe
+    strip_platform = not args.keep_platform_markers
 
     if args.check:
         with tempfile.TemporaryDirectory() as td:
             tmp_lock = Path(td) / "_lock.tmp"
-            code = compile_lock(req, tmp_lock, lock.name, allow_unsafe)
+            code = compile_lock(req, tmp_lock, allow_unsafe, strip_platform)
             if code != 0:
                 return code
             new_content = tmp_lock.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -176,7 +219,8 @@ def main() -> int:
                 print(
                     "Run: python scripts/update_requirements_lock.py"
                     + (" --dev" if args.dev else "")
-                    + (" --allow-unsafe" if args.allow_unsafe and not args.dev else "")
+                    + (" --no-allow-unsafe" if args.no_allow_unsafe else "")
+                    + (" --keep-platform-markers" if args.keep_platform_markers else "")
                     + " to refresh.",
                     file=sys.stderr,
                 )
@@ -184,7 +228,7 @@ def main() -> int:
             print(f"{lock.name} up to date")
             return 0
     # Update mode (write lock)
-    code = compile_lock(req, lock, lock.name, allow_unsafe)
+    code = compile_lock(req, lock, allow_unsafe, strip_platform)
     if code == 0:
         print(f"wrote {lock}")
     return code

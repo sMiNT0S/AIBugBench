@@ -55,7 +55,7 @@ jobs:
             echo "requirements.lock is out of date with requirements.txt" >&2
             echo "To regenerate lock file run:" >&2
             echo "  pip install 'pip-tools>=7.5.0'" >&2
-            echo "  python -m piptools compile --generate-hashes -o requirements.lock requirements.txt" >&2
+            echo "  python -m piptools compile --generate-hashes --allow-unsafe -o requirements.lock requirements.txt" >&2
             echo "--- Diff (expected no output) ---" >&2
             cat lock.diff >&2 || true
             exit 1
@@ -70,6 +70,7 @@ jobs:
           else
             echo "### Dependency Lock Verification" >> $GITHUB_STEP_SUMMARY
             echo "Lock up to date." >> $GITHUB_STEP_SUMMARY
+          fi
 
   lint-and-type-check:
     name: Lint and Type Check

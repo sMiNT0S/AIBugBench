@@ -497,14 +497,15 @@ class SecureRunner:
                             and hasattr(resource, "setrlimit")
                             and hasattr(resource, "RLIMIT_CPU")
                         )
-                        if has_setrlimit_cpu:
+                        if has_setrlimit_cpu and isinstance(RLIMIT_CPU, int) and RLIMIT_CPU:
+                            # Guarded: RLIMIT_CPU may be 0 placeholder on non-POSIX
                             resource.setrlimit(RLIMIT_CPU, (timeout, timeout))  # type: ignore[attr-defined]
                         has_setrlimit_as = (
                             resource
                             and hasattr(resource, "setrlimit")
                             and hasattr(resource, "RLIMIT_AS")
                         )
-                        if has_setrlimit_as:
+                        if has_setrlimit_as and isinstance(RLIMIT_AS, int) and RLIMIT_AS:
                             bytes_limit = memory_mb * 1024 * 1024
                             resource.setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))  # type: ignore[attr-defined]
                         has_setrlimit_fsize = (
@@ -512,7 +513,7 @@ class SecureRunner:
                             and hasattr(resource, "setrlimit")
                             and hasattr(resource, "RLIMIT_FSIZE")
                         )
-                        if has_setrlimit_fsize:
+                        if has_setrlimit_fsize and isinstance(RLIMIT_FSIZE, int) and RLIMIT_FSIZE:
                             resource.setrlimit(  # type: ignore[attr-defined]
                                 RLIMIT_FSIZE,
                                 (10 * 1024 * 1024, 10 * 1024 * 1024),

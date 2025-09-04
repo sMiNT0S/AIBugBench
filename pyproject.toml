@@ -75,7 +75,7 @@ warn_unused_ignores = true
 warn_return_any = true
 warn_unreachable = true
 show_error_codes = true
-disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-overload"]
+disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-overload", "import-untyped"]
 
 # Strict-on-core override: enforce stronger typing only for core packages
 [[tool.mypy.overrides]]

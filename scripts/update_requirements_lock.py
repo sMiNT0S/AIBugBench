@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import argparse
@@ -12,7 +14,7 @@ import tempfile
 try:  # packaging is a pip-tools dependency; required for strict version gate
     from packaging.version import Version
 except Exception:  # pragma: no cover
-    Version = None
+    Version = None  # type: ignore[misc]  # Runtime fallback for missing packaging
 
 ROOT = Path(__file__).resolve().parent.parent
 REQ_RUNTIME = ROOT / "requirements.txt"
@@ -40,7 +42,9 @@ def _require_modern_piptools() -> str | None:
         return None
 
 
-def _rewrite_header(lock_path: Path, lock_name: str, req_name: str) -> None:
+def _rewrite_header(
+    lock_path: Path, lock_name: str, req_name: str, allow_unsafe: bool = False
+) -> None:
     """Normalize header comment to canonical relative form for stable diffs."""
     try:
         lines = lock_path.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -48,14 +52,17 @@ def _rewrite_header(lock_path: Path, lock_name: str, req_name: str) -> None:
         return
     for i, line in enumerate(lines):
         if line.startswith("#    pip-compile "):
-            desired = f"#    pip-compile --generate-hashes --output-file={lock_name} {req_name}\n"
+            base_cmd = "pip-compile --generate-hashes"
+            if allow_unsafe:
+                base_cmd += " --allow-unsafe"
+            desired = f"#    {base_cmd} --output-file={lock_name} {req_name}\n"
             if line != desired:
                 lines[i] = desired
                 lock_path.write_text("".join(lines), encoding="utf-8")
             break
 
 
-def compile_lock(req: Path, output: Path, lock_name: str, dev: bool) -> int:
+def compile_lock(req: Path, output: Path, lock_name: str, allow_unsafe: bool) -> int:
     """Run pip-tools compile producing the given output path for req file.
 
     Uses relative requirement filename (stable across platforms) and injects a
@@ -63,9 +70,8 @@ def compile_lock(req: Path, output: Path, lock_name: str, dev: bool) -> int:
     the committed canonical command. This keeps diffs stable between Linux,
     macOS, and Windows (avoids absolute path leakage).
 
-    If dev=True, adds --allow-unsafe to retain prior behavior of capturing
-    tooling packages like pip/setuptools/wheel (useful for reproducible
-    isolated dev environments) while leaving runtime lock minimal.
+    If allow_unsafe=True, adds --allow-unsafe to capture tooling packages
+    like pip/setuptools/wheel (useful for reproducible isolated environments).
     """
     print(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
     if _require_modern_piptools() is None:
@@ -84,11 +90,11 @@ def compile_lock(req: Path, output: Path, lock_name: str, dev: bool) -> int:
         str(output),
         req.name,
     ]
-    if dev:
+    if allow_unsafe:
         cmd.append("--allow-unsafe")
     rc = run(cmd)
     if rc == 0:
-        _rewrite_header(output, lock_name, req.name)
+        _rewrite_header(output, lock_name, req.name, allow_unsafe)
     return rc
 
 
@@ -105,6 +111,11 @@ def main() -> int:
         "--dev",
         action="store_true",
         help="Operate on requirements-dev.txt / requirements-dev.lock instead of runtime",
+    )
+    parser.add_argument(
+        "--allow-unsafe",
+        action="store_true",
+        help="Include unsafe packages (pip, setuptools, wheel) in lock file",
     )
     args = parser.parse_args()
 
@@ -135,10 +146,13 @@ def main() -> int:
             )
             return 2
 
+    # Use --allow-unsafe if explicitly passed, or default to True for dev
+    allow_unsafe = args.allow_unsafe or args.dev
+
     if args.check:
         with tempfile.TemporaryDirectory() as td:
             tmp_lock = Path(td) / "_lock.tmp"
-            code = compile_lock(req, tmp_lock, lock.name, args.dev)
+            code = compile_lock(req, tmp_lock, lock.name, allow_unsafe)
             if code != 0:
                 return code
             new_content = tmp_lock.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -162,6 +176,7 @@ def main() -> int:
                 print(
                     "Run: python scripts/update_requirements_lock.py"
                     + (" --dev" if args.dev else "")
+                    + (" --allow-unsafe" if args.allow_unsafe and not args.dev else "")
                     + " to refresh.",
                     file=sys.stderr,
                 )
@@ -169,7 +184,7 @@ def main() -> int:
             print(f"{lock.name} up to date")
             return 0
     # Update mode (write lock)
-    code = compile_lock(req, lock, lock.name, args.dev)
+    code = compile_lock(req, lock, lock.name, allow_unsafe)
     if code == 0:
         print(f"wrote {lock}")
     return code

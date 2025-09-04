@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Lightweight structural smoke test for AICodeBenchmark.
 
 Avoids dynamic exec() and only inspects the imported class for a few expected

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Validators for AI Code Benchmark prompts."""
 
 from collections.abc import Callable
@@ -93,7 +95,9 @@ def run_in_sandbox(
                 self.test_data_dir = original_test_data
 
 
-def sandbox_validator(fn: Callable[Concatenate[Self, P], R]) -> Callable[Concatenate[Self, P], R]:
+def sandbox_validator(  # noqa: UP047
+    fn: Callable[Concatenate[Self, P], R],
+) -> Callable[Concatenate[Self, P], R]:
     """Decorator for PromptValidators instance methods preserving signature & return type."""
 
     @wraps(fn)

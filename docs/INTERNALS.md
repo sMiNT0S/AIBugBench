@@ -15,7 +15,7 @@ Location: `validation/`
 
 Purpose: Internal modules for documentation command extraction, security checks, and repo audit.
 
-Key README: [validation/README.md](../validation/README.md)
+Key README: [validation/README.md](internal/validation-readme.md)
 
 ## Documentation Validation Script
 
@@ -23,7 +23,7 @@ Location: `scripts/validate_docs.py`
 
 Purpose: Parses all Markdown docs, classifies commands by safety, and optionally executes them cross‑platform to ensure documentation accuracy.
 
-Key README: [scripts/README.md](../scripts/README.md)
+Key README: [scripts/README.md](internal/scripts-readme.md)
 
 ## Model Submissions Workflow
 
@@ -31,8 +31,8 @@ Location: `submissions/`
 
 Purpose: Holds model solution directories (reference, templates, user submissions) used by the benchmark runner.
 
-Guide: [submissions/README.md](../submissions/README.md)  
-Template Instructions: [submissions/templates/template/README.md](../submissions/templates/template/README.md)
+Guide: [submissions/README.md](internal/submissions-readme.md)  
+Template Instructions: [submissions/templates/template/README.md](internal/submission-template-readme.md)
 
 ## Repository Audit Tool
 

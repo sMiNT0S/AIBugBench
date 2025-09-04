@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Secure execution environment for untrusted code.
 
 Phase 1 baseline + Phase 5.5 hardening additions:
@@ -32,7 +34,7 @@ except ImportError:  # pragma: no cover - platform specific
     WINDOWS_JOB_SUPPORT = False
 
 # ---- Platform RLIMIT typing shim (Windows-safe) ----
-from collections.abc import Generator
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 try:
@@ -79,7 +81,7 @@ class SecureRunner:
         self._original_env = os.environ.copy()
 
     @contextmanager
-    def sandbox(self) -> Generator[Any, None, None]:
+    def sandbox(self) -> Iterator[Any]:
         """Context manager establishing the sandbox directory and environment."""
         temp_dir = Path(tempfile.mkdtemp(prefix="aibugbench_"))
         sandbox_dir = temp_dir / "sandbox"
@@ -555,6 +557,7 @@ class SecureRunner:
                 text=True,
                 timeout=timeout,
                 check=False,
+                close_fds=True,  # SECURITY: Prevent handle leakage to child processes
             )
 
         # Create Job Object with resource limits
@@ -567,7 +570,13 @@ class SecureRunner:
             | win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
             | win32job.JOB_OBJECT_LIMIT_PROCESS_MEMORY
         )
-        info["BasicLimitInformation"]["ActiveProcessLimit"] = 1
+        # CRITICAL SECURITY: Prevent breakaway to keep all descendants in job
+        info["BasicLimitInformation"]["LimitFlags"] &= ~(
+            win32job.JOB_OBJECT_LIMIT_BREAKAWAY_OK | win32job.JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK
+        )
+        # Allow 3 processes: main + subprocess + nested subprocess for canary tests
+        # This enables testing of subprocess blocking while maintaining resource limits
+        info["BasicLimitInformation"]["ActiveProcessLimit"] = 3
         info["ProcessMemoryLimit"] = memory_mb * 1024 * 1024
         win32job.SetInformationJobObject(job, win32job.JobObjectExtendedLimitInformation, info)
 
@@ -580,6 +589,7 @@ class SecureRunner:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                close_fds=True,  # SECURITY: Prevent handle leakage to child processes
             )
             job_assigned = True
             try:

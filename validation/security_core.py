@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Security validation core helpers.
 
 Thin wrappers around functions that currently live in the `scripts/validate_security.py`

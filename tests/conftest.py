@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Shared pytest fixtures for the AIBugBench test suite.
 
 Provides commonly used temporary directories, sample data, and helper mocks

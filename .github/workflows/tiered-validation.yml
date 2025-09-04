@@ -14,8 +14,12 @@ on:
       - 'tests/test_templates.py'
       - '.github/workflows/tiered-validation.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.13'
   BANDIT_VERSION: '1.8.6'
 
 jobs:

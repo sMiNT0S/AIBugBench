@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """
 AI Code Benchmark Package
 A comprehensive tool for evaluating AI models' coding capabilities.

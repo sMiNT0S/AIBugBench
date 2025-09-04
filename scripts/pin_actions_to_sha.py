@@ -1,4 +1,6 @@
 # scripts/pin_actions_to_sha.py
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import argparse

@@ -1,21 +1,24 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
+"""Type annotation helpers for the benchmarking framework.
+
+Python 3.13+ provides modern typing features natively.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
-from typing import TypeVar
-
-try:
-    # Prefer stdlib on newer Pythons
-    from typing import ParamSpec  # Python ≥3.10
-except ImportError:  # pragma: no cover
-    from typing_extensions import ParamSpec
+from typing import ParamSpec, TypeVar
 
 P = ParamSpec("P")
 R = TypeVar("R")
 T = TypeVar("T")  # instance type for methods (self), if needed
 
 
-def preserve_sig(fn: Callable[P, R]) -> Callable[P, R]:
+def preserve_sig(  # noqa: UP047
+    fn: Callable[P, R],
+) -> Callable[P, R]:
     """No-op decorator that preserves the wrapped function's signature for type checkers."""
 
     @wraps(fn)
@@ -25,6 +28,8 @@ def preserve_sig(fn: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
-def typed_factory(factory: Callable[..., Callable[P, R]]) -> Callable[..., Callable[P, R]]:
+def typed_factory(  # noqa: UP047
+    factory: Callable[..., Callable[P, R]],
+) -> Callable[..., Callable[P, R]]:
     """Identity helper to keep readable types on decorator factories."""
     return factory

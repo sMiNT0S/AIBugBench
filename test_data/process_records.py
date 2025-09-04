@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 # ruff: noqa
 # fmt: off
 # process_records.py: A script for processing user records from

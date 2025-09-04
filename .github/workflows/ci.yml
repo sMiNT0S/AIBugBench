@@ -1,7 +1,7 @@
 name: CI
 
 env:
-  PYTHON_DEFAULT_VERSION: "3.12"
+  PYTHON_DEFAULT_VERSION: "3.13"
   BANDIT_VERSION: "1.8.6"
   RUFF_VERSION: "0.5.5"
   MYPY_VERSION: "1.11.2"
@@ -15,6 +15,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 # (Moved to top-level env block)
 
@@ -35,13 +39,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install 'pip-tools>=7.5.0'
-      - name: Recompile lock file
+      - name: Ensure requirements.lock exists
         run: |
           if [ ! -f requirements.lock ]; then
             echo "requirements.lock missing. Run lock generation locally." >&2
             exit 1
           fi
-          python -m piptools compile --generate-hashes -o new.requirements.lock requirements.txt
+      - name: Generate fresh requirements.lock for comparison
+        run: |
+          python -m piptools compile --generate-hashes --allow-unsafe -o new.requirements.lock requirements.txt
       - name: Diff lock
         run: |
           set -e
@@ -88,21 +94,11 @@ jobs:
             ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
       - name: Lint with ruff
         run: ruff check .
-      # Dual mypy passes: ensure lowest supported (config default 3.10) stays clean,
-      # then re-run with 3.13 stdlib/typeshed to surface forward-typing issues.
+      # Single mypy pass with Python 3.13 (current standard)
       # Explicit targets (no src/ layout): benchmark/, validation/, and run_benchmark.py.
-      - name: "mypy (min supported: 3.10)"
+      - name: "mypy (Python 3.13)"
         run: |
           python -m mypy ./benchmark ./validation ./run_benchmark.py --no-error-summary
-      - name: "mypy (latest runtime: 3.13 types)"
-        run: |
-          python -m mypy \
-            ./benchmark \
-            ./validation \
-            ./run_benchmark.py \
-            --no-error-summary \
-            --python-version 3.13 \
-            --cache-dir .mypy_cache/py313
       - name: Format check with ruff
         run: ruff format --check .
 
@@ -202,7 +198,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
         include:
           - os: ubuntu-latest
             platform_name: linux

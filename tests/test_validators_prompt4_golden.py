@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """High-score golden test for Prompt 4 API validator.
 
 Ensures a well-structured implementation with headers, bearer token, timeout,

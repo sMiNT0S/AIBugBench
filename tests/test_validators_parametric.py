@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Parametric consolidation of validator tests.
 
 Covers core variants for each prompt while reducing repetition found in original

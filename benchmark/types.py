@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Shared TypedDict result shapes for benchmark validators and runner.
 
 Centralizing these shapes ensures a single source of truth for prompt-level

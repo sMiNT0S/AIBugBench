@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """
 Documentation Validation Script for AIBugBench
 
@@ -36,6 +38,9 @@ import subprocess
 import sys
 import tempfile
 import time
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from validation.docs_core import Command, CommandType, Platform
 

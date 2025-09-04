@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """User data transformation and enrichment utilities (reference implementation).
 
 Applies normalization and derives additional attributes (email provider, account

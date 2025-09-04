@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 # Your sync_users_to_crm function
 # TODO: Implement API synchronization with error handling
 

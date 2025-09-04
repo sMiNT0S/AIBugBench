@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Consolidated tests for formatting helpers and Unicode safety logic in run_benchmark.
 
 Merged former test_run_benchmark_formatting.py and test_run_benchmark_unicode_discovery.py

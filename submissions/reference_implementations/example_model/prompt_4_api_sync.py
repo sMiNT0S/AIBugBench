@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """
 CRM Synchronization Module
 Handles synchronization of processed user data with external CRM system via REST API.

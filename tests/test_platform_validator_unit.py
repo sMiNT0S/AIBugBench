@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Unit tests for `benchmark.platform_validator.PlatformBenchmarkValidator`.
 
 Focused on pure logic methods (no actual benchmark subprocess execution).

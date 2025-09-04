@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """
 validation.repo_audit_enhanced — Comprehensive, offline-first repository audit.
 
@@ -166,7 +168,8 @@ def load_toml_file(p: Path) -> dict[str, Any]:
         data = tomllib.loads(text)  # module is non-None on this branch
         if isinstance(data, dict):
             return cast(dict[str, Any], data)
-        return {}
+        # tomllib.loads() always returns dict for valid TOML, so this is unreachable
+        # return {}  # removed unreachable code
     except Exception:
         return {}
 

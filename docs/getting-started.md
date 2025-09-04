@@ -6,7 +6,7 @@ Get AIBugBench running and test your AI model's code generation skills in 15 min
 
 **Prerequisites:**
 
-- Python 3.10+
+- Python 3.13+
 - Git
 - 15 minutes
 
@@ -64,7 +64,7 @@ Test with the built-in example model:
 python run_benchmark.py --model example_model
 ```
 
-**Expected Output:** Scores around 92.17/100 (A grade). If you see "FAILED" results or errors, check that Python 3.10+ is active and all dependencies installed.
+**Expected Output:** Scores around 92.17/100 (A grade). If you see "FAILED" results or errors, check that Python 3.13+ is active and all dependencies installed.
 
 ## Directory Overview
 
@@ -169,4 +169,4 @@ Historical runs accumulate; each benchmark invocation creates a new `<RUN_TS>` d
 - Explore detailed documentation
 - Contribute new challenges to the benchmark
 
-📖 **[Full Documentation](../README.md)** | 👨‍💻 **[Developer Guide](developer-guide.md)** | 📊 **[Scoring Details](scoring-methodology.md)**
+📖 **[Full Documentation](index.md)** | 👨‍💻 **[Developer Guide](developer-guide.md)** | 📊 **[Scoring Details](scoring-methodology.md)**

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Extended tests for BenchmarkScorer to raise coverage.
 
 Covers: calculate_grade boundaries, feedback summary branches, improvement suggestions,

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Consolidated tests for validation.repo_audit_enhanced.secret_scan.
 
 Covers:

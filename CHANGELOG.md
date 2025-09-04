@@ -28,8 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **Critical security vulnerability fixes**: Fixed run_benchmark.py to properly halt execution on security script failures and audit failures (lines 741-747, 750-756)
+- **Windows Job Object hardening**: Enhanced secure_runner.py with ActiveProcessLimit=3, breakaway prevention, and handle leak protection
+- **Subprocess security**: Added close_fds=True to subprocess calls and improved process containment
 - **Dependency integrity**: Updated requirements lock files with proper hash verification and normalized compilation headers
 - **Workflow security hardening**: Enhanced GitHub Actions workflows with improved permission models and security scanning integration
+
+### Documentation
+
+- **GitHub Pages deployment**: Enabled automatic documentation deployment with mkdocs, material theme, and GitHub Actions workflow
+- **MkDocs configuration**: Fixed navigation structure, added proper YAML formatting, and included roadmap in site navigation  
+- **Documentation dependencies**: Added mkdocs, mkdocs-material, and mkdocs-include-markdown-plugin to requirements-dev.txt
+- **Internal link fixes**: Corrected broken README links in INTERNALS.md and getting-started.md for proper site navigation
+- **ROADMAP cleanup**: Removed private development references for public repository readiness
+
+### Bug Fixes
+
+- **Python 3.13 compatibility**: Resolved all static analysis errors with type compatibility solutions for modern Python syntax
+- **Windows canary test failures**: Fixed Job Object quota limits preventing benchmark execution on Windows systems
+
+### Known Issues
+
+- **validate_docs.py parsing bug**: Documentation validation script has broken command parsing that extracts random text as commands. Requires refactor of parse_commands_from_docs() and platform detection logic. See GitHub issue for details.
 
 ### Quality Assurance
 
@@ -37,9 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Code formatting consistency**: Broad formatting normalization across configuration files, workflows, and Python modules
 - **Type safety enhancements**: Additional mypy compatibility improvements and type annotation corrections
 
-### Impact
+### Planned
 
-This release establishes reliable, fast, isolated pre-commit execution patterns and comprehensive CI/CD workflow foundations. All behavioral functionality remains unchanged while significantly improving developer workflow stability and artifact management.
+- Post-0.9.0 documentation polish & diagrams
+- Tiered submission system documentation (developer guide section)
+- Validation package migration (execution + reporting layers) completion
+- Public documentation deployment enablement (GitHub Pages)
 
 ## [0.9.0-beta] - 2025-09-03
 

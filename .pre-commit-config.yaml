@@ -79,13 +79,13 @@ repos:
     hooks:
       - id: lock-sync-check
         name: Check requirements.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check
+        entry: python scripts/update_requirements_lock.py --check --allow-unsafe
         language: system
         pass_filenames: false
         always_run: true
       - id: lock-sync-check-dev
         name: Check requirements-dev.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check --dev
+        entry: python scripts/update_requirements_lock.py --check --dev --allow-unsafe
         language: system
         pass_filenames: false
         always_run: true

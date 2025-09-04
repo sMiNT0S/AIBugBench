@@ -153,3 +153,12 @@ docs_private/
 scripts/audit_local.json
 audit_local.json
 .mypy_report/index.txt
+*~
+.DS_Store
+.vscode/
+.idea/
+*.log
+venv/
+.env
+__pycache__/
+coverage.xml

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Wrapper script to run smoke pytest with redirected artifact/results output.
 
 This avoids modifying the working tree during pre-commit by honoring the

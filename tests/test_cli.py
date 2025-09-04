@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Tests for CLI security flags (Phase 3)."""
 
 from __future__ import annotations

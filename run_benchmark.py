@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """
 AIBugBench - AI Code Evaluation Tool
 Main entry point for running comprehensive AI code evaluation tests.
@@ -10,7 +12,7 @@ Usage: python run_benchmark.py [options]
 import argparse  # noqa: I001
 import concurrent.futures
 import contextlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import hashlib
 import json
 import os
@@ -510,7 +512,7 @@ class AICodeBenchmark:
             meta["git_commit"] = os.environ.get("GITHUB_SHA") or _resolve_git_commit()
             meta["python_version"] = platform.python_version()
             meta["platform"] = platform.platform()
-            meta["timestamp_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            meta["timestamp_utc"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
             if self.dependency_fingerprint:
                 meta["dependency_fingerprint"] = self.dependency_fingerprint
 
@@ -736,19 +738,25 @@ def main(argv: list[str] | None = None) -> int:
                 )
             except Exception as e:  # pragma: no cover - defensive
                 print(f"Security audit invocation failed: {e}")
-                # Continue execution - audit banner failure is non-fatal
+                # CRITICAL: Security audit invocation failure must halt execution
+                print("Security audit could not be executed. Refusing to run benchmark for safety.")
+                return 1
             if proc.returncode != 0:
                 print(proc.stdout.rstrip())
                 print(
                     "Security audit failed. Refusing to run benchmark. "
                     "Re-run with --unsafe to bypass (NOT RECOMMENDED)."
                 )
-                # Continue execution - audit banner failure is non-fatal
+                # CRITICAL: Security audit failure must halt execution immediately
+                return 1
         else:
             print(
-                "Warning: security audit script missing (scripts/security_audit.py). "
-                "Proceeding; add Phase 5.5 audit for stronger guarantees."
+                "Security audit script missing (scripts/security_audit.py). "
+                "Refusing to run benchmark for safety. "
+                "Re-run with --unsafe to bypass (NOT RECOMMENDED)."
             )
+            # CRITICAL: Missing security audit script must halt execution
+            return 1
 
     # Confirm unsafe mode unless trusted
     if args.unsafe and not args.trusted_model:

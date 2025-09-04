@@ -1,7 +1,7 @@
 # AIBugBench
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://python.org)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
 [![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
 [![Test Coverage](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
@@ -134,7 +134,7 @@ Full threat model & roadmap: see [`SAFETY.md`](SAFETY.md) and [`SECURITY.md`](SE
 
 ---
 
-**Requirements:** Python 3.10+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
+**Requirements:** Python 3.13+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
 
 ## Dependency Locks (pip-tools)
 

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Cross-platform benchmark results consistency checker.
 
 Reads JSON files named platform_validation_*.json from a supplied results directory

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Unit tests for newly extracted validation core helpers.
 
 These focus on pure parsing / classification logic to raise coverage without

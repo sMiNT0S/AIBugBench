@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Informational tests for templates (Phase 3).
 
 These are non-blocking in CI (continue-on-error job).

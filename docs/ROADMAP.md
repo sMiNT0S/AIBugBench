@@ -31,7 +31,7 @@ Action buckets:
   - scripts/validate_docs.py: attributes .get on generic object -> refine types for command metadata dicts
   - validation/repo_audit_enhanced.py: .append/.update targets -> correct initial types
 - Argument type mismatches:
-  - run_benchmark.py: datetime.UTC vs Python version compatibility (fallback to timezone.utc for <3.11)
+  - run_benchmark.py: datetime.UTC usage (Python 3.13+ native support)
   - ScoringDetail.add_check call: ensure correct (str, bool, float) argument types
   - UnicodeEncodeError construction in tests (argument order/types)
 - Return contract corrections:
@@ -58,7 +58,9 @@ Optional Tooling:
 - ✅ **Phase 4: PR security automation**: **IMPLEMENTED** - Comprehensive PR security workflow with mandatory security checks (Ruff security rules, Bandit analysis, pip-audit, security audit validation). Note: CODEOWNERS file not yet created but can be added when needed.
 - **Environment isolation hardening**: Complete environment variable whitelisting (vs. current pattern removal + clear on exit) for enhanced security isolation.
 - **Python interpreter isolation**: Investigate `-I/-S` Python isolation flags for imported model code execution, though current in-process architecture may require significant redesign.
-- **Pre-commit Framework Migration**: Replace manual `.git/hooks/pre-commit` with standardized `pre-commit` tool for public contributors. Implementation plan: (1) Add `pre-commit` to `requirements-dev.txt`, (2) Create `.pre-commit-config.yaml` with ruff + pytest-smoke hooks, (3) Update `CONTRIBUTING.md` with setup instructions: `pre-commit install`, (4) Maintain current manual hook for private development, (5) Enable contributor opt-out via `--no-verify`. Activation criteria: repository goes public OR first external contributor onboarding. Rationale: ensures consistent code quality gates across all contributors while avoiding setup complexity during private development phase.
+- ✅ **Pre-commit Framework Migration**: **IMPLEMENTED** - Standardized `pre-commit` tool with comprehensive hooks for consistent code quality gates. Setup: `pre-commit install` (see `CONTRIBUTING.md`).
+- **Environment isolation hardening**: Complete environment variable whitelisting (vs. current pattern removal + clear on exit) for enhanced security isolation.
+- **Python interpreter isolation**: Investigate `-I/-S` Python isolation flags for imported model code execution, though current in-process architecture may require significant redesign.
 - Fuzz & mutation tests for docs/yaml parsers
 - Concurrency / load stress harness
 - SBOM + provenance attestation (CycloneDX, optional signing)

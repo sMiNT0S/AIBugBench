@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024-2025 sMiNT0S
+# SPDX-License-Identifier: Apache-2.0
 """Core documentation validation primitives.
 
 Parsing and classification logic for documentation command blocks. Execution,

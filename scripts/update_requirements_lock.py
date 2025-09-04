@@ -128,9 +128,11 @@ def _dedupe_provenance(lock_path: Path) -> None:
             if (
                 j >= 0
                 and out[j].lstrip().startswith("# via ")
-                and out[j].strip() != "# via -r requirements.txt"
+                and (
+                    out[j].strip() != "# via -r requirements.txt" or out[j].strip() == line.strip()
+                )
             ):
-                # Skip redundant generic provenance
+                # Redundant generic provenance -> skip
                 continue
         out.append(line)
     if out != lines:

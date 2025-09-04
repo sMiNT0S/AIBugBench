@@ -104,7 +104,7 @@ audit_summary.md
 bandit-report.json
 safety-report.json
 semgrep-secrets.json
-trufflehog-results.json
+trufflehog-results.json 
 
 # Coverage & pytest extra outputs (already partially covered)
 .pytest_cache/

@@ -7,19 +7,19 @@ use_legacy_paths: 'true'
 
 paths:
     data_source: /srv/data/production/users.json
-  legacy_data_source: ./user_data.json  # Note: This is a relative path
-     log_file: /var/log/processor.log
+ legacy_data_source: ./user_data.json  # Note: This is a relative path
+    log_file: /var/log/processor.log
 
 # Validation rules for user records
 validation_rules:
-    min_age_years:"21" # Must be of legal age
+    min_age_years: "21" # Must be of legal age
     minimum_posts: 5
     # a required_fields section was here, but removed for now
     required_fields:
-        - id
-        - first_name
-        - last_name
-        - contact.email # this format is tricky
+     - id
+     - first_name
+      - last_name
+     - contact.email # this format is tricky
 
 api_keys:
   - service: 'geolocator'
@@ -36,4 +36,5 @@ server_settings:
   port: 8080
   timeout_seconds: '60'
   retry_attempts: 3
-  max_connections: 100
+    # Bad indentation below
+   max_connections: 100

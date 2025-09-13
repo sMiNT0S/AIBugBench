@@ -10,6 +10,8 @@
 # 4. Fix logical errors
 # 5. Follow modern Python best practices
 
+import json
+import yaml
 # Add other imports as needed
 
 # Your refactored code here

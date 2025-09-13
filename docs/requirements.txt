@@ -1,0 +1,5 @@
+mkdocs>=1.6,<2
+mkdocs-material>=9.5,<10
+pymdown-extensions>=10.7,<11
+# Uncomment when moving to analytics env var:
+# pyyaml-env-tag>=0.1

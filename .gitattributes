@@ -1,1 +1,15 @@
 * text=auto
+
+# Scripts that must be LF to run correctly anywhere
+*.sh  text eol=lf
+*.bash text eol=lf
+
+# Windows-only batch scripts stay CRLF
+*.bat eol=crlf
+*.cmd eol=crlf
+
+# Binary files must never be normalized
+*.png -text
+*.jpg -text
+*.pdf -text
+*.ico -text

@@ -5,6 +5,7 @@ regressions (e.g. syntax errors, guard logic) surface without requiring
 explicit `--cov=setup` invocation.
 """
 
+
 def test_setup_module_imports():
     import setup  # import triggers top-level definitions only
 

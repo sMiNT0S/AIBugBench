@@ -47,6 +47,7 @@ Thumbs.db
 .cache
 htmlcov/
 .tox/
+installed.txt
 
 # Test Coverage
 .coverage

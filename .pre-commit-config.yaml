@@ -77,17 +77,12 @@ repos:
   # Local/system hooks (use your current Python; no bash required)
   - repo: local
     hooks:
-      - id: lock-sync-check
-        name: Check requirements.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check
+      - id: verify-lock-sync
+        name: verify lock files are in sync with requirements
+        entry: python scripts/verify_lock_sync.py
         language: system
         pass_filenames: false
-        always_run: true
-      - id: lock-sync-check-dev
-        name: Check requirements-dev.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check --dev
-        language: system
-        pass_filenames: false
+        stages: [commit, push]
         always_run: true
 
       - id: smoke-pytest

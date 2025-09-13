@@ -41,24 +41,31 @@ jobs:
           else
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
-      - name: Create PR
+      - name: Summarize changes to job summary
         if: steps.diff.outputs.changed == 'true'
-        env:
-          BRANCH: automated/lock-refresh
         run: |
-            set -e
-            git config user.name 'github-actions'
-            git config user.email 'github-actions@users.noreply.github.com'
-            git checkout -B "$BRANCH"
-            git commit -m 'chore(deps): scheduled lock refresh' || exit 0
-            git push -f origin "$BRANCH"
-            gh pr create --title 'chore(deps): scheduled lock refresh' --body 'Automated weekly dependency lock refresh.' --base main || echo "PR already exists"
-        shell: bash
+          echo "### Lockfile diff (stat)" >> "$GITHUB_STEP_SUMMARY"
+          git --no-pager diff --stat || true
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Changed files:" >> "$GITHUB_STEP_SUMMARY"
+          git diff --name-only || true
+      - name: Create or update PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        with:
+          commit-message: "deps: refresh lock files"
+          title: "chore(deps): refresh lock files"
+          body: "Automated lock refresh. See the job summary for a diff stat."
+          branch: chore/deps/lock-refresh
+          delete-branch: true
+          labels: dependencies
+          assignees: sMiNT0S
+          signoff: true
       - name: Summary
         if: always()
         run: |
           echo '### Scheduled Dependency Refresh' >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.diff.outputs.changed }}" = 'true' ]; then
-            echo 'Changes detected; PR created or updated.' >> $GITHUB_STEP_SUMMARY
+            echo 'Changes detected; PR created or updated (peter-evans/create-pull-request).' >> $GITHUB_STEP_SUMMARY
           else
             echo 'No changes in locks; nothing to do.' >> $GITHUB_STEP_SUMMARY

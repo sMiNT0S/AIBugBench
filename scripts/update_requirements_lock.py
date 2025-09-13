@@ -11,10 +11,10 @@ import subprocess
 import sys
 import tempfile
 
-try:  # packaging is a pip-tools dependency; required for strict version gate
-    from packaging.version import Version
+try:
+    import packaging.version as _pkgver
 except Exception:  # pragma: no cover
-    Version = None  # Runtime fallback for missing packaging
+    _pkgver = None
 
 ROOT = Path(__file__).resolve().parent.parent
 REQ_RUNTIME = ROOT / "requirements.txt"
@@ -33,14 +33,13 @@ def run(cmd: list[str]) -> int:
 
 
 def _require_modern_piptools() -> str | None:
-    """Return version string if pip-tools >=7.5.0, else None."""
     try:
-        if Version is None:
+        if _pkgver is None:
             return None
         import importlib.metadata as _im
 
-        ver = Version(_im.version("pip-tools"))
-        if ver >= Version("7.5.0"):
+        ver = _pkgver.Version(_im.version("pip-tools"))
+        if ver >= _pkgver.Version("7.5.0"):
             return str(ver)
         return None
     except Exception:  # pragma: no cover

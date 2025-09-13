@@ -133,7 +133,7 @@ Full threat model & roadmap: see [`SAFETY.md`](SAFETY.md) and [`SECURITY.md`](SE
 
 ---
 
-**Requirements:** Python 3.13+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
+**Requirements:** Python 3.13+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [Apache-2.0](LICENSE)
 
 ## Dependency Policy & Locks (pip-tools)
 

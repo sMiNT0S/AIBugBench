@@ -2,8 +2,7 @@
 name = "aibugbench"
 version = "0.9.0-beta"
 description = "AI code generation benchmarking tool"
-license = { text = "Apache-2.0" }
-classifiers = ["License :: OSI Approved :: Apache Software License"]
+license = "Apache-2.0"
 authors = [{ name = "sMiNT0S" }]
 maintainers = [{ name = "AIBugBench Maintainers" }]
 readme = "README.md"
@@ -13,6 +12,17 @@ dependencies = [
   "requests==2.32.5",
   "pywin32==311; sys_platform == 'win32'"
 ]
+
+[project.scripts]
+run-benchmark = "run_benchmark:main"
+
+[tool.setuptools]
+packages = ["benchmark"]
+py-modules = ["run_benchmark"]
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 100
@@ -26,7 +36,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-# Strict set; expect noise, then burn it down with autofix + small PRs.
+# Strict set;
 select = [
   "E",   # pycodestyle errors (correctness)
   "F",   # pyflakes (unused vars, etc.)

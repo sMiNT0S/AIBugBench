@@ -3,6 +3,7 @@
 # Your sync_users_to_crm function
 # TODO: Implement API synchronization with error handling
 
+import requests
 
 def sync_users_to_crm(user_data, api_token):
     """

@@ -3,56 +3,38 @@
 
 version: 2
 updates:
-  # Python dependencies (requirements.txt, requirements-dev.txt, pyproject.toml if present)
+  # Python dependencies
   - package-ecosystem: "pip"
     directory: "/"
-    schedule:  # Move to daily so security patches land faster
+    schedule:
       interval: "daily"
       time: "09:00"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 5
-    versioning-strategy: increase-if-necessary  # Avoid needless major bumps
-    assignees:
-      - "sMiNT0S"
+    versioning-strategy: increase-if-necessary
+    assignees: ["sMiNT0S"]
     commit-message:
       prefix: "deps"
       prefix-development: "deps-dev"
       include: "scope"
-    labels:
-      - "dependencies"
+    labels: ["dependencies"]
     allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
-    groups:  # Broaden grouping to cut PR noise
+      - dependency-type: "direct"   # drop indirects to cut noise
+    groups:
       requests-group:
-        patterns:
-          - "requests*"
-          - "urllib3"
-          - "certifi"
+        patterns: ["requests*", "urllib3", "certifi"]
       yaml-group:
-        patterns:
-          - "pyyaml"
-          - "yaml*"
-      dev-tools:
-        patterns:
-          - "ruff"
-          - "mypy"
-          - "pytest*"
-          - "coverage*"
-          - "bandit"
-          - "safety"
-          - "pip-audit"
-          - "pip-tools"
+        patterns: ["pyyaml", "yaml*"]
+      dev-tools:                    # no security tools here (avoid overlap)
+        patterns: ["ruff", "mypy", "pytest*", "coverage*", "pip-tools"]
       security-tools:
-        patterns:
-          - "bandit"
-          - "safety"
-          - "pip-audit"
+        patterns: ["bandit", "safety", "pip-audit"]
       typing:
-        patterns:
-          - "types-*"
+        patterns: ["types-*"]
+      docs-stack:                   # mkdocs and friends grouped together
+        patterns: ["mkdocs*", "pymdown-extensions*", "sphinx*"]
 
-  # GitHub Actions (will only update if using tags; pinned SHAs will not auto-update)
+  # GitHub Actions (weekly; you pin SHAs separately)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -62,20 +44,15 @@ updates:
       timezone: "Etc/UTC"
     open-pull-requests-limit: 5
     versioning-strategy: increase-if-necessary
-    assignees:
-      - "sMiNT0S"
+    assignees: ["sMiNT0S"]
     commit-message:
       prefix: "ci"
       include: "scope"
-    labels:
-      - "dependencies"
+    labels: ["dependencies"]
     allow:
       - dependency-type: "direct"
     groups:
       github-actions-core:
-        patterns:
-          - "actions/*"
+        patterns: ["actions/*"]
       github-actions-security:
-        patterns:
-          - "github/codeql-action*"
-          - "aquasecurity/*"
+        patterns: ["github/codeql-action*", "aquasecurity/*"]

@@ -3,6 +3,7 @@ site_url: https://smintos.github.io/AIBugBench
 repo_url: https://github.com/sMiNT0S/AIBugBench
 repo_name: sMiNT0S/AIBugBench
 docs_dir: docs
+strict: true  
 
 theme:
   name: material
@@ -78,9 +79,6 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/sMiNT0S/AIBugBench
-  analytics:
-    provider: google
-    #property: !ENV GOOGLE_ANALYTICS_KEY
   generator: false
   # Feature flags (used by templates / future macros)
   features:

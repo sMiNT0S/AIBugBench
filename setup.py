@@ -7,6 +7,7 @@ Creates necessary directories and initializes test data.
 """
 
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -99,6 +100,14 @@ Copy this message to your AI/LLM, then proceed with the benchmark prompts.
 
 def display_ai_prompt():
     """Display the AI prompt message during setup."""
+    # Skip entirely in non-interactive environments or if explicitly disabled.
+    if (
+        os.environ.get("AIBUGBENCH_NONINTERACTIVE") == "1"
+        or not sys.stdout.isatty()
+        or not sys.stdin.isatty()
+    ):
+        return  # Silent skip during pip builds / CI
+
     safe_mode = use_safe_unicode()
 
     print("\n" + "=" * 60)
@@ -196,7 +205,21 @@ Ready to showcase your coding skills? Let's begin with the AIBugBench challenges
     print(f"\n{file_icon} This prompt has been saved to 'prompts/ai_prompt.md' for easy access.")
     print(f"\n{timer_icon} Please copy this message to your AI/LLM before proceeding...")
     print("Press Enter when you've prepared your AI and are ready to continue...")
-    input()
+    # Extra defensive guard: even though we earlier returned for non-interactive
+    # contexts, pip build wrappers can produce edge cases; double-check.
+    if (
+        sys.stdin is not None
+        and hasattr(sys.stdin, "isatty")
+        and sys.stdin.isatty()
+        and sys.stdout.isatty()
+        and not os.environ.get("CI")
+    ):
+        try:  # pragma: no cover - purely interactive branch
+            input()
+        except EOFError:  # Fallback if environment flips mid-run
+            print("[Non-interactive] Skipping input pause (EOF).")
+    else:
+        print("[Non-interactive] Skipping input pause.")
 
 
 def create_directory_structure():
@@ -602,4 +625,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Only run bootstrap when explicitly requested; otherwise do nothing so
+    # that setuptools build backend handles metadata generation without side effects.
+    if os.environ.get("AIBUGBENCH_BOOTSTRAP") == "1":  # pragma: no cover
+        main()

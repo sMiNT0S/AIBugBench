@@ -30,8 +30,7 @@ runs:
         pip install \
           pytest==${{ env.PYTEST_VERSION }} \
           pytest-cov==${{ env.PYTEST_COV_VERSION }} \
-          coverage==${{ env.COVERAGE_VERSION }} \
-          psutil==7.0.0
+          coverage==${{ env.COVERAGE_VERSION }}
     - name: Install security tooling
       if: ${{ inputs.install-security == 'true' }}
       shell: bash

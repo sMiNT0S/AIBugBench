@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   lock-verification:
-    name: Dependency Lock Verification
+    name: Dependency Lock Sync (runtime + dev)
     permissions:
       contents: read
       actions: read
@@ -35,41 +35,22 @@ jobs:
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-      - name: Install pip-tools (pinned)
+      - name: Install pip-tools
         run: |
           python -m pip install --upgrade pip
           pip install 'pip-tools>=7.5.0'
-      - name: Ensure requirements.lock exists
+      - name: Verify runtime & dev locks
         run: |
-          if [ ! -f requirements.lock ]; then
-            echo "requirements.lock missing. Run lock generation locally." >&2
-            exit 1
-          fi
-      - name: Generate fresh requirements.lock for comparison
-        run: |
-          python -m piptools compile --generate-hashes --allow-unsafe -o new.requirements.lock requirements.txt
-      - name: Diff lock
-        run: |
-          set -e
-          if ! diff -u requirements.lock new.requirements.lock > lock.diff || [ -s lock.diff ]; then
-            echo "requirements.lock is out of date with requirements.txt" >&2
-            echo "To regenerate lock file run:" >&2
-            echo "  pip install 'pip-tools>=7.5.0'" >&2
-            echo "  python -m piptools compile --generate-hashes --allow-unsafe -o requirements.lock requirements.txt" >&2
-            echo "--- Diff (expected no output) ---" >&2
-            cat lock.diff >&2 || true
-            exit 1
-          fi
-          echo "requirements.lock matches requirements.txt"
+          python scripts/verify_lock_sync.py || echo "LOCK_SYNC_FAILED=1" >> $GITHUB_ENV
       - name: Summary
         if: always()
         run: |
-          if [ -f lock.diff ] && [ -s lock.diff ]; then
-            echo "### Dependency Lock Verification" >> $GITHUB_STEP_SUMMARY
-            echo "Lock OUT OF DATE. See diff above." >> $GITHUB_STEP_SUMMARY
+          echo "### Dependency Lock Sync" >> $GITHUB_STEP_SUMMARY
+          if [ "$LOCK_SYNC_FAILED" = "1" ]; then
+            echo "One or more locks OUT OF DATE (see job log)." >> $GITHUB_STEP_SUMMARY
+            exit 1
           else
-            echo "### Dependency Lock Verification" >> $GITHUB_STEP_SUMMARY
-            echo "Lock up to date." >> $GITHUB_STEP_SUMMARY
+            echo "Runtime & dev locks up to date." >> $GITHUB_STEP_SUMMARY
           fi
 
   lint-and-type-check:

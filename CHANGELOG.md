@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added explicit `psutil==7.0.0` runtime dependency (previously only installed implicitly in CI) to support performance regression and resource monitoring tests without ImportError locally. Updated `requirements.txt`, `pyproject.toml`, and removed duplicate install line from composite action.
+
 ### Infrastructure
 
 - **Pre-commit pipeline stabilization**: Fixed malformed `.pre-commit-config.yaml` structure consolidating all local hooks under single `repo: local` block

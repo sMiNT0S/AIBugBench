@@ -24,3 +24,6 @@ yamllint>=1.35.0       # YAML style and schema linting
 mkdocs>=1.5.0          # Documentation site generator
 mkdocs-material>=9.0.0 # Material design theme for MkDocs
 mkdocs-include-markdown-plugin>=6.0.0 # Include markdown files plugin
+
+# Performance / system introspection (used in tests only)
+psutil==7.0.0          # Align with CI composite action pin; required by performance regression tests

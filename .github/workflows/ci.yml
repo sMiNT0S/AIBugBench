@@ -3,7 +3,7 @@ name: CI
 env:
   PYTHON_DEFAULT_VERSION: "3.13"
   BANDIT_VERSION: "1.8.6"
-  RUFF_VERSION: "0.12.11"  # Upgraded to align with local environment (supports UP047 rule)
+  RUFF_VERSION: "0.12.11" # Upgraded to align with local environment (supports UP047 rule)
   MYPY_VERSION: "1.11.2"
   PYTEST_VERSION: "8.3.2"
   PYTEST_COV_VERSION: "5.0.0"
@@ -69,7 +69,7 @@ jobs:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
           install-dev: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
@@ -103,7 +103,7 @@ jobs:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
           install-test: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
@@ -202,7 +202,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           install-test: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
@@ -269,6 +269,16 @@ jobs:
           path: ./collected-results
           merge-multiple: true
 
+      - name: Ensure collected-results exists
+        shell: bash
+        run: |
+          if [ ! -d ./collected-results ] || \
+             [ -z "$(ls -A ./collected-results 2>/dev/null)" ]; then
+            echo "No collected benchmark artifacts found. Ensure previous jobs uploaded artifacts." >&2
+            echo "Expected artifacts from multi-platform-tests (pattern: benchmark-results-*)" >&2
+            exit 1
+          fi
+
       - name: Run cross-platform comparison
         id: comparison
         shell: bash
@@ -327,7 +337,7 @@ jobs:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
           install-security: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
@@ -336,19 +346,38 @@ jobs:
 
       - name: Run bandit security scan
         # Use pyproject.toml configuration for consistent exclusions (pinned version)
-        run: bandit -r . -ll --configfile pyproject.toml -f json -o bandit-report.json --version
+        run: |
+          bandit \
+            -r . \
+            -ll \
+            --configfile pyproject.toml \
+            -f json \
+            -o bandit-report.json \
+            --version
         continue-on-error: true
 
       - name: Run safety scan
-        run: safety scan --file=requirements.lock --json > safety-report.json || echo "safety scan fallback"
+        run: |
+          safety scan \
+            --file=requirements.lock \
+            --json \
+            > safety-report.json \
+            || echo "safety scan fallback"
         continue-on-error: true
       - name: Run internal security audit
         run: python scripts/security_audit.py --json --output audit.json
         continue-on-error: true
 
       - name: Fail if audit not ok
-        run: >
-          python -c "import json,sys,pathlib;d=json.loads(pathlib.Path('audit.json').read_text()); ok=bool(d.get('ok'));print('Audit OK:',ok);sys.exit(0 if ok else 1)"
+        run: |
+          # Inline Python audit verification wrapped for readability (was a single long line)
+          python - <<'PY'
+          import json, sys, pathlib
+          data = json.loads(pathlib.Path('audit.json').read_text())
+          ok = bool(data.get('ok'))
+          print('Audit OK:', ok)
+          sys.exit(0 if ok else 1)
+          PY
         continue-on-error: false
 
       - name: Generate security audit summary

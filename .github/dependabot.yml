@@ -19,19 +19,19 @@ updates:
       include: "scope"
     labels: ["dependencies"]
     allow:
-      - dependency-type: "direct"   # drop indirects to cut noise
+      - dependency-type: "direct"             # drop indirects to cut noise
     groups:
       requests-group:
         patterns: ["requests*", "urllib3", "certifi"]
       yaml-group:
         patterns: ["pyyaml", "yaml*"]
-      dev-tools:                    # no security tools here (avoid overlap)
+      dev-tools:                               # no security tools overlap
         patterns: ["ruff", "mypy", "pytest*", "coverage*", "pip-tools"]
       security-tools:
         patterns: ["bandit", "safety", "pip-audit"]
       typing:
         patterns: ["types-*"]
-      docs-stack:                   # mkdocs and friends grouped together
+      docs-stack:                              # mkdocs & friends together
         patterns: ["mkdocs*", "pymdown-extensions*", "sphinx*"]
 
   # GitHub Actions (weekly; you pin SHAs separately)
@@ -43,14 +43,11 @@ updates:
       time: "09:00"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 5
-    versioning-strategy: increase-if-necessary
     assignees: ["sMiNT0S"]
     commit-message:
       prefix: "ci"
       include: "scope"
     labels: ["dependencies"]
-    allow:
-      - dependency-type: "direct"
     groups:
       github-actions-core:
         patterns: ["actions/*"]

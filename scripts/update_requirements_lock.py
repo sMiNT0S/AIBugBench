@@ -285,7 +285,16 @@ def main() -> int:
             return out
 
         with tempfile.TemporaryDirectory() as td:
+            # Seed the temp output with the current lock so pip-compile reuses
+            # existing pins instead of upgrading to latest within the version ranges.
+            # pip-compile keeps versions from the *output file* unless --upgrade.
             tmp_lock = Path(td) / "_lock.tmp"
+            try:
+                tmp_lock.write_text(lock.read_text(encoding="utf-8"), encoding="utf-8")
+            except Exception:
+                # Fallback: binary copy if encoding is odd for some reason
+                shutil.copy2(lock, tmp_lock)
+
             code = compile_lock(req, tmp_lock, allow_unsafe, strip_platform)
             if code != 0:
                 return code

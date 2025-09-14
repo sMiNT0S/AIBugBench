@@ -13,3 +13,6 @@
 *.jpg -text
 *.pdf -text
 *.ico -text
+
+# Lock files must be LF to avoid bogus drift
+requirements*.lock text eol=lf

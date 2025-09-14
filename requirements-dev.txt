@@ -11,7 +11,7 @@ coverage>=7.0.0,<8.0.0        # Code coverage measurement
 bandit==1.8.6          # Static security analysis (pinned for CI consistency)
 safety>=3.0.0          # Known vulnerability scanning  
 pip-audit>=2.0.0       # Dependency vulnerability checking
-pip-tools>=7.5.0       # Dependency management (>=7.5.0 for pip 24 compatibility)
+pip-tools==7.5.0       # Dependency management (==7.5.0 for pip 24 compatibility)
 
 # Code quality and linting
 ruff>=0.1.0            # Fast Python linter

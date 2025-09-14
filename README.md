@@ -8,7 +8,7 @@
 [![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
 ![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
 
-## Welcome to AIBugBench - note; on the slight offchance this repo gains some attention when i'm away for vacation, repo is read only for now after silent public switch
+## Welcome to AIBugBench
 
 So… you vibe coded a weekend project and shipped it. Bold move. Before you crown an LLM your new teammate, see how it behaves under **the same** set of tasks.
 
@@ -67,7 +67,6 @@ python run_benchmark.py --model example_model
 - [Common Tasks](#common-tasks)
   - [Notes](#notes)
 - [Resources](#resources)
-- [Dependency Locks (pip-tools)](#dependency-locks-pip-tools)
 - [Dependency Policy & Locks (pip-tools)](#dependency-policy--locks-pip-tools)
   - [Developer Tooling Lock](#developer-tooling-lock)
 - [Scope & Limitations](#scope--limitations)

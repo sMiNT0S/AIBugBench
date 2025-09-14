@@ -137,6 +137,10 @@ status/
 # Keep canonical template directory
 !submissions/templates/template/
 
+# scripts i might add later
+scripts/audit_local.json
+scripts/Audit-VSCodeSettings.ps1
+
 # Developer-specific & transient files
 # -------------------------------------------------------------
 # Use .git/info/exclude (not committed) for personal/editor/scratch ignores.
@@ -151,7 +155,6 @@ status/
 
 # Documentation artifacts (exclude planning docs)
 docs_private/
-scripts/audit_local.json
 audit_local.json
 .mypy_report/index.txt
 *~

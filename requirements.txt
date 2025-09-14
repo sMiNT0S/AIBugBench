@@ -1,5 +1,5 @@
-## AI Code Benchmark Requirements
-## Pinned to match pyproject.toml (single source of truth). Update both together.
-PyYAML==6.0.2
+# AI Code Benchmark Requirements
+# NOTE: Pins kept minimal here; full hashed transitive set lives in requirements.lock.
+pyyaml==6.0.2
 requests==2.32.5
-pywin32==311; sys_platform == "win32"
+psutil==7.0.0

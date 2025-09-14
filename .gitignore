@@ -47,6 +47,7 @@ Thumbs.db
 .cache
 htmlcov/
 .tox/
+installed.txt
 
 # Test Coverage
 .coverage
@@ -104,7 +105,7 @@ audit_summary.md
 bandit-report.json
 safety-report.json
 semgrep-secrets.json
-trufflehog-results.json
+trufflehog-results.json 
 
 # Coverage & pytest extra outputs (already partially covered)
 .pytest_cache/
@@ -136,6 +137,10 @@ status/
 # Keep canonical template directory
 !submissions/templates/template/
 
+# scripts i might add later
+scripts/audit_local.json
+scripts/Audit-VSCodeSettings.ps1
+
 # Developer-specific & transient files
 # -------------------------------------------------------------
 # Use .git/info/exclude (not committed) for personal/editor/scratch ignores.
@@ -150,7 +155,6 @@ status/
 
 # Documentation artifacts (exclude planning docs)
 docs_private/
-scripts/audit_local.json
 audit_local.json
 .mypy_report/index.txt
 *~

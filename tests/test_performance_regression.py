@@ -135,7 +135,7 @@ class TestPerformanceRegression:
 
         metadata = load_all_model_metadata(large_submissions_structure)
 
-        current, peak = tracemalloc.get_traced_memory()
+        _, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
 
         # Memory usage should be reasonable
@@ -478,7 +478,7 @@ def sync_users_to_crm(users, token):
     def test_resource_monitoring_during_execution(self, tmp_path):
         """Test resource monitoring during benchmark execution."""
 
-        def monitor_resources(duration_seconds=2):
+        def monitor_resources(duration_seconds: float = 2):
             """Monitor CPU and memory usage."""
             process = psutil.Process(os.getpid())
             samples = []

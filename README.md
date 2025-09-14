@@ -1,22 +1,20 @@
 # AIBugBench
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://python.org)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
 [![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
-[![Test Coverage](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
-[![Security Audit](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security-audit.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security-audit.yml)
 [![Security Analysis](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml)
 [![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
 ![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
 
-## Welcome to AIBugBench
+## Welcome to AIBugBench - note; on the slight offchance this repo gains some attention when i'm away for vacation, repo is read only for now after silent public switch
 
 So… you vibe coded a weekend project and shipped it. Bold move. Before you crown an LLM your new teammate, see how it behaves under **the same** set of tasks.
 
 AIBugBench evaluates AI-generated code on four **prewritten prompts** and fixed test fixtures. You paste the model’s output, it runs **locally** in a sandbox, and you get a scorecard across seven quality dimensions. Comparable, repeatable, receipts—not vibes.
 
-### What This Is
+### What this is
 
 - **Model behavior benchmark:** How different LLMs handle the *same* four curated prompts + deterministic fixtures under controlled conditions.
 - **Regression detector:** Track model versions / prompt policies over time and catch “it used to work” moments (baseline vs new output diffs).
@@ -24,7 +22,7 @@ AIBugBench evaluates AI-generated code on four **prewritten prompts** and fixed 
 - **Apples-to-apples:** Fixed prompts + fixed harness = comparable results across models and runs (scoring stable across versions).
 - **Seven-dimension scorecard:** Correctness, safety, readability, efficiency, robustness, portability, maintainability.
 
-### What This Is *Not*
+### What this is *not*
 
 - A scanner/tester for your whole codebase  
 - A magic prompt tuner for your app  
@@ -60,8 +58,8 @@ python run_benchmark.py --model example_model
 <!-- TOC_START -->
 
 - [Welcome to AIBugBench](#welcome-to-aibugbench)
-  - [What This Is](#what-this-is)
-  - [What This Is *Not*](#what-this-is-not)
+  - [What this is](#what-this-is)
+  - [What this is *not*](#what-this-is-not)
   - [How It Works (TL;DR)](#how-it-works-tldr)
 - [Quick Start (60 seconds)](#quick-start-60-seconds)
 - [Security at a glance](#security-at-a-glance)
@@ -69,7 +67,7 @@ python run_benchmark.py --model example_model
 - [Common Tasks](#common-tasks)
   - [Notes](#notes)
 - [Resources](#resources)
-- [Dependency Locks (pip-tools)](#dependency-locks-pip-tools)
+- [Dependency Policy & Locks (pip-tools)](#dependency-policy--locks-pip-tools)
   - [Developer Tooling Lock](#developer-tooling-lock)
 - [Scope & Limitations](#scope--limitations)
 - [Result Metadata & Privacy](#result-metadata--privacy)
@@ -134,11 +132,23 @@ Full threat model & roadmap: see [`SAFETY.md`](SAFETY.md) and [`SECURITY.md`](SE
 
 ---
 
-**Requirements:** Python 3.13+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [MIT](LICENSE)
+**Requirements:** Python 3.13+ • pyyaml>=6.0 • requests>=2.25.0 | **License:** [Apache-2.0](LICENSE)
 
-## Dependency Locks (pip-tools)
+## Dependency Policy & Locks (pip-tools)
 
 Locked runtime deps live in `requirements.lock` (hashes enforced in PR security workflow). Developer tooling (linters, type checkers, test utilities, security scanners) is separately pinned in `requirements-dev.lock` to decouple supply‑chain drift from runtime evaluation.
+
+Weekly automation: A scheduled workflow (`scheduled-dep-refresh.yml`) recompiles both locks every Monday (UTC) and opens/updates a PR if changes occur. This keeps security patches visible while preserving review control.
+
+Policy (Early Project Phase):
+
+- Direct runtime dependencies are hard-pinned (exact versions) in BOTH `pyproject.toml` and `requirements.txt` for maximum reproducibility.
+- Transitive graph is captured with hashes in `requirements.lock` (single source of truth for installations using `--require-hashes`).
+- `requirements.txt` intentionally remains minimal (only direct deps) to reduce merge noise and aid review.
+- Addition/removal of a direct dependency requires: update `pyproject.toml`, `requirements.txt`, regenerate `requirements.lock`, and update CHANGELOG.
+- Ranges will be reconsidered only after first external adopter milestone (avoids untested drift).
+
+Rationale: Benchmarks and performance regression tests rely on environmental determinism (timings, resource usage). Pin churn is explicit and auditable; accidental minor version bumps cannot silently alter scoring baselines.
 
 Update flow:
 

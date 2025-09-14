@@ -30,12 +30,14 @@ Thank you for your interest in contributing to AIBugBench! This document provide
    source .venv/bin/activate
    ```
 
-3. **Install dependencies**:
+3. **Install dependencies (hash-verified)**:
 
    ```bash
    pip install --upgrade pip
-   pip install -r requirements.txt
-   pip install ruff pytest
+   # Install runtime dependencies (direct pins; prefer lock for reproducibility)
+   pip install --require-hashes -r requirements.lock
+   # (Optional) install dev tooling (linters, test utilities, security scanners)
+   pip install --require-hashes -r requirements-dev.lock
    ```
 
 4. **Set up pre-commit hooks (recommended)**:
@@ -77,7 +79,7 @@ If pre-commit hooks are installed, they will automatically:
 - Run Bandit security analysis
 - Validate YAML formatting
 - Execute smoke tests to ensure basic functionality
-- Check requirements lock file synchronization
+- Check requirements.lock / requirements-dev.lock sync (drift fails commit)
 
 ## Pull Request Process
 
@@ -96,13 +98,18 @@ If pre-commit hooks are installed, they will automatically:
 - [ ] Clear commit messages
 - [ ] Updated documentation (if applicable)
 
-## Coding Standards
+## Coding Standards & Dependency Policy
 
 - **Python Style**: Follow PEP 8, enforced by Ruff
 - **Line Length**: 100 characters maximum
-- **Imports**: One import per line, sorted alphabetically
+- **Imports**: One import per line, sorted (Ruff governs ordering)
 - **Documentation**: Add docstrings for public functions and classes
 - **Testing**: Write tests for new features and bug fixes
+- **Dependency Policy**:
+      - Direct runtime deps are hard-pinned in `pyproject.toml` / `requirements.txt` and lock hashed in `requirements.lock`.
+      - Dev/tooling deps live in `requirements-dev.txt` with hashed lock in `requirements-dev.lock`.
+      - When adding/removing a direct runtime dependency: update both manifests, regenerate lock (`python scripts/update_requirements_lock.py`), and add a CHANGELOG entry.
+      - Do not broaden version ranges without prior discussion (determinism priority during early lifecycle).
 
 ## Issue Reporting
 

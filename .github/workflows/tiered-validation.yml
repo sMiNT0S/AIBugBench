@@ -15,7 +15,7 @@ on:
       - '.github/workflows/tiered-validation.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
 env:
@@ -34,23 +34,23 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{env.PYTHON_VERSION}}
 
       - name: Install dependencies (pinned security tools)
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install bandit==${{ env.BANDIT_VERSION }}
+          pip install bandit==${{env.BANDIT_VERSION}}
 
       - name: Lint reference
         run: |
-          if [ -d "submissions/reference_implementations" ]; then
+          if [-d "submissions/reference_implementations"]; then
             ruff check submissions/reference_implementations/
           fi
 
       - name: Security scan
         run: |
-          if [ -d "submissions/reference_implementations" ]; then
+          if [-d "submissions/reference_implementations"]; then
             bandit -c bandit.yaml -r submissions/reference_implementations/
           fi
 
@@ -69,17 +69,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{env.PYTHON_VERSION}}
 
       - name: Install dependencies (pinned security tools)
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install bandit==${{ env.BANDIT_VERSION }}
+          pip install bandit==${{env.BANDIT_VERSION}}
 
       - name: Basic checks
         run: |
-          if [ -d "submissions/templates" ]; then
+          if [-d "submissions/templates"]; then
             ruff check submissions/templates/ --config .ruff-tier2.toml || true
             bandit -c bandit-tier2.yaml -r submissions/templates/ || true
           fi

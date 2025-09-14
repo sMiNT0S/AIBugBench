@@ -1,0 +1,5 @@
+* @sMiNT0S
+.github/workflows/** @sMiNT0S
+scripts/** @sMiNT0S
+requirements*.txt @sMiNT0S
+requirements*.lock @sMiNT0S

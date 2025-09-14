@@ -57,7 +57,7 @@ python run_benchmark.py --model example_model
 
 <!-- TOC_START -->
 
-- [Welcome to AIBugBench](#welcome-to-aibugbench)
+- [Welcome to AIBugBench - note; on the slight offchance this repo gains some attention when i'm away for vacation, repo is read only for now after silent public switch](#welcome-to-aibugbench---note-on-the-slight-offchance-this-repo-gains-some-attention-when-im-away-for-vacation-repo-is-read-only-for-now-after-silent-public-switch)
   - [What this is](#what-this-is)
   - [What this is *not*](#what-this-is-not)
   - [How It Works (TL;DR)](#how-it-works-tldr)

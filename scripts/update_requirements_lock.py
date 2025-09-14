@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -74,12 +76,12 @@ def _rewrite_header(lock_path: Path, req_name: str, allow_unsafe: bool = True) -
 
 
 def _strip_platform_specific(lock_path: Path) -> None:
-    """Remove platform-specific requirement blocks for deterministic cross-OS locks.
+    """Remove Windows-only requirement blocks for deterministic cross-OS locks.
 
-    Currently we strip any requirement line containing ' ; sys_platform == "win32"'.
-    We also remove its following indented hash lines. This allows generating the
-    authoritative lock on Windows without reintroducing Windows-only packages
-    that CI (Linux) would omit, preventing perpetual churn.
+    Strips any requirement line containing one of:
+      ; sys_platform == "win32"  |  'win32'
+      ; platform_system == "Windows"  |  'Windows'
+    Also removes the immediately following indented hash lines (    --hash=...).
     """
     try:
         lines = lock_path.read_text(encoding="utf-8").splitlines()
@@ -87,17 +89,24 @@ def _strip_platform_specific(lock_path: Path) -> None:
         return
     out: list[str] = []
     skip_hashes = False
+    win_marker = re.compile(
+        r""";\s*(?:sys_platform\s*==\s*['"]win32['"]|platform_system\s*==\s*['"]Windows['"])"""
+    )
     for line in lines:
-        if skip_hashes:
-            if line.startswith("    --hash="):
-                continue  # still part of skipped block
-            else:
-                skip_hashes = False
-        if ' ; sys_platform == "win32"' in line:
-            skip_hashes = True  # drop this requirement & its hash lines
-            continue
+        is_hash_line = line.startswith("    --hash=")
+        is_win_marked = bool(win_marker.search(line))
+
+    if skip_hashes and is_hash_line:
+        # Still inside a skipped block: drop hash continuation lines.
+        pass  # intentionally do nothing
+    elif is_win_marked:
+        # Start of a Windows-only requirement: skip this line and enter hash-skip mode.
+        skip_hashes = True
+    else:
+        # Normal line. If we were skipping, the block ends here.
         out.append(line)
-    lock_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+        if skip_hashes:
+            skip_hashes = False
 
 
 def _dedupe_provenance(lock_path: Path) -> None:
@@ -152,7 +161,7 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
     print(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
     if _require_modern_piptools() is None:
         print(
-            "pip-tools >=7.5.0 required. Upgrade with: pip install -U 'pip-tools>=7.5.0'",
+            "pip-tools ==7.5.0 required. Install with: pip install -U 'pip-tools==7.5.0'",
             file=sys.stderr,
         )
         return 4
@@ -220,7 +229,7 @@ def main() -> int:
             piptools = str(candidate)
         else:
             print(
-                "pip-tools not found. Install with: pip install 'pip-tools>=7.5.0'",
+                "pip-tools not found. Install with: pip install 'pip-tools==7.5.0'",
                 file=sys.stderr,
             )
             return 2
@@ -235,24 +244,53 @@ def main() -> int:
             code = compile_lock(req, tmp_lock, allow_unsafe, strip_platform)
             if code != 0:
                 return code
-            new_content = tmp_lock.read_text(encoding="utf-8").splitlines(keepends=True)
-            old_content = lock.read_text(encoding="utf-8").splitlines(keepends=True)
+
+            def _norm_for_compare(text: str) -> list[str]:
+                # Normalize newlines and strip trailing whitespace so CRLF/LF
+                # and editor-added spaces don't trigger false drift.
+                text = text.replace("\r\n", "\n").replace("\r", "\n")
+                return [ln.rstrip() for ln in text.split("\n")]
+
+            new_content = _norm_for_compare(tmp_lock.read_text(encoding="utf-8"))
+            old_content = _norm_for_compare(lock.read_text(encoding="utf-8"))
             if new_content != old_content:
                 print(
                     f"{lock.name} is OUT OF DATE with {req.name}",
                     file=sys.stderr,
                 )
-                diff = difflib.unified_diff(
+                diff_iter = difflib.unified_diff(
                     old_content,
                     new_content,
                     fromfile=str(lock.name),
                     tofile="(recompiled)",
+                    lineterm="",
                 )
-                for i, line in enumerate(diff):
+                diff_lines: list[str] = []
+                for i, line in enumerate(diff_iter):
                     if i > 400:  # safety cut
                         print("... diff truncated ...", file=sys.stderr)
                         break
-                    print(line.rstrip())
+                    print(line.rstrip(), file=sys.stderr)
+                    diff_lines.append(line)
+                # Compute simple diff stats (+/-) excluding headers
+                added = sum(
+                    1
+                    for line_added in diff_lines
+                    if line_added.startswith("+") and not line_added.startswith("+++")
+                )
+                removed = sum(
+                    1
+                    for line_removed in diff_lines
+                    if line_removed.startswith("-") and not line_removed.startswith("---")
+                )
+                summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+                if summary_path:
+                    try:
+                        with open(summary_path, "a", encoding="utf-8") as fh:
+                            fh.write(f"Lock drift: {lock.name} (+{added} -{removed})\n")
+                    except Exception as exc:
+                        # Best-effort only; do not fail lock check due to summary write issues.
+                        print(f"Warning: failed writing summary: {exc}", file=sys.stderr)
                 print(
                     "Run: python scripts/update_requirements_lock.py"
                     + (" --dev" if args.dev else "")

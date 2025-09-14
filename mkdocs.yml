@@ -3,7 +3,7 @@ site_url: https://smintos.github.io/AIBugBench
 repo_url: https://github.com/sMiNT0S/AIBugBench
 repo_name: sMiNT0S/AIBugBench
 docs_dir: docs
-strict: true  
+strict: true
 
 theme:
   name: material

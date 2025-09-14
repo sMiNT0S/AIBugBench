@@ -430,7 +430,7 @@ class TestBenchmarkUtilities:
 
             # Should get reasonable results
             # Using tuple form for broader Python compatibility per test requirements
-            assert isinstance(result["score"], (int, float))  # noqa: UP038
+            assert isinstance(result["score"], (int, float))
             assert result["score"] >= 0
             assert "detailed_scoring" in result
 
@@ -441,7 +441,7 @@ class TestBenchmarkUtilities:
 
             # Should get reasonable results
             # Using tuple form for broader Python compatibility per test requirements
-            assert isinstance(result["score"], (int, float))  # noqa: UP038
+            assert isinstance(result["score"], (int, float))
             assert result["score"] >= 0
 
 

@@ -20,7 +20,7 @@ SCRIPT = ROOT / "scripts" / "update_requirements_lock.py"
 def _run(args: list[str]) -> int:
     # Internal call to existing lock updater; arguments are static lists we control.
     # Invokes maintained internal script with static argument list (no user input) -> safe.
-    return subprocess.call([sys.executable, str(SCRIPT), *args])  # noqa S603 # nosec B603,B607
+    return subprocess.call([sys.executable, str(SCRIPT), *args])  # noqa S603
 
 
 def main() -> int:

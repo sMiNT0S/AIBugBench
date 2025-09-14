@@ -45,17 +45,26 @@ repos:
     rev: 1.7.9
     hooks:
       - id: bandit
-        args:
-          [
-            "-r",
-            ".",
-            "-ll",
-            "--configfile",
-            "pyproject.toml",
-            "-x",
-            "tests,submissions",
-          ]
-        pass_filenames: false
+      # Scan only tracked Python files that pre-commit passes in
+        args: ["-ll", "--configfile", "pyproject.toml"]
+        types: [python]
+        exclude: >-
+          (?x) ^(
+            tests/
+            | submissions/
+            | \.git/
+            | \.git/\.pre-commit-cache/
+            | \.venv/
+            | venv/
+            | build/
+            | dist/
+            | coverage/
+            | htmlcov/
+            | \.mypy_cache/
+            | \.ruff_cache/
+            | \.pytest_cache/
+            | .*/__pycache__/
+          )
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.10.0
@@ -80,9 +89,12 @@ repos:
       - id: verify-lock-sync
         name: verify lock files are in sync with requirements
         entry: python scripts/verify_lock_sync.py
-        language: system
+        language: python
+        language_version: python3.13
         pass_filenames: false
-        stages: [commit, push]
+        additional_dependencies:
+          - pip-tools==7.5.0
+        stages: [pre-commit, pre-push]
         always_run: true
 
       - id: smoke-pytest

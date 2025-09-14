@@ -93,16 +93,20 @@ def _strip_platform_specific(lock_path: Path) -> None:
         r""";\s*(?:sys_platform\s*==\s*['"]win32['"]|platform_system\s*==\s*['"]Windows['"])"""
     )
     for line in lines:
-        if skip_hashes:
-            if line.startswith("    --hash="):
-                continue  # still part of skipped block
-            else:
-                skip_hashes = False
-        if win_marker.search(line):
-            skip_hashes = True  # drop this requirement & its hash lines
-            continue
+        is_hash_line = line.startswith("    --hash=")
+        is_win_marked = bool(win_marker.search(line))
+
+    if skip_hashes and is_hash_line:
+        # Still inside a skipped block: drop hash continuation lines.
+        pass  # intentionally do nothing
+    elif is_win_marked:
+        # Start of a Windows-only requirement: skip this line and enter hash-skip mode.
+        skip_hashes = True
+    else:
+        # Normal line. If we were skipping, the block ends here.
         out.append(line)
-    lock_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+        if skip_hashes:
+            skip_hashes = False
 
 
 def _dedupe_provenance(lock_path: Path) -> None:

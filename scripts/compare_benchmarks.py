@@ -128,7 +128,7 @@ def _parse_args() -> argparse.Namespace:
 
     # Normalize require list
     req: list[str] = []
-    for item in (args.require or []):
+    for item in args.require or []:
         req.extend([p.strip() for p in str(item).split(",") if p.strip()])
     args.require = req
 

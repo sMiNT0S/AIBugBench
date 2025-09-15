@@ -55,6 +55,7 @@ certifi==2025.8.3 \
     --hash=sha256:e564105f78ded564e3ae7c923924435e1daa7463faeab5bb932bc53ffae63407 \
     --hash=sha256:f6c12493cfb1b06ba2ff328595af9350c65d6644968e5d3a2ffd78699af217a5
     # via
+    #   -c requirements.lock
     #   httpcore
     #   httpx
     #   requests
@@ -224,7 +225,9 @@ charset-normalizer==3.4.3 \
     --hash=sha256:fb7f67a1bfa6e40b438170ebdc8158b78dc465a5a67b6dde178a46987b244a72 \
     --hash=sha256:fd10de089bcdcd1be95a2f73dbe6254798ec1bda9f450d5828c96f93e2536b9c \
     --hash=sha256:fdabf8315679312cfa71302f9bd509ded4f2f263fb5b765cf1433b39106c3cc9
-# via requests
+    # via
+    #   -c requirements.lock
+    #   requests
 click==8.2.1 \
     --hash=sha256:27c491cc05d968d271d5a1db13e3b5a184636d9d930f148c50b038f0d0646202 \
     --hash=sha256:61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b
@@ -417,6 +420,7 @@ idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
     # via
+    #   -c requirements.lock
     #   anyio
     #   httpx
     #   requests
@@ -728,7 +732,9 @@ psutil==7.0.0 \
     --hash=sha256:a5f098451abc2828f7dc6b58d44b532b22f2088f4999a937557b603ce72b1993 \
     --hash=sha256:ba3fcef7523064a6c9da440fc4d6bd07da93ac726b5733c29027d7dc95b39d99
     # via
+    #   -c requirements.lock
     #   -r requirements-dev.txt
+    #   -r requirements.txt
     #   safety
 py-serializable==2.1.0 \
     --hash=sha256:9d5db56154a867a9b897c0163b33a793c804c80cee984116d02d49e4578fc103 \
@@ -930,6 +936,8 @@ pyyaml==6.0.2 \
     --hash=sha256:f753120cb8181e736c57ef7636e83f31b9c0d1722c516f7e86cf15b7aa57ff12 \
     --hash=sha256:ff3824dc5261f50c9b0dfb3be22b4567a6f938ccce4587b38952d85fd9e9afe4
     # via
+    #   -c requirements.lock
+    #   -r requirements.txt
     #   bandit
     #   mkdocs
     #   mkdocs-get-deps
@@ -1033,6 +1041,8 @@ requests==2.32.5 \
     --hash=sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6 \
     --hash=sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf
     # via
+    #   -c requirements.lock
+    #   -r requirements.txt
     #   cachecontrol
     #   mkdocs-material
     #   pip-audit
@@ -1189,6 +1199,7 @@ urllib3==2.5.0 \
     --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
     --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
     # via
+    #   -c requirements.lock
     #   requests
     #   types-requests
 watchdog==6.0.0 \

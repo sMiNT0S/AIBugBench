@@ -169,3 +169,5 @@ coverage.xml
 artifacts/new.requirements-dev.lock
 artifacts/new.requirements.lock
 logs.txt
+.mcp/
+diff.md

@@ -64,8 +64,8 @@ jobs:
           python -m pip install -U pip
           python -m pip install "pip-tools==7.5.0"
           # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
-          python scripts/update_requirements_lock.py --check || {echo "runtime lock drift"; exit 3;}
-          python scripts/update_requirements_lock.py --check --dev || {echo "dev lock drift"; exit 3;}
+          python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
+          python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
       - name: Recompile locks for artifact (on fail)
         if: failure()
         run: |
@@ -163,7 +163,7 @@ jobs:
         id: coverage_file
         shell: bash
         run: |
-          if [-f coverage.xml]; then
+          if [ -f coverage.xml ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
             echo "coverage.xml present"
           else
@@ -183,7 +183,7 @@ jobs:
       - name: Detect Codecov token
         shell: bash
         run: |
-          if [-n "${{secrets.CODECOV_TOKEN}}"]; then
+          if [ -n "${{secrets.CODECOV_TOKEN}}" ]; then
           echo "HAVE_CODECOV=1" >> "$GITHUB_ENV"
           else
           echo "HAVE_CODECOV=0" >> "$GITHUB_ENV"
@@ -200,9 +200,9 @@ jobs:
       - name: Skip Codecov (no token present)
         if: ${{env.HAVE_CODECOV != '1' || steps.coverage_file.outputs.present != 'true'}}
         run: |
-          if ["$HAVE_CODECOV" != '1']; then
+          if [ "$HAVE_CODECOV" != '1' ]; then
             echo "Codecov token not provided; skipping upload (private repo)."
-          elif ["${{steps.coverage_file.outputs.present}}" != 'true']; then
+          elif [ "${{steps.coverage_file.outputs.present}}" != 'true' ]; then
             echo "coverage.xml missing; skipping Codecov upload."
           fi
   multi-platform-tests:
@@ -269,12 +269,12 @@ jobs:
         id: check_artifacts
         shell: bash
         run: |
-          if [-d "ci_results"] && [-n "$(ls -A ci_results 2>/dev/null)"]; then
+          if [ -d "ci_results" ] && [ -n "$(ls -A ci_results 2>/dev/null)" ]; then
             echo "has_ci_results=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_ci_results=false" >> "$GITHUB_OUTPUT"
           fi
-          if [-f "*.log"] 2>/dev/null; then
+          if [ -f "*.log" ] 2>/dev/null; then
             echo "has_logs=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_logs=false" >> "$GITHUB_OUTPUT"
@@ -318,10 +318,10 @@ jobs:
         id: check_collected
         shell: bash
         run: |
-          if [! -d ./collected-results]; then
+          if [ ! -d ./collected-results ]; then
             echo "No collected-results directory found"
             echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
-          elif [-z "$(ls -A ./collected-results 2>/dev/null)"]; then
+          elif [ -z "$(ls -A ./collected-results 2>/dev/null)" ]; then
             echo "collected-results directory is empty"
             echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
           else

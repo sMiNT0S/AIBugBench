@@ -166,3 +166,5 @@ venv/
 .env
 __pycache__/
 coverage.xml
+artifacts/new.requirements-dev.lock
+artifacts/new.requirements.lock

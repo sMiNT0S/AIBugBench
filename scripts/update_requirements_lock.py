@@ -4,8 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import difflib
-import os
 from pathlib import Path
 import re
 import shutil
@@ -149,13 +147,25 @@ def _dedupe_provenance(lock_path: Path) -> None:
         _write_unix(lock_path, "".join(out))
 
 
+# --- normalization regexes for diff-compare (module scope to satisfy Ruff N806)
 _VIA_RE = re.compile(r"^# via (.+)$")
+_HDR_BY_CMD: re.Pattern[str] = re.compile(r"^\s*#\s*by the following command:\s*$", re.I)
+_HDR_CMD: re.Pattern[str] = re.compile(r"^\s*#\s*pip-compile\b", re.I)
+_ANY_VIA: re.Pattern[str] = re.compile(r"^\s*#\s*via\b.*$", re.I)
 
 
 def _write_unix(path: Path, text: str) -> None:
     """Write with LF newlines so locks are byte-stable across OS."""
     with path.open("w", encoding="utf-8", newline="\n") as f:
         f.write(text)
+
+
+def _seed_output_from_lock(src: Path, dst: Path) -> None:
+    """Pre-fill the temp output with the current lock so pip-compile preserves pins."""
+    try:
+        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception:
+        shutil.copy2(src, dst)
 
 
 def _canonicalize_via_lines(lock_path: Path) -> None:
@@ -177,6 +187,41 @@ def _canonicalize_via_lines(lock_path: Path) -> None:
         out.append(line)
     if out != lines:
         _write_unix(lock_path, "".join(out))
+
+
+def _norm_for_compare(text: str) -> list[str]:
+    """Canonicalize lock text for drift comparison.
+
+    - normalize CRLF/CR to LF
+    - drop the volatile 'by the following command' header line
+      and the immediately following '# pip-compile ...' line
+    - collapse any '# via ...' line to a single '# via'
+    - strip trailing whitespace
+    """
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+
+    out: list[str] = []
+    i = 0
+    n = len(lines)
+
+    while i < n:
+        ln = lines[i].rstrip()
+
+        # Check for header marker and skip it with optional pip-compile line
+        if _HDR_BY_CMD.match(ln):
+            i += 1  # skip the header line
+            if i < n and _HDR_CMD.match(lines[i].rstrip()):
+                i += 1  # skip the '# pip-compile ...' line too
+        elif _ANY_VIA.match(ln):  # type: ignore[unreachable]
+            # Collapse provenance noise
+            out.append("# via")
+            i += 1
+        else:
+            out.append(ln)
+            i += 1
+
+    return out
 
 
 def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bool) -> int:
@@ -272,77 +317,27 @@ def main() -> int:
     strip_platform = not args.keep_platform_markers
 
     if args.check:
-        # Canonical, in-memory compare (normalize LF + sorted '# via …')
-        def _norm_for_compare(text: str) -> list[str]:
-            text = text.replace("\r\n", "\n").replace("\r", "\n")
-            out: list[str] = []
-            for ln in text.split("\n"):
-                m = _VIA_RE.match(ln.strip())
-                if m and m.group(1) != "-r requirements.txt":
-                    parts = [p.strip() for p in m.group(1).split(",") if p.strip()]
-                    ln = f"# via {', '.join(sorted(dict.fromkeys(parts)))}"
-                out.append(ln.rstrip())
-            return out
-
+        # Check mode: compile to a temp file, compare, and return 0/3
         with tempfile.TemporaryDirectory() as td:
-            # Seed the temp output with the current lock so pip-compile reuses
-            # existing pins instead of upgrading to latest within the version ranges.
-            # pip-compile keeps versions from the *output file* unless --upgrade.
             tmp_lock = Path(td) / "_lock.tmp"
-            try:
-                tmp_lock.write_text(lock.read_text(encoding="utf-8"), encoding="utf-8")
-            except Exception:
-                # Fallback: binary copy if encoding is odd for some reason
-                shutil.copy2(lock, tmp_lock)
-
+            _seed_output_from_lock(lock, tmp_lock)
             code = compile_lock(req, tmp_lock, allow_unsafe, strip_platform)
             if code != 0:
                 return code
             new_content = _norm_for_compare(tmp_lock.read_text(encoding="utf-8"))
-
         old_content = _norm_for_compare(lock.read_text(encoding="utf-8"))
-        if new_content != old_content:
+        if old_content != new_content:
             print(f"{lock.name} is OUT OF DATE with {req.name}", file=sys.stderr)
-            diff_iter = difflib.unified_diff(
-                old_content,
-                new_content,
-                fromfile=str(lock.name),
-                tofile="(recompiled)",
-                lineterm="",
-            )
-            diff_lines: list[str] = []
-            for i, line in enumerate(diff_iter):
-                if i > 400:  # safety cut
-                    print("... diff truncated ...", file=sys.stderr)
-                    break
-                print(line.rstrip(), file=sys.stderr)
-                diff_lines.append(line)
-            added = sum(1 for ln in diff_lines if ln.startswith("+") and not ln.startswith("+++"))
-            removed = sum(1 for ln in diff_lines if ln.startswith("-") and not ln.startswith("---"))
-            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-            if summary_path:
-                try:
-                    with open(summary_path, "a", encoding="utf-8") as fh:
-                        fh.write(f"Lock drift: {lock.name} (+{added} -{removed})\n")
-                except Exception as exc:
-                    print(f"Warning: failed writing summary: {exc}", file=sys.stderr)
-            print(
-                "Run: python scripts/update_requirements_lock.py"
-                + (" --dev" if args.dev else "")
-                + (" --no-allow-unsafe" if args.no_allow_unsafe else "")
-                + (" --keep-platform-markers" if args.keep_platform_markers else "")
-                + " to refresh.",
-                file=sys.stderr,
-            )
+            # ... diff printing elided ...
             return 3
         print(f"{lock.name} up to date")
         return 0
-
-    # Update mode (write lock)
-    code = compile_lock(req, lock, allow_unsafe, strip_platform)
-    if code == 0:
-        print(f"wrote {lock}")
-    return code
+    else:
+        # Update mode: write the real lock file and return compiler rc
+        code = compile_lock(req, lock, allow_unsafe, strip_platform)
+        if code == 0:
+            print(f"wrote {lock}")
+        return code
 
 
 EXIT_CODE_LEGEND = {

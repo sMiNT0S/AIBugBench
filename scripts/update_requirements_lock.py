@@ -211,8 +211,16 @@ def _norm_for_compare(text: str) -> list[str]:
         # Check for header marker and skip it with optional pip-compile line
         if _HDR_BY_CMD.match(ln):
             i += 1  # skip the header line
-            if i < n and _HDR_CMD.match(lines[i].rstrip()):
-                i += 1  # skip the '# pip-compile ...' line too
+            # Skip blank comment lines and find the pip-compile line
+            while i < n:
+                next_line = lines[i].rstrip()
+                if _HDR_CMD.match(next_line):
+                    i += 1  # skip the pip-compile line
+                    break
+                elif next_line in ("", "#"):  # type: ignore[unreachable]
+                    i += 1  # skip blank/empty comment lines
+                else:
+                    break  # found non-header content, stop skipping
         elif _ANY_VIA.match(ln):  # type: ignore[unreachable]
             # Collapse provenance noise
             out.append("# via")

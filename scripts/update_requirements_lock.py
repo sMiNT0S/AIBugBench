@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import re
 import shutil
@@ -11,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 
+JSON_MODE = False
 try:
     import packaging.version as _pkgver
 except Exception:  # pragma: no cover
@@ -26,6 +28,14 @@ LOCK_DEV = ROOT / "requirements-dev.lock"
 # header even though the committed file is requirements.lock so that local
 # runs and CI produce byte-identical files.
 CANONICAL_OUTPUT_NAME = "new.requirements.lock"
+
+
+def _say(msg: str) -> None:
+    # Keep human chatter off stdout in --json mode
+    if JSON_MODE:
+        print(msg, file=sys.stderr)
+    else:
+        print(msg)
 
 
 def run(cmd: list[str]) -> int:
@@ -243,7 +253,7 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
     If allow_unsafe=True, adds --allow-unsafe to capture tooling packages
     like pip/setuptools/wheel (useful for reproducible isolated environments).
     """
-    print(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
+    _say(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
     if _require_modern_piptools() is None:
         print(
             "pip-tools ==7.5.0 required. Install with: pip install -U 'pip-tools==7.5.0'",
@@ -291,17 +301,38 @@ def main() -> int:
         action="store_true",
         help="Do not strip platform-specific (e.g. win32) requirement blocks",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit single-line JSON status instead of human text",
+    )
     args = parser.parse_args()
+    global JSON_MODE
+    JSON_MODE = args.json
+
+    def _emit_json(payload: dict) -> None:
+        print(json.dumps(payload, ensure_ascii=False))
 
     req = REQ_DEV if args.dev else REQ_RUNTIME
     lock = LOCK_DEV if args.dev else LOCK_RUNTIME
 
     if not req.exists():
-        print(f"{req} not found", file=sys.stderr)
+        if args.json:
+            _emit_json(
+                {
+                    "tool": "lock-check",
+                    "lock": lock.name,
+                    "status": "error",
+                    "exit": 1,
+                    "error": f"{req.name} not found",
+                }
+            )
+        else:
+            _say(f"{req} not found")
         return 1
 
     if not lock.exists() and args.check:
-        print(f"{lock} missing (cannot --check). Run without --check first.", file=sys.stderr)
+        _say(f"{lock} missing (cannot --check). Run without --check first.")
         return 1
 
     piptools = shutil.which("pip-compile") or shutil.which("piptools")
@@ -314,10 +345,19 @@ def main() -> int:
         if candidate.exists():
             piptools = str(candidate)
         else:
-            print(
-                "pip-tools not found. Install with: pip install 'pip-tools==7.5.0'",
-                file=sys.stderr,
-            )
+            if args.json:
+                _emit_json(
+                    {
+                        "tool": "lock-check",
+                        "lock": lock.name,
+                        "status": "error",
+                        "exit": 2,
+                        "error": "pip-tools not found",
+                    }
+                )
+                return 2
+
+            _say("pip-tools not found. Install with: pip install 'pip-tools==7.5.0'")
             return 2
 
     # Canonical policy: always include unsafe packages to avoid resolver drift.
@@ -335,16 +375,29 @@ def main() -> int:
             new_content = _norm_for_compare(tmp_lock.read_text(encoding="utf-8"))
         old_content = _norm_for_compare(lock.read_text(encoding="utf-8"))
         if old_content != new_content:
-            print(f"{lock.name} is OUT OF DATE with {req.name}", file=sys.stderr)
-            # ... diff printing elided ...
+            if args.json:
+                _emit_json(
+                    {
+                        "tool": "lock-check",
+                        "lock": lock.name,
+                        "status": "drift",
+                        "exit": 3,
+                        "artifact_hint": f"artifacts/new.{lock.name}",
+                    }
+                )
+            else:
+                _say(f"{lock.name} is OUT OF DATE with {req.name}")
             return 3
-        print(f"{lock.name} up to date")
+        if args.json:
+            _emit_json({"tool": "lock-check", "lock": lock.name, "status": "ok", "exit": 0})
+        else:
+            _say(f"{lock.name} up to date")
         return 0
     else:
         # Update mode: write the real lock file and return compiler rc
         code = compile_lock(req, lock, allow_unsafe, strip_platform)
         if code == 0:
-            print(f"wrote {lock}")
+            _say(f"wrote {lock}")
         return code
 
 
@@ -359,5 +412,7 @@ EXIT_CODE_LEGEND = {
 if __name__ == "__main__":
     rc = main()
     meaning = EXIT_CODE_LEGEND.get(rc, "(unknown)")
-    print(f"Exit code {rc}: {meaning}")
+    # In JSON mode, do not write a footer to stdout
+    if not JSON_MODE:
+        print(f"Exit code {rc}: {meaning}")
     sys.exit(rc)

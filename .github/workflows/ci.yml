@@ -66,6 +66,23 @@ jobs:
           # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
           python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
           python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
+      - name: Verify dependency lock determinism (JSON)
+        if: always()
+        shell: bash
+        run: |
+          python -m pip install "pip-tools==7.5.0"
+          python scripts/update_requirements_lock.py --check --json || true
+          python scripts/update_requirements_lock.py --check --dev --json || true
+      - name: Build drift manifest
+        if: failure()
+        shell: bash
+        run: |
+          cat > artifacts.manifest.json <<'JSON'
+          {"items":[
+            {"path":"new.requirements.lock","kind":"lock"},
+            {"path":"new.requirements-dev.lock","kind":"lock"}
+          ]}
+          JSON
       - name: Recompile locks for artifact (on fail)
         if: failure()
         run: |
@@ -80,6 +97,7 @@ jobs:
           path: |
             new.requirements.lock
             new.requirements-dev.lock
+            artifacts.manifest.json
           retention-days: 30
 
   lint-and-type-check:

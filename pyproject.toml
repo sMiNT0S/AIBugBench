@@ -10,8 +10,22 @@ requires-python = ">=3.13,<3.15"
 dependencies = [
   "PyYAML==6.0.2",
   "requests==2.32.5",
+  "psutil==7.0.0",
   "pywin32==311; sys_platform == 'win32'"
 ]
+classifiers = [
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/sMiNT0S/AIBugBench"
+Documentation = "https://smintos.github.io/AIBugBench/"
+Issues = "https://github.com/sMiNT0S/AIBugBench/issues"
+Source = "https://github.com/sMiNT0S/AIBugBench"
 
 [project.scripts]
 run-benchmark = "run_benchmark:main"

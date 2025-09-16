@@ -208,8 +208,9 @@ def process_records(filename):
         import importlib.util
 
         spec = importlib.util.spec_from_file_location("run_benchmark", run_path)
+        assert spec is not None
+        assert spec.loader is not None
         module = importlib.util.module_from_spec(spec)
-        assert spec and spec.loader
         spec.loader.exec_module(module)
 
         with patch(
@@ -429,8 +430,7 @@ class TestBenchmarkUtilities:
             result = validators.validate_prompt_1_refactoring(prompt1_file)
 
             # Should get reasonable results
-            # Using tuple form for broader Python compatibility per test requirements
-            assert isinstance(result["score"], (int, float))  # noqa: UP038
+            assert "score" in result and isinstance(result["score"], (int, float))
             assert result["score"] >= 0
             assert "detailed_scoring" in result
 
@@ -440,8 +440,8 @@ class TestBenchmarkUtilities:
             result = validators.validate_prompt_4_api(prompt4_file)
 
             # Should get reasonable results
-            # Using tuple form for broader Python compatibility per test requirements
-            assert isinstance(result["score"], (int, float))  # noqa: UP038
+            # Ensure the 'score' key exists before accessing (optional in TypedDict)
+            assert "score" in result and isinstance(result["score"], (int, float))
             assert result["score"] >= 0
 
 

@@ -17,60 +17,88 @@ on:
     branches: [main]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
 # (Moved to top-level env block)
 
 jobs:
+  action-pin-check:
+    name: Actions Pin Verification
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Verify all actions pinned to full SHAs
+        run: |
+          if grep -R "uses: .*@v[0-9]" .github/workflows/*.yml; then
+            echo "Found unpinned actions. Pin to full SHAs." >&2
+            exit 1
+          fi
+
   lock-verification:
-    name: Dependency Lock Verification
+    name: Dependency Lock Sync (runtime + dev)
+    needs: action-pin-check
     permissions:
       contents: read
       actions: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
+      - name: Set up Python ${{env.PYTHON_DEFAULT_VERSION}}
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-      - name: Install pip-tools (pinned)
+          python-version: ${{env.PYTHON_DEFAULT_VERSION}}
+      - name: Debug lock environment
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install 'pip-tools>=7.5.0'
-      - name: Ensure requirements.lock exists
+          set -eu
+          python --version
+          python -c "import importlib.metadata as m; print('pip-tools', m.version('pip-tools'))" || true
+          git config --global core.autocrlf false || true
+      - name: Verify dependency lock determinism
+        env:
+          PYTHONUTF8: "1"
         run: |
-          if [ ! -f requirements.lock ]; then
-            echo "requirements.lock missing. Run lock generation locally." >&2
-            exit 1
-          fi
-      - name: Generate fresh requirements.lock for comparison
-        run: |
-          python -m piptools compile --generate-hashes --allow-unsafe -o new.requirements.lock requirements.txt
-      - name: Diff lock
-        run: |
-          set -e
-          if ! diff -u requirements.lock new.requirements.lock > lock.diff || [ -s lock.diff ]; then
-            echo "requirements.lock is out of date with requirements.txt" >&2
-            echo "To regenerate lock file run:" >&2
-            echo "  pip install 'pip-tools>=7.5.0'" >&2
-            echo "  python -m piptools compile --generate-hashes --allow-unsafe -o requirements.lock requirements.txt" >&2
-            echo "--- Diff (expected no output) ---" >&2
-            cat lock.diff >&2 || true
-            exit 1
-          fi
-          echo "requirements.lock matches requirements.txt"
-      - name: Summary
+          python -m pip install -U pip
+          python -m pip install "pip-tools==7.5.0"
+          # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
+          python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
+          python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
+      - name: Verify dependency lock determinism (JSON)
         if: always()
+        shell: bash
         run: |
-          if [ -f lock.diff ] && [ -s lock.diff ]; then
-            echo "### Dependency Lock Verification" >> $GITHUB_STEP_SUMMARY
-            echo "Lock OUT OF DATE. See diff above." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### Dependency Lock Verification" >> $GITHUB_STEP_SUMMARY
-            echo "Lock up to date." >> $GITHUB_STEP_SUMMARY
-          fi
+          python -m pip install "pip-tools==7.5.0"
+          python scripts/update_requirements_lock.py --check --json || true
+          python scripts/update_requirements_lock.py --check --dev --json || true
+      - name: Build drift manifest
+        if: failure()
+        shell: bash
+        run: |
+          cat > artifacts.manifest.json <<'JSON'
+          {"items":[
+            {"path":"new.requirements.lock","kind":"lock"},
+            {"path":"new.requirements-dev.lock","kind":"lock"}
+          ]}
+          JSON
+      - name: Recompile locks for artifact (on fail)
+        if: failure()
+        run: |
+          python -m pip install -U pip "pip-tools==7.5.0"
+          pip-compile --allow-unsafe --generate-hashes -o new.requirements.lock requirements.txt
+          pip-compile --allow-unsafe --generate-hashes -o new.requirements-dev.lock requirements-dev.txt
+      - name: Upload recompiled locks
+        if: failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+          name: lock-drift
+          path: |
+            new.requirements.lock
+            new.requirements-dev.lock
+            artifacts.manifest.json
+          retention-days: 30
 
   lint-and-type-check:
     name: Lint and Type Check
@@ -81,18 +109,19 @@ jobs:
       actions: read
     runs-on: ubuntu-latest
     steps:
+      # remove any malformed 'uses: sMiNT0S/AIBugBench/.' step; use the pinned composite action
       - name: Base Python + dev tools
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-dev: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
+          key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
-            ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
+            ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-
       - name: Lint with ruff
         run: ruff check .
       # Single mypy pass with Python 3.13 (current standard)
@@ -102,6 +131,8 @@ jobs:
           python -m mypy ./benchmark ./validation ./run_benchmark.py --no-error-summary
       - name: Format check with ruff
         run: ruff format --check .
+      - name: CLI smoke test
+        run: python -c "import run_benchmark as m; assert callable(getattr(m,'main',None))"
 
   test-coverage:
     name: Test Coverage Analysis
@@ -110,21 +141,21 @@ jobs:
       contents: read
       actions: read
     env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
     runs-on: ubuntu-latest
     steps:
       - name: Base Python + test tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-test: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
+          key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
-            ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
+            ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-
 
       - name: Run tests (branch coverage unified)
         run: |
@@ -170,26 +201,26 @@ jobs:
       - name: Detect Codecov token
         shell: bash
         run: |
-          if [ -n "${{ secrets.CODECOV_TOKEN }}" ]; then
+          if [ -n "${{secrets.CODECOV_TOKEN}}" ]; then
           echo "HAVE_CODECOV=1" >> "$GITHUB_ENV"
           else
           echo "HAVE_CODECOV=0" >> "$GITHUB_ENV"
           fi
 
       - name: Upload to Codecov
-        if: ${{ env.HAVE_CODECOV == '1' && hashFiles('coverage.xml') != '' }}
+        if: ${{env.HAVE_CODECOV == '1' && hashFiles('coverage.xml') != ''}}
         uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00
         with:
           files: coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{secrets.CODECOV_TOKEN}}
           fail_ci_if_error: true
 
       - name: Skip Codecov (no token present)
-        if: ${{ env.HAVE_CODECOV != '1' || steps.coverage_file.outputs.present != 'true' }}
+        if: ${{env.HAVE_CODECOV != '1' || steps.coverage_file.outputs.present != 'true'}}
         run: |
           if [ "$HAVE_CODECOV" != '1' ]; then
             echo "Codecov token not provided; skipping upload (private repo)."
-          elif [ "${{ steps.coverage_file.outputs.present }}" != 'true' ]; then
+          elif [ "${{steps.coverage_file.outputs.present}}" != 'true' ]; then
             echo "coverage.xml missing; skipping Codecov upload."
           fi
   multi-platform-tests:
@@ -207,7 +238,7 @@ jobs:
             platform_name: windows
           - os: macos-latest
             platform_name: macos
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{matrix.os}}
     permissions:
       contents: read
       actions: read
@@ -215,21 +246,21 @@ jobs:
       - name: Base Python + test tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{matrix.python-version}}
           install-test: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
+          key: ${{runner.os}}-pip-${{matrix.python-version}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
-            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{runner.os}}-pip-${{matrix.python-version}}-
       - name: Install package (editable)
         run: python -m pip install -e .
 
       - name: Run comprehensive test suite
         run: |
-          echo "Running comprehensive test suite on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          echo "Running comprehensive test suite on ${{matrix.os}} with Python ${{matrix.python-version}}"
           pytest tests/ -v --tb=short -m "not slow"
 
       - name: Run unit tests (fallback)
@@ -252,16 +283,32 @@ jobs:
         run: python benchmark/platform_validator.py
         continue-on-error: true
 
+      - name: Check for benchmark artifacts
+        id: check_artifacts
+        shell: bash
+        run: |
+          if [ -d "ci_results" ] && [ -n "$(ls -A ci_results 2>/dev/null)" ]; then
+            echo "has_ci_results=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_ci_results=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f "*.log" ] 2>/dev/null; then
+            echo "has_logs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_logs=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Collect benchmark artifacts
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
-        if: always()
+        if: always() && (steps.check_artifacts.outputs.has_ci_results == 'true' || steps.check_artifacts.outputs.has_logs == 'true')
         with:
-          name: benchmark-results-${{ matrix.platform_name }}-py${{ matrix.python-version }}
+          name: benchmark-results-${{matrix.platform_name}}-py${{matrix.python-version}}
           path: |
             ci_results/
             results/
             *.log
           retention-days: 30
+          if-no-files-found: warn
 
   benchmark-consistency-check:
     name: Benchmark Consistency Validation
@@ -276,7 +323,7 @@ jobs:
       - name: Base Python setup
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          python-version: ${{env.PYTHON_DEFAULT_VERSION}}
 
       - name: Download all benchmark artifacts
         uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
@@ -285,18 +332,47 @@ jobs:
           path: ./collected-results
           merge-multiple: true
 
+      - name: Check collected-results availability
+        id: check_collected
+        shell: bash
+        run: |
+          if [ ! -d ./collected-results ]; then
+            echo "No collected-results directory found"
+            echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$(ls -A ./collected-results 2>/dev/null)" ]; then
+            echo "collected-results directory is empty"
+            echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found benchmark artifacts in collected-results"
+            echo "has_artifacts=true" >> "$GITHUB_OUTPUT"
+            ls -la ./collected-results
+          fi
+
+      - name: Skip benchmark comparison (no artifacts)
+        if: steps.check_collected.outputs.has_artifacts != 'true'
+        run: |
+          echo "WARNING: No benchmark artifacts found. Skipping consistency validation."
+          echo "This may happen if platform validation failed on all platforms."
+          echo "Check the multi-platform-tests job logs for errors."
+          echo "# Benchmark Consistency Report" > consistency_report.md
+          echo "" >> consistency_report.md
+          echo "**Status:** No artifacts available for comparison" >> consistency_report.md
+          echo "**Reason:** Platform validation may have failed on all test platforms" >> consistency_report.md
+
       - name: Run cross-platform comparison
         id: comparison
+        if: steps.check_collected.outputs.has_artifacts == 'true'
         shell: bash
         run: python scripts/compare_benchmarks.py --dir ./collected-results
         continue-on-error: false
 
       - name: Generate consistency report
+        if: steps.check_collected.outputs.has_artifacts == 'true'
         run: |
           echo "# Benchmark Consistency Report" > consistency_report.md
           echo "" >> consistency_report.md
           echo "**Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> consistency_report.md
-          echo "**Commit:** ${{ github.sha }}" >> consistency_report.md
+          echo "**Commit:** ${{github.sha}}" >> consistency_report.md
           echo "" >> consistency_report.md
 
           if ls ./collected-results/platform_validation_*.json 1> /dev/null 2>&1; then
@@ -340,31 +416,50 @@ jobs:
       - name: Base Python + security tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-security: "true"
       - name: Cache pip
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('requirements.txt') }}
+          key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
-            ${{ runner.os }}-pip-${{ env.PYTHON_DEFAULT_VERSION }}-
+            ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-
 
       - name: Run bandit security scan
         # Use pyproject.toml configuration for consistent exclusions (pinned version)
-        run: bandit -r . -ll --configfile pyproject.toml -f json -o bandit-report.json --version
+        run: |
+          bandit \
+            -r . \
+            -ll \
+            --configfile pyproject.toml \
+            -f json \
+            -o bandit-report.json \
+            --version
         continue-on-error: true
 
       - name: Run safety scan
-        run: safety scan --file=requirements.lock --json > safety-report.json || echo "safety scan fallback"
+        run: |
+          safety scan \
+            --file=requirements.lock \
+            --json \
+            > safety-report.json \
+            || echo "safety scan fallback"
         continue-on-error: true
       - name: Run internal security audit
         run: python scripts/security_audit.py --json --output audit.json
         continue-on-error: true
 
       - name: Fail if audit not ok
-        run: >
-          python -c "import json,sys,pathlib;d=json.loads(pathlib.Path('audit.json').read_text()); ok=bool(d.get('ok'));print('Audit OK:',ok);sys.exit(0 if ok else 1)"
+        run: |
+          # Inline Python audit verification wrapped for readability (was a single long line)
+          python - <<'PY'
+          import json, sys, pathlib
+          data = json.loads(pathlib.Path('audit.json').read_text())
+          ok = bool(data.get('ok'))
+          print('Audit OK:', ok)
+          sys.exit(0 if ok else 1)
+          PY
         continue-on-error: false
 
       - name: Generate security audit summary

@@ -1,3 +1,5 @@
 # AI Code Benchmark Requirements
-pyyaml>=6.0
-requests>=2.31.0
+# NOTE: Pins kept minimal here; full hashed transitive set lives in requirements.lock.
+pyyaml==6.0.2
+requests==2.32.5
+psutil==7.0.0

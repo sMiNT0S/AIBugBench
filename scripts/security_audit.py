@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2024-2025 sMiNT0S
 # SPDX-License-Identifier: Apache-2.0
-"""AIBugBench Security Audit (Phase 5.5)
-
-Expanded audit superseding Phase 5 script. Provides a broader set of
+"""AIBugBench Security Audit;
+Provides a broader set of
 static heuristics validating pre-release security posture. No external
 dependencies or network calls are made.
 

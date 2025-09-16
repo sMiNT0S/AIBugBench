@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["branch","run_id","failed_job","failed_step","exit_code","category"],
+  "properties": {
+    "branch": {"type": "string"},
+    "run_id": {"type": "integer"},
+    "failed_job": {"type": "string"},
+    "failed_step": {"type": "string"},
+    "exit_code": {"type": "integer"},
+    "category": {
+      "type": "string",
+      "enum": ["lock_drift","yaml_schema","coverage","lint","typecheck","encoding","pin_policy","network"]
+    },
+    "notes": {"type": "string"}
+  }
+}

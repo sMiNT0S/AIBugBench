@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
 permissions:
@@ -33,7 +33,7 @@ jobs:
           pip install 'pip-tools>=7.5.0'
           pip install --require-hashes -r requirements.lock
           pip install -r requirements-dev.txt
-          pip install bandit==${{ env.BANDIT_VERSION }}
+          pip install bandit==${{env.BANDIT_VERSION}}
 
       - name: Ruff Security Rules (S rules)
         run: ruff check --select=S .

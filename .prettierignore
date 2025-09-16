@@ -1,0 +1,32 @@
+# --- Core ignores ---
+node_modules/
+build/
+dist/
+coverage/
+.vscode/
+.next/
+out/
+
+# --- Logs & artifacts ---
+*.log
+*.cache
+*.tmp
+
+# --- Locks & metadata (formatting them is pointless) ---
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# --- Skip YAML entirely (your request) ---
+*.yml
+*.yaml
+**/*.yml
+**/*.yaml
+.github/**/*.yml
+.github/**/*.yaml
+.kubernetes/**
+helm/**
+
+# --- Other common generated files you may want to skip ---
+*.min.js
+*.min.css

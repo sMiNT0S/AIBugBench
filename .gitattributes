@@ -1,1 +1,23 @@
 * text=auto
+
+# Scripts that must be LF to run correctly anywhere
+*.sh  text eol=lf
+*.bash text eol=lf
+
+# Windows-only batch scripts stay CRLF
+*.bat eol=crlf
+*.cmd eol=crlf
+
+# Binary files must never be normalized
+*.png -text
+*.jpg -text
+*.pdf -text
+*.ico -text
+
+# Lock files must be LF to avoid bogus drift
+requirements*.lock text eol=lf
+
+# YAML/JSON consistency for CI
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf

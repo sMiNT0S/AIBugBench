@@ -45,7 +45,7 @@ repos:
     rev: 1.7.9
     hooks:
       - id: bandit
-      # Scan only tracked Python files that pre-commit passes in
+        # Scan only tracked Python files that pre-commit passes in
         args: ["-ll", "--configfile", "pyproject.toml"]
         types: [python]
         exclude: >-
@@ -109,3 +109,10 @@ repos:
         language: system
         pass_filenames: false
         files: "^README\\.md$"
+
+      - id: ci-encodings
+        name: Ensure YAML/JSON/requirements locks are UTF-8 LF
+        entry: python .ci/check_encodings.py
+        language: system
+        pass_filenames: true
+        files: '^(\.github/workflows/.*\.ya?ml|\.ci/.*\.json|requirements.*\.lock)$'

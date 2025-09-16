@@ -16,3 +16,8 @@
 
 # Lock files must be LF to avoid bogus drift
 requirements*.lock text eol=lf
+
+# YAML/JSON consistency for CI
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf

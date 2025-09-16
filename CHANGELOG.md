@@ -26,12 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 
+- **CI lock hardening fixes**: Resolved persistent mypy false positive in `update_requirements_lock.py` with targeted `# type: ignore[unreachable]` comment; fixed lock drift detection with improved header normalization handling blank comment lines; corrected bash syntax errors in CI workflow (curly brace blocks → parentheses, missing spaces in test expressions)
 - **Pre-commit pipeline stabilization**: Fixed malformed `.pre-commit-config.yaml` structure consolidating all local hooks under single `repo: local` block
 - **Smoke test isolation**: Added `scripts/smoke_pytest_wrapper.py` for artifact-isolated test execution with environment variable cascade (`AIB_RESULTS_DIR`, `AIB_ARTIFACT_DIR`, `AIBUGBENCH_ARTIFACT_DIR`)
 - **Pytest coverage conflict resolution**: Created minimal `scripts/pytest_smoke.ini` to bypass global coverage plugin conflicts in smoke tests while preserving full coverage in CI
 - **Artifact redirection framework**: Enhanced platform validator and benchmark runner to honor environment-based artifact redirection preventing pre-commit working tree mutations
 - **CI/CD workflow hardening**: Updated multiple GitHub Actions workflows for YAML compliance, security improvements, and cross-platform compatibility
-- **Benchmark consistency guard**: Added explicit artifact presence check step before running cross-platform benchmark comparison in `ci.yml`, producing a clear failure message if `collected-results` is missing or empty (improves diagnosability over silent/late failures).
+- **Benchmark consistency guard**: Added explicit artifact presence check step before running cross-platform benchmark comparison in `ci.yml`, producing a clear failure message if `collected-results` is missing or empty; enhanced artifact upload with conditional checks and graceful handling when platform validation fails (improves diagnosability over silent/late failures).
 - **Workflow readability improvements**: Refactored long single-line inline commands (bandit, safety, audit verification) in `ci.yml` into multi-line blocks for maintainability and to satisfy yamllint line-length guidance (no behavioral change).
 
 ### Documentation

@@ -4,8 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import difflib
-import os
+import json
 from pathlib import Path
 import re
 import shutil
@@ -13,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 
+JSON_MODE = False
 try:
     import packaging.version as _pkgver
 except Exception:  # pragma: no cover
@@ -28,6 +28,14 @@ LOCK_DEV = ROOT / "requirements-dev.lock"
 # header even though the committed file is requirements.lock so that local
 # runs and CI produce byte-identical files.
 CANONICAL_OUTPUT_NAME = "new.requirements.lock"
+
+
+def _say(msg: str) -> None:
+    # Keep human chatter off stdout in --json mode
+    if JSON_MODE:
+        print(msg, file=sys.stderr)
+    else:
+        print(msg)
 
 
 def run(cmd: list[str]) -> int:
@@ -71,7 +79,7 @@ def _rewrite_header(lock_path: Path, req_name: str, allow_unsafe: bool = True) -
         if line.startswith("#    pip-compile"):
             if line != desired:
                 lines[_idx] = desired
-                lock_path.write_text("".join(lines), encoding="utf-8")
+                _write_unix(lock_path, "".join(lines))
             break
 
 
@@ -95,18 +103,20 @@ def _strip_platform_specific(lock_path: Path) -> None:
     for line in lines:
         is_hash_line = line.startswith("    --hash=")
         is_win_marked = bool(win_marker.search(line))
-
-    if skip_hashes and is_hash_line:
-        # Still inside a skipped block: drop hash continuation lines.
-        pass  # intentionally do nothing
-    elif is_win_marked:
-        # Start of a Windows-only requirement: skip this line and enter hash-skip mode.
-        skip_hashes = True
-    else:
-        # Normal line. If we were skipping, the block ends here.
+        if skip_hashes and is_hash_line:
+            # skip hash lines immediately following a removed Windows-only requirement
+            continue
+        if is_win_marked:
+            # drop the Windows-only requirement line and enable hash skipping
+            skip_hashes = True
+            continue
         out.append(line)
-        if skip_hashes:
+        if skip_hashes and not is_hash_line:
+            # first non-hash line after skipping hash lines -> reset
             skip_hashes = False
+    if out != lines:
+        # splitlines() above dropped newlines; re-add a trailing LF for stability
+        _write_unix(lock_path, "\n".join(out) + "\n")
 
 
 def _dedupe_provenance(lock_path: Path) -> None:
@@ -144,7 +154,92 @@ def _dedupe_provenance(lock_path: Path) -> None:
                 continue
         out.append(line)
     if out != lines:
-        lock_path.write_text("".join(out), encoding="utf-8")
+        _write_unix(lock_path, "".join(out))
+
+
+# --- normalization regexes for diff-compare (module scope to satisfy Ruff N806)
+_VIA_RE = re.compile(r"^# via (.+)$")
+_HDR_BY_CMD: re.Pattern[str] = re.compile(r"^\s*#\s*by the following command:\s*$", re.I)
+_HDR_CMD: re.Pattern[str] = re.compile(r"^\s*#\s*pip-compile\b", re.I)
+_ANY_VIA: re.Pattern[str] = re.compile(r"^\s*#\s*via\b.*$", re.I)
+
+
+def _write_unix(path: Path, text: str) -> None:
+    """Write with LF newlines so locks are byte-stable across OS."""
+    with path.open("w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+
+
+def _seed_output_from_lock(src: Path, dst: Path) -> None:
+    """Pre-fill the temp output with the current lock so pip-compile preserves pins."""
+    try:
+        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception:
+        shutil.copy2(src, dst)
+
+
+def _canonicalize_via_lines(lock_path: Path) -> None:
+    """Normalize '# via ...' comment lines so ordering is stable across OS."""
+    try:
+        lines = lock_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    except FileNotFoundError:
+        return
+    out: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("# via ") and stripped != "# via -r requirements.txt":
+            payload = stripped[len("# via ") :]
+            # Split on commas, trim, sort, rejoin with single spaces after comma.
+            parts = [p.strip() for p in payload.split(",")]
+            parts = [p for p in parts if p]  # drop empties
+            payload = ", ".join(sorted(dict.fromkeys(parts)))
+            line = f"# via {payload}\n"
+        out.append(line)
+    if out != lines:
+        _write_unix(lock_path, "".join(out))
+
+
+def _norm_for_compare(text: str) -> list[str]:
+    """Canonicalize lock text for drift comparison.
+
+    - normalize CRLF/CR to LF
+    - drop the volatile 'by the following command' header line
+      and the immediately following '# pip-compile ...' line
+    - collapse any '# via ...' line to a single '# via'
+    - strip trailing whitespace
+    """
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+
+    out: list[str] = []
+    i = 0
+    n = len(lines)
+
+    while i < n:
+        ln = lines[i].rstrip()
+
+        # Check for header marker and skip it with optional pip-compile line
+        if _HDR_BY_CMD.match(ln):
+            i += 1  # skip the header line
+            # Skip blank comment lines and find the pip-compile line
+            while i < n:
+                next_line = lines[i].rstrip()
+                if _HDR_CMD.match(next_line):
+                    i += 1  # skip the pip-compile line
+                    break
+                elif next_line in ("", "#"):  # type: ignore[unreachable]
+                    i += 1  # skip blank/empty comment lines
+                else:
+                    break  # found non-header content, stop skipping
+        elif _ANY_VIA.match(ln):  # type: ignore[unreachable]
+            # Collapse provenance noise
+            out.append("# via")
+            i += 1
+        else:
+            out.append(ln)
+            i += 1
+
+    return out
 
 
 def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bool) -> int:
@@ -158,7 +253,7 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
     If allow_unsafe=True, adds --allow-unsafe to capture tooling packages
     like pip/setuptools/wheel (useful for reproducible isolated environments).
     """
-    print(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
+    _say(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
     if _require_modern_piptools() is None:
         print(
             "pip-tools ==7.5.0 required. Install with: pip install -U 'pip-tools==7.5.0'",
@@ -175,7 +270,8 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
         _rewrite_header(output, req.name, allow_unsafe=allow_unsafe)
         if strip_platform:
             _strip_platform_specific(output)
-    _dedupe_provenance(output)
+        _dedupe_provenance(output)
+        _canonicalize_via_lines(output)
     return rc
 
 
@@ -205,17 +301,38 @@ def main() -> int:
         action="store_true",
         help="Do not strip platform-specific (e.g. win32) requirement blocks",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit single-line JSON status instead of human text",
+    )
     args = parser.parse_args()
+    global JSON_MODE
+    JSON_MODE = args.json
+
+    def _emit_json(payload: dict) -> None:
+        print(json.dumps(payload, ensure_ascii=False))
 
     req = REQ_DEV if args.dev else REQ_RUNTIME
     lock = LOCK_DEV if args.dev else LOCK_RUNTIME
 
     if not req.exists():
-        print(f"{req} not found", file=sys.stderr)
+        if args.json:
+            _emit_json(
+                {
+                    "tool": "lock-check",
+                    "lock": lock.name,
+                    "status": "error",
+                    "exit": 1,
+                    "error": f"{req.name} not found",
+                }
+            )
+        else:
+            _say(f"{req} not found")
         return 1
 
     if not lock.exists() and args.check:
-        print(f"{lock} missing (cannot --check). Run without --check first.", file=sys.stderr)
+        _say(f"{lock} missing (cannot --check). Run without --check first.")
         return 1
 
     piptools = shutil.which("pip-compile") or shutil.which("piptools")
@@ -228,10 +345,19 @@ def main() -> int:
         if candidate.exists():
             piptools = str(candidate)
         else:
-            print(
-                "pip-tools not found. Install with: pip install 'pip-tools==7.5.0'",
-                file=sys.stderr,
-            )
+            if args.json:
+                _emit_json(
+                    {
+                        "tool": "lock-check",
+                        "lock": lock.name,
+                        "status": "error",
+                        "exit": 2,
+                        "error": "pip-tools not found",
+                    }
+                )
+                return 2
+
+            _say("pip-tools not found. Install with: pip install 'pip-tools==7.5.0'")
             return 2
 
     # Canonical policy: always include unsafe packages to avoid resolver drift.
@@ -239,74 +365,40 @@ def main() -> int:
     strip_platform = not args.keep_platform_markers
 
     if args.check:
+        # Check mode: compile to a temp file, compare, and return 0/3
         with tempfile.TemporaryDirectory() as td:
             tmp_lock = Path(td) / "_lock.tmp"
+            _seed_output_from_lock(lock, tmp_lock)
             code = compile_lock(req, tmp_lock, allow_unsafe, strip_platform)
             if code != 0:
                 return code
-
-            def _norm_for_compare(text: str) -> list[str]:
-                # Normalize newlines and strip trailing whitespace so CRLF/LF
-                # and editor-added spaces don't trigger false drift.
-                text = text.replace("\r\n", "\n").replace("\r", "\n")
-                return [ln.rstrip() for ln in text.split("\n")]
-
             new_content = _norm_for_compare(tmp_lock.read_text(encoding="utf-8"))
-            old_content = _norm_for_compare(lock.read_text(encoding="utf-8"))
-            if new_content != old_content:
-                print(
-                    f"{lock.name} is OUT OF DATE with {req.name}",
-                    file=sys.stderr,
+        old_content = _norm_for_compare(lock.read_text(encoding="utf-8"))
+        if old_content != new_content:
+            if args.json:
+                _emit_json(
+                    {
+                        "tool": "lock-check",
+                        "lock": lock.name,
+                        "status": "drift",
+                        "exit": 3,
+                        "artifact_hint": f"artifacts/new.{lock.name}",
+                    }
                 )
-                diff_iter = difflib.unified_diff(
-                    old_content,
-                    new_content,
-                    fromfile=str(lock.name),
-                    tofile="(recompiled)",
-                    lineterm="",
-                )
-                diff_lines: list[str] = []
-                for i, line in enumerate(diff_iter):
-                    if i > 400:  # safety cut
-                        print("... diff truncated ...", file=sys.stderr)
-                        break
-                    print(line.rstrip(), file=sys.stderr)
-                    diff_lines.append(line)
-                # Compute simple diff stats (+/-) excluding headers
-                added = sum(
-                    1
-                    for line_added in diff_lines
-                    if line_added.startswith("+") and not line_added.startswith("+++")
-                )
-                removed = sum(
-                    1
-                    for line_removed in diff_lines
-                    if line_removed.startswith("-") and not line_removed.startswith("---")
-                )
-                summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-                if summary_path:
-                    try:
-                        with open(summary_path, "a", encoding="utf-8") as fh:
-                            fh.write(f"Lock drift: {lock.name} (+{added} -{removed})\n")
-                    except Exception as exc:
-                        # Best-effort only; do not fail lock check due to summary write issues.
-                        print(f"Warning: failed writing summary: {exc}", file=sys.stderr)
-                print(
-                    "Run: python scripts/update_requirements_lock.py"
-                    + (" --dev" if args.dev else "")
-                    + (" --no-allow-unsafe" if args.no_allow_unsafe else "")
-                    + (" --keep-platform-markers" if args.keep_platform_markers else "")
-                    + " to refresh.",
-                    file=sys.stderr,
-                )
-                return 3
-            print(f"{lock.name} up to date")
-            return 0
-    # Update mode (write lock)
-    code = compile_lock(req, lock, allow_unsafe, strip_platform)
-    if code == 0:
-        print(f"wrote {lock}")
-    return code
+            else:
+                _say(f"{lock.name} is OUT OF DATE with {req.name}")
+            return 3
+        if args.json:
+            _emit_json({"tool": "lock-check", "lock": lock.name, "status": "ok", "exit": 0})
+        else:
+            _say(f"{lock.name} up to date")
+        return 0
+    else:
+        # Update mode: write the real lock file and return compiler rc
+        code = compile_lock(req, lock, allow_unsafe, strip_platform)
+        if code == 0:
+            _say(f"wrote {lock}")
+        return code
 
 
 EXIT_CODE_LEGEND = {
@@ -320,5 +412,7 @@ EXIT_CODE_LEGEND = {
 if __name__ == "__main__":
     rc = main()
     meaning = EXIT_CODE_LEGEND.get(rc, "(unknown)")
-    print(f"Exit code {rc}: {meaning}")
+    # In JSON mode, do not write a footer to stdout
+    if not JSON_MODE:
+        print(f"Exit code {rc}: {meaning}")
     sys.exit(rc)

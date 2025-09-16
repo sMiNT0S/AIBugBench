@@ -133,13 +133,12 @@ status/
 *.tmp
 *.bak
 .temp/
+node_modules/
+package.json
+package-lock.json
 
 # Keep canonical template directory
 !submissions/templates/template/
-
-# scripts i might add later
-scripts/audit_local.json
-scripts/Audit-VSCodeSettings.ps1
 
 # Developer-specific & transient files
 # -------------------------------------------------------------
@@ -147,15 +146,10 @@ scripts/Audit-VSCodeSettings.ps1
 # This keeps the shared .gitignore focused on universally generated artifacts.
 # Local exclude currently contains (for reference only — do not copy back):
 #   .vscode/, .idea/
-#   showcase_results.json, *_results.json,
-#   temp_test.py, scan_status.ps1, setup-security.ps1, showcase_cli.py
-#   test_new_user_experience.ps1, 2025-*.txt
-#   .mcp.json
+#   *_results.json, 2025-*.txt, .mcp.json
 # -------------------------------------------------------------
 
 # Documentation artifacts (exclude planning docs)
-docs_private/
-audit_local.json
 .mypy_report/index.txt
 *~
 .DS_Store
@@ -168,6 +162,4 @@ __pycache__/
 coverage.xml
 artifacts/new.requirements-dev.lock
 artifacts/new.requirements.lock
-logs.txt
 .mcp/
-diff.md

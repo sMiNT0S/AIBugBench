@@ -430,7 +430,7 @@ class TestBenchmarkUtilities:
             result = validators.validate_prompt_1_refactoring(prompt1_file)
 
             # Should get reasonable results
-            assert "score" in result and isinstance(result["score"], (int, float))
+            assert "score" in result and isinstance(result["score"], int | float)
             assert result["score"] >= 0
             assert "detailed_scoring" in result
 
@@ -441,7 +441,7 @@ class TestBenchmarkUtilities:
 
             # Should get reasonable results
             # Ensure the 'score' key exists before accessing (optional in TypedDict)
-            assert "score" in result and isinstance(result["score"], (int, float))
+            assert "score" in result and isinstance(result["score"], int | float)
             assert result["score"] >= 0
 
 

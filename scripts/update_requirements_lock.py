@@ -239,6 +239,10 @@ def _norm_for_compare(text: str) -> list[str]:
             out.append(ln)
             i += 1
 
+    # Drop trailing blank lines introduced by split when text ends with a newline
+    while out and out[-1] == "":
+        out.pop()
+
     return out
 
 

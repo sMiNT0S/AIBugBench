@@ -163,3 +163,7 @@ coverage.xml
 artifacts/new.requirements-dev.lock
 artifacts/new.requirements.lock
 .mcp/
+
+# Local CI cache and telemetry (stay uncommitted)
+.ci/local/
+.ci/*.ndjson

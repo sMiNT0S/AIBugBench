@@ -18,7 +18,7 @@ env:
 
 jobs:
   security-checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
@@ -26,7 +26,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
+          check-latest: false
       - name: Install dev dependencies with hash verification (pinned security tools)
         run: |
           python -m pip install --upgrade pip

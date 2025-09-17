@@ -771,6 +771,24 @@ def load_config(repo: Path) -> dict[str, Any]:
         return {}
 
 
+def redact_secret_values(s: str) -> str:
+    """
+    Redacts commonly detected secret formats in a string.
+    Replaces likely secrets (API keys, tokens, passwords) with "***REDACTED***".
+    Adjust patterns according to what secret_scan detects.
+    """
+    # Simple patterns: hex/base64 tokens of length >= 12, typical API key structures, etc.
+    # These could be tuned to match secret_scan's own patterns if available.
+    patterns = [
+        r'([A-Za-z0-9+/=]{12,})',                                     # long alphanumeric strings
+        r'([A-Za-z0-9_]{16,})',                                       # long underscore-containing tokens
+        r'(["\']?(api[_-]?key|secret|token|password)["\']?\s*[:=]\s*["\']?)[^"\', ]+',
+    ]
+    redacted = s
+    for pat in patterns:
+        redacted = re.sub(pat, r'\1***REDACTED***', redacted, flags=re.I)
+    return redacted
+
 def print_summary(report: dict[str, Any]) -> None:
     scores = report["scores"]
     weights = report["weights"]
@@ -833,7 +851,7 @@ def print_summary(report: dict[str, Any]) -> None:
     if report["suggestions"]:
         print("\n[Top Suggestions]")
         for s in report["suggestions"][:8]:
-            print(f"  - {s}")
+            print(f"  - {redact_secret_values(str(s))}")
 
 
 def _find_repo_root(start: Path) -> Path:

@@ -232,8 +232,9 @@ jobs:
 
       - name: Install dependencies for CodeQL analysis
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -U "pip==24.3.1"
+          # CodeQL doesn't require installing project deps, but if needed use the locked runtime set
+          pip install --require-hashes -r requirements.lock
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3  # v3.30.3
@@ -264,7 +265,7 @@ jobs:
 
       - name: Run Safety scan on dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --require-hashes -r requirements.lock
           safety scan --file=requirements.lock --json > safety-report.json || echo "Safety scan completed"
           cat safety-report.json
 

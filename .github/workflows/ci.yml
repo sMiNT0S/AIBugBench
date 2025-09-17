@@ -70,10 +70,97 @@ jobs:
       - name: Verify dependency lock determinism (JSON)
         if: always()
         shell: bash
+        id: lock_check_json
         run: |
           python -m pip install "pip-tools==7.5.0"
           python scripts/update_requirements_lock.py --check --json || true
           python scripts/update_requirements_lock.py --check --dev --json || true
+
+      # --- Append-only telemetry/schema validators (read-only; no runner/step renames) ---
+      - name: Collect telemetry (NDJSON, read-only)
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p .ci/local
+          : > .ci/local/telemetry.ndjson
+          python scripts/update_requirements_lock.py --check --json       >> .ci/local/telemetry.ndjson || true
+          python scripts/update_requirements_lock.py --check --dev --json >> .ci/local/telemetry.ndjson || true
+
+      # Enable validation only when a local flag file is present (keeps this local-only)
+      - name: Detect local telemetry flag
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .ci/local/enable_telemetry_validate ]; then
+            echo "TELEMETRY_VALIDATE=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate telemetry schema
+        if: ${{ always() && env.TELEMETRY_VALIDATE == '1' }}
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --no-cache-dir "jsonschema==4.23.0"
+          python - <<'PY'
+          import json, sys, pathlib
+          from jsonschema import validate, Draft7Validator
+          root = pathlib.Path(".")
+          ndjson = root/".ci"/"local"/"telemetry.ndjson"
+          schema_candidates = [
+              root/".ci"/"schemas"/"telemetry.schema.json",
+              root/".ci"/"telemetry.schema.json",
+              root/"schemas"/"telemetry.schema.json",
+              root/"telemetry.schema.json",
+          ]
+          schema = next((p for p in schema_candidates if p.exists()), None)
+          if not schema or not ndjson.exists():
+              print("telemetry: schema or ndjson not found; skipping", file=sys.stderr); sys.exit(0)
+          sch = json.load(open(schema, "r", encoding="utf-8"))
+          Draft7Validator.check_schema(sch)
+          n = ok = 0
+          for line in ndjson.read_text(encoding="utf-8").splitlines():
+              line = line.strip()
+              if not line:
+                  continue
+              validate(instance=json.loads(line), schema=sch)
+              ok += 1
+              n  += 1
+          print(f"telemetry: validated {ok}/{n} records")
+          PY
+
+      - name: Validate artifacts manifest schema
+        if: ${{ always() && env.TELEMETRY_VALIDATE == '1' }}
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --no-cache-dir "jsonschema==4.23.0"
+          python - <<'PY'
+          import json, sys, pathlib
+          from jsonschema import validate, Draft7Validator
+          root = pathlib.Path(".")
+          manifest = root/"artifacts.manifest.json"
+          schema_candidates = [
+              root/".ci"/"schemas"/"manifest.schema.json",
+              root/".ci"/"manifest.schema.json",
+              root/"schemas"/"manifest.schema.json",
+              root/"manifest.schema.json",
+          ]
+          schema = next((p for p in schema_candidates if p.exists()), None)
+          if not schema or not manifest.exists():
+              print("manifest: schema or artifacts.manifest.json not found; skipping", file=sys.stderr); sys.exit(0)
+          sch = json.load(open(schema, "r", encoding="utf-8"))
+          data = json.load(open(manifest, "r", encoding="utf-8"))
+          Draft7Validator.check_schema(sch)
+          validate(instance=data, schema=sch)
+          print("manifest: OK")
+          PY
+      - name: Generate lock telemetry
+        if: always()
+        shell: bash
+        run: |
+          python .ci/generate_manifest.py \
+            --generated-by "lock-verification" \
+            --item "requirements.lock" "lock" \
+            --item "requirements-dev.lock" "lock" \
+            --output lock-telemetry.manifest.json
       - name: Build drift manifest
         if: failure()
         shell: bash
@@ -99,6 +186,7 @@ jobs:
             new.requirements.lock
             new.requirements-dev.lock
             artifacts.manifest.json
+            lock-telemetry.manifest.json
           retention-days: 30
 
   lint-and-type-check:
@@ -448,6 +536,16 @@ jobs:
             > safety-report.json \
             || echo "safety scan fallback"
         continue-on-error: true
+      - name: Generate security telemetry
+        if: always()
+        shell: bash
+        run: |
+          python .ci/generate_manifest.py \
+            --generated-by "security-scan" \
+            --item "bandit-report.json" "security" \
+            --item "safety-report.json" "security" \
+            --item "audit.json" "security" \
+            --output security-telemetry.manifest.json
       - name: Run internal security audit
         run: python scripts/security_audit.py --json --output audit.json
         continue-on-error: true
@@ -478,4 +576,5 @@ jobs:
             safety-report.json
             audit.json
             audit_summary.md
+            security-telemetry.manifest.json
           retention-days: 30

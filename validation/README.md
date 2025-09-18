@@ -107,24 +107,6 @@ python scripts/validate_docs.py --skip-destructive --no-network
 - **DESTRUCTIVE**: File modification commands (mkdir, rm, edit)
 - **NETWORK**: External dependency commands (pip install, curl)
 
-### Security Validation
-
-```bash
-# Comprehensive security scan
-python scripts/validate_security.py --json
-
-# Quick security file check
-python scripts/validate_security.py --files-only
-```
-
-**Validation Scope**:
-
-- GitHub Actions security workflow presence
-- Dependabot configuration
-- CodeQL setup and custom patterns
-- TruffleHog and Semgrep ignore patterns
-- Safety dependency scanning configuration
-
 ### Repository Audit
 
 ```bash

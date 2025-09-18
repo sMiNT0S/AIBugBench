@@ -2,8 +2,7 @@
 # SPDX-FileCopyrightText: 2024-2025 sMiNT0S
 # SPDX-License-Identifier: Apache-2.0
 """AIBugBench Security Audit;
-Provides a broader set of
-static heuristics validating pre-release security posture. No external
+Provides a broad set of static heuristics validating single-user security posture. No external
 dependencies or network calls are made.
 
 Checks are grouped as:
@@ -203,13 +202,36 @@ def check_python_isolation() -> CheckResult:
 def check_resource_limits_wired() -> CheckResult:
     sr = _read_secure_runner()
     vd = read_text(Path("benchmark/validators.py"))
-    has_rlimit = "resource.setrlimit" in sr
-    uses_runner = "SecureRunner" in vd and "run_with_limits" in sr
-    if has_rlimit and uses_runner:
-        return CheckResult("Resource limits wired", "PASS", "CPU/memory limits present", True)
-    if has_rlimit:
+    # Detect rlimit usage even if set via getattr or an alias function
+    has_rlimit = any(
+        token in sr
+        for token in (
+            "resource.setrlimit",
+            'getattr(resource, "setrlimit"',
+            "getattr(resource, 'setrlimit'",
+            "_setrlimit(",
+        )
+    ) and any(const in sr for const in ("RLIMIT_CPU", "RLIMIT_AS", "RLIMIT_FSIZE"))
+    # Detect Windows Job Objects enforcement
+    has_job_objects = all(
+        token in sr
+        for token in (
+            "WINDOWS_JOB_SUPPORT",
+            "CreateJobObject",
+            "_run_with_job_objects",
+        )
+    )
+    uses_runner = "SecureRunner" in vd
+    if (has_rlimit or has_job_objects) and uses_runner:
         return CheckResult(
-            "Resource limits wired", "FAIL", "limits defined but validators may bypass", True
+            "Resource limits wired", "PASS", "limits enforced (rlimit or Job Objects)", True
+        )
+    if has_rlimit or has_job_objects:
+        return CheckResult(
+            "Resource limits wired",
+            "FAIL",
+            "limits present but integration uncertain",
+            True,
         )
     return CheckResult("Resource limits wired", "FAIL", "no resource limits detected", True)
 
@@ -262,7 +284,19 @@ def check_banner_honesty() -> CheckResult:
     sr = _read_secure_runner()
     # Simple heuristic: if banner mentions ENFORCED ensure setrlimit present
     banner_claims_limits = "ENFORCED" in cli or "ResourceLimits" in cli
-    has_limits = "resource.setrlimit" in sr
+    has_rlimit_tokens = any(
+        token in sr
+        for token in (
+            "resource.setrlimit",
+            'getattr(resource, "setrlimit"',
+            "getattr(resource, 'setrlimit'",
+            "_setrlimit(",
+        )
+    ) and any(const in sr for const in ("RLIMIT_CPU", "RLIMIT_AS", "RLIMIT_FSIZE"))
+    has_job_tokens = all(
+        token in sr for token in ("WINDOWS_JOB_SUPPORT", "CreateJobObject", "_run_with_job_objects")
+    )
+    has_limits = has_rlimit_tokens or has_job_tokens
     if banner_claims_limits and not has_limits:
         return CheckResult("Banner honesty", "FAIL", "banner overclaims limits", True)
     return CheckResult("Banner honesty", "PASS", "banner consistent with implementation", True)

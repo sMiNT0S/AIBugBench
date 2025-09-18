@@ -2,9 +2,7 @@
 # SPDX-FileCopyrightText: 2024-2025 sMiNT0S
 # SPDX-License-Identifier: Apache-2.0
 """
-validation.repo_audit_enhanced — Comprehensive, offline-first repository audit.
-
-Migrated from the former root script; no compatibility wrapper retained (private project cleanup).
+repo_audit_enhanced — Comprehensive, offline-first repository audit.
 
 Highlights
 - Zero network calls by default; uses stdlib + optional local tools (ruff,
@@ -164,12 +162,8 @@ def load_toml_file(p: Path) -> dict[str, Any]:
     if tomllib is None or not p.exists():
         return {}
     try:
-        text = read_text(p)
-        data = tomllib.loads(text)  # module is non-None on this branch
-        if isinstance(data, dict):
-            return cast(dict[str, Any], data)
-        # tomllib.loads() always returns dict for valid TOML, so this is unreachable
-        # return {}  # removed unreachable code
+        # tomllib.loads() returns a dict for valid TOML; cast for type checkers
+        return cast(dict[str, Any], tomllib.loads(read_text(p)))
     except Exception:
         return {}
 
@@ -896,6 +890,17 @@ def main() -> int:
         try:
 
             def ser(o: Any) -> Any:
+                """
+                The function `ser` sorts sets and converts `Path` objects to strings,
+                returning the original input otherwise.
+                :param o: The function `ser` takes an input parameter `o` of type `Any`
+                and returns a value of type
+                `Any`. Inside the function, it checks if the input `o` is a set or a Path object.
+                If `o` is a set, it returns the sorted version of the set.
+                :type o: Any:return: The function `ser` returns the input `o`
+                if it is not a set or a Path object.
+                If `o` is a Path object, it returns the string representation of the Path object.
+                """
                 if isinstance(o, set):
                     return sorted(o)
                 if isinstance(o, Path):

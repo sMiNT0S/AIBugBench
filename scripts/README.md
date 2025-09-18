@@ -4,8 +4,6 @@ description: Deep usage guide for validate_docs.py including command classificat
 search:
   boost: 0.6
 ---
-## LEGACY FOR NOW (especially validate_docs.py) - NEEDS PATCH AFTER SANDBOX/REHAULS/REFACTORS. LEGACY REFERENCES STILL USED
-
 ## Documentation Validation Tools
 
 > Consolidated reference docs live in [`docs/developer-guide.md`](../docs/developer-guide.md) and [`docs/architecture.md`](../docs/architecture.md). This README provides deep usage details for validation helper scripts (primarily `validate_docs.py`).
@@ -34,6 +32,14 @@ Commands are automatically classified into these safety levels:
 - **SANDBOX**: File-modifying commands that can be safely isolated (mkdir, cp, python setup.py)
 - **NETWORK**: Commands that access network resources (git clone, curl, wget)
 - **DESTRUCTIVE**: Potentially dangerous commands (rm -rf, format, shutdown) - skipped by default
+
+### Platform Attribution (neutral bucket)
+
+Fenced code blocks labeled as bash/sh/shell are attributed to the macOS/Linux platform for parsing.
+However, many such commands are OS-neutral (for example: `python`, `pip`, `pytest`, `uv`, `git`).
+To avoid skewing the platform breakdown, the validator separates these into a pseudo platform named
+"neutral" and reduces the macOS/Linux count by that neutral subset. This split is reflected in both
+the console summary and the JSON output under `platform_counts`.
 
 ### Usage
 
@@ -117,7 +123,7 @@ Platforms:
   windows_cmd: 42
   windows_powershell: 41
   macos_linux: 59
-Types:P
+Types:
   network: 9
   safe: 76
   sandbox: 57
@@ -139,7 +145,8 @@ Success Rate:       90.1%
 
 windows_cmd             42 commands
 windows_powershell      0 commands (platform mismatch)
-macos_linux            0 commands (platform mismatch)
+neutral                 18 commands
+macos_linux             41 commands
 
 #### COMMAND TYPE BREAKDOWN
 

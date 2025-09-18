@@ -80,6 +80,7 @@ quote-style = "double"
 python_version = "3.13"
 ignore_missing_imports = true
 plugins = []  # explicit (currently none configured)
+explicit_package_bases = true
 exclude = [
   "submissions/reference_implementations/example_model/",
   "submissions/templates/",

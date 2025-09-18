@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import re
 import tempfile
-from typing import Any, Concatenate, TypeVar
+from typing import Any, Concatenate, TypeVar, cast
 from unittest.mock import Mock, patch
 
 import requests
@@ -47,11 +47,14 @@ def run_in_sandbox(
     """
     if not _sandbox_enabled():
         return fn(self, *args, **kwargs)
-    if not args or not hasattr(args[0], "parts"):
+    if not args:
         return fn(self, *args, **kwargs)
     first_path = args[0]
+    parts_attr = getattr(first_path, "parts", None)
+    if not parts_attr:
+        return fn(self, *args, **kwargs)
     try:
-        parts = list(first_path.parts)
+        parts = list(parts_attr)
         if "submissions" not in parts:
             return fn(self, *args, **kwargs)
         idx = parts.index("submissions")
@@ -68,14 +71,15 @@ def run_in_sandbox(
         new_args: list[Any] = []
         submission_root = sb_dir / "submission"
         for a in args:
-            if hasattr(a, "parts") and "submissions" in getattr(a, "parts", []):
-                a_parts = list(a.parts)
+            a_parts = getattr(a, "parts", None)
+            if a_parts and "submissions" in a_parts:
+                a_parts_list = list(a_parts)
                 try:
-                    a_idx = a_parts.index("submissions")
+                    a_idx = a_parts_list.index("submissions")
                     rel = (
-                        Path(*a_parts[a_idx + 3 :])
-                        if len(a_parts) > a_idx + 3
-                        else Path(a_parts[-1])
+                        Path(*a_parts_list[a_idx + 3 :])
+                        if len(a_parts_list) > a_idx + 3
+                        else Path(a_parts_list[-1])
                     )
                     sandbox_path = submission_root / rel
                     new_args.append(sandbox_path)
@@ -89,7 +93,8 @@ def run_in_sandbox(
         if sandbox_test_data.exists():
             self.test_data_dir = sandbox_test_data
         try:
-            return fn(self, *new_args, **kwargs)
+            fn_any: Callable[..., R] = cast("Callable[..., R]", fn)
+            return fn_any(self, *new_args, **kwargs)
         finally:
             if original_test_data is not None:
                 self.test_data_dir = original_test_data
@@ -619,9 +624,15 @@ class MaintainabilityAnalyzer:
 class PromptValidators:
     """Validates solutions for each benchmark prompt."""
 
+    # Attribute declarations for type checkers
+    test_data_dir: Path
+    model_name: str
+    sandbox_owner: Any | None
+
     def __init__(self, test_data_dir: str | Path, model_name: str = "default"):
         self.test_data_dir = Path(test_data_dir)  # Convert to Path if string
         self.model_name = model_name
+        self.sandbox_owner = None
         self._load_test_data()
 
     def _load_test_data(self) -> None:

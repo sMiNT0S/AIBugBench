@@ -36,7 +36,9 @@ py-modules = ["run_benchmark"]
 
 [build-system]
 requires = ["setuptools>=69", "wheel"]
-build-backend = "setuptools.build_meta"
+# Temporarily route through our in-tree wrapper to capture duplicate .egg-info candidates. (old path: "setuptools.build_meta")
+build-backend = "build_backend"
+backend-path = ["scripts"]
 
 [tool.ruff]
 line-length = 100

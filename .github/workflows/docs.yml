@@ -16,15 +16,17 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: '3.13'
+          python-version: '3.13.7'
+          check-latest: false
       - name: Install MkDocs and plugins
         run: |
-         python -m pip install --upgrade pip
+          python -m pip install -U "pip==24.3.1"
+          # Docs deps are separate; if a docs lock exists in future, switch to it with --require-hashes
           pip install -r docs/requirements.txt
       - name: Build site
         run: mkdocs build --strict
@@ -35,7 +37,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{steps.deployment.outputs.page_url}}

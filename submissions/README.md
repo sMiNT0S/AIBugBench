@@ -26,7 +26,7 @@ Your AI model implementations.
 
 ## Directory Structure
 
-```
+```logs
 submissions/
 ├── reference_implementations/
 │   └── example_model/

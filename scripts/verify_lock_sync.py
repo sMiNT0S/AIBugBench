@@ -9,9 +9,15 @@ CI consolidation or tooling integration without re-implementing diff logic.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import subprocess
 import sys
+
+# Skip heavy lock verification on local Windows environments; CI (Linux) is source of truth.
+if sys.platform == "win32" and not os.environ.get("FORCE_LOCK_VERIFY"):
+    print('{"tool":"lock-check","status":"skipped","exit":0,"reason":"win32_local"}')
+    raise SystemExit(0)
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "update_requirements_lock.py"

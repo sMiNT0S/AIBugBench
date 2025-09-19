@@ -1,7 +1,8 @@
 name: CI
 
 env:
-  PYTHON_DEFAULT_VERSION: "3.13"
+  PYTHON_DEFAULT_VERSION: "3.13.7"
+  PIP_VERSION: "24.3.1"
   BANDIT_VERSION: "1.8.6"
   RUFF_VERSION: "0.12.11"  # Upgraded to align with local environment (supports UP047 rule)
   MYPY_VERSION: "1.11.2"
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   action-pin-check:
     name: Actions Pin Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -43,7 +44,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
@@ -51,6 +52,7 @@ jobs:
 
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
+          check-latest: false
       - name: Debug lock environment
         shell: bash
         run: |
@@ -62,32 +64,135 @@ jobs:
         env:
           PYTHONUTF8: "1"
         run: |
-          python -m pip install -U pip
-          python -m pip install "pip-tools==7.5.0"
+          python -m pip install -U "pip==${{ env.PIP_VERSION }}" "pip-tools==7.5.0"
           # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
           python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
           python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
       - name: Verify dependency lock determinism (JSON)
         if: always()
         shell: bash
+        id: lock_check_json
         run: |
           python -m pip install "pip-tools==7.5.0"
           python scripts/update_requirements_lock.py --check --json || true
           python scripts/update_requirements_lock.py --check --dev --json || true
+
+      # --- Append-only telemetry/schema validators (read-only; no runner/step renames) ---
+      - name: Collect telemetry (NDJSON, read-only)
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p .ci/local
+          : > .ci/local/telemetry.ndjson
+          python scripts/update_requirements_lock.py --check --json       >> .ci/local/telemetry.ndjson || true
+          python scripts/update_requirements_lock.py --check --dev --json >> .ci/local/telemetry.ndjson || true
+
+      # Enable validation only when a local flag file is present (keeps this local-only)
+      - name: Detect local telemetry flag
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .ci/local/enable_telemetry_validate ]; then
+            echo "TELEMETRY_VALIDATE=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate telemetry schema
+        if: ${{ always() && env.TELEMETRY_VALIDATE == '1' }}
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --no-cache-dir "jsonschema==4.23.0"
+          python - <<'PY'
+          import json, sys, pathlib
+          from jsonschema import validate, Draft7Validator
+          root = pathlib.Path(".")
+          ndjson = root/".ci"/"local"/"telemetry.ndjson"
+          schema_candidates = [
+              root/".ci"/"schemas"/"telemetry.schema.json",
+              root/".ci"/"telemetry.schema.json",
+              root/"schemas"/"telemetry.schema.json",
+              root/"telemetry.schema.json",
+          ]
+          schema = next((p for p in schema_candidates if p.exists()), None)
+          if not schema or not ndjson.exists():
+              print("telemetry: schema or ndjson not found; skipping", file=sys.stderr); sys.exit(0)
+          sch = json.load(open(schema, "r", encoding="utf-8"))
+          Draft7Validator.check_schema(sch)
+          n = ok = 0
+          for line in ndjson.read_text(encoding="utf-8").splitlines():
+              line = line.strip()
+              if not line:
+                  continue
+              validate(instance=json.loads(line), schema=sch)
+              ok += 1
+              n  += 1
+          print(f"telemetry: validated {ok}/{n} records")
+          PY
+
+      - name: Validate artifacts manifest schema
+        if: ${{ always() && env.TELEMETRY_VALIDATE == '1' }}
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --no-cache-dir "jsonschema==4.23.0"
+          python - <<'PY'
+          import json, sys, pathlib
+          from jsonschema import validate, Draft7Validator
+          root = pathlib.Path(".")
+          manifest = root/"artifacts.manifest.json"
+          schema_candidates = [
+              root/".ci"/"schemas"/"manifest.schema.json",
+              root/".ci"/"manifest.schema.json",
+              root/"schemas"/"manifest.schema.json",
+              root/"manifest.schema.json",
+          ]
+          schema = next((p for p in schema_candidates if p.exists()), None)
+          if not schema or not manifest.exists():
+              print("manifest: schema or artifacts.manifest.json not found; skipping", file=sys.stderr); sys.exit(0)
+          sch = json.load(open(schema, "r", encoding="utf-8"))
+          data = json.load(open(manifest, "r", encoding="utf-8"))
+          Draft7Validator.check_schema(sch)
+          validate(instance=data, schema=sch)
+          print("manifest: OK")
+          PY
+      - name: Generate lock telemetry
+        if: always()
+        shell: bash
+        run: |
+          python scripts/generate_manifest.py \
+            --generated-by "lock-verification" \
+            --item "requirements.lock" "lock" \
+            --item "requirements-dev.lock" "lock" \
+            --output lock-telemetry.manifest.json
       - name: Build drift manifest
         if: failure()
         shell: bash
         run: |
-          cat > artifacts.manifest.json <<'JSON'
-          {"items":[
-            {"path":"new.requirements.lock","kind":"lock"},
-            {"path":"new.requirements-dev.lock","kind":"lock"}
-          ]}
-          JSON
+          python scripts/generate_manifest.py \
+            --generated-by "lock-verification" \
+            --item "new.requirements.lock" "lock" \
+            --item "new.requirements-dev.lock" "lock" \
+            --item "lock-drift.contents.json" "meta" \
+            --item "lock-drift.url.txt" "meta" \
+            --output artifacts.manifest.json
+      - name: Validate drift manifest schema
+        if: failure()
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --no-cache-dir "jsonschema==4.23.0"
+          python - <<'PY'
+          import json
+          from jsonschema import validate, Draft7Validator
+          with open('artifacts.manifest.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          with open('schemas/manifest.schema.json', 'r', encoding='utf-8') as f:
+              schema = json.load(f)
+          Draft7Validator.check_schema(schema)
+          validate(instance=data, schema=schema)
+          print('drift manifest: OK')
+          PY
       - name: Recompile locks for artifact (on fail)
         if: failure()
         run: |
-          python -m pip install -U pip "pip-tools==7.5.0"
+          python -m pip install -U "pip==${{ env.PIP_VERSION }}" "pip-tools==7.5.0"
           pip-compile --allow-unsafe --generate-hashes -o new.requirements.lock requirements.txt
           pip-compile --allow-unsafe --generate-hashes -o new.requirements-dev.lock requirements-dev.txt
       - name: Upload recompiled locks
@@ -99,6 +204,7 @@ jobs:
             new.requirements.lock
             new.requirements-dev.lock
             artifacts.manifest.json
+            lock-telemetry.manifest.json
           retention-days: 30
 
   lint-and-type-check:
@@ -108,7 +214,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # remove any malformed 'uses: sMiNT0S/AIBugBench/.' step; use the pinned composite action
       - name: Base Python + dev tools
@@ -143,7 +249,7 @@ jobs:
       actions: read
     env:
       CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Base Python + test tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
@@ -231,14 +337,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.13"]
+        os: [ubuntu-24.04, windows-2022, macos-15]
+        python-version: ["3.13.7"]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             platform_name: linux
-          - os: windows-latest
+          - os: windows-2022
             platform_name: windows
-          - os: macos-latest
+          - os: macos-15
             platform_name: macos
     runs-on: ${{matrix.os}}
     permissions:
@@ -257,8 +363,8 @@ jobs:
           key: ${{runner.os}}-pip-${{matrix.python-version}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
             ${{runner.os}}-pip-${{matrix.python-version}}-
-      - name: Install package (editable)
-        run: python -m pip install -e .
+      - name: Install package (wheel)
+        run: python -m pip install .
 
       - name: Run comprehensive test suite
         run: |
@@ -294,7 +400,7 @@ jobs:
           else
             echo "has_ci_results=false" >> "$GITHUB_OUTPUT"
           fi
-          if [ -f "*.log" ] 2>/dev/null; then
+          if ls -1 *.log 1>/dev/null 2>&1; then
             echo "has_logs=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_logs=false" >> "$GITHUB_OUTPUT"
@@ -315,7 +421,7 @@ jobs:
   benchmark-consistency-check:
     name: Benchmark Consistency Validation
     needs: multi-platform-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always()
     permissions:
       contents: read
@@ -410,7 +516,7 @@ jobs:
   security-scan:
     name: Security Scan
     needs: lock-verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
@@ -448,6 +554,16 @@ jobs:
             > safety-report.json \
             || echo "safety scan fallback"
         continue-on-error: true
+      - name: Generate security telemetry
+        if: always()
+        shell: bash
+        run: |
+          python scripts/generate_manifest.py \
+            --generated-by "security-scan" \
+            --item "bandit-report.json" "security" \
+            --item "safety-report.json" "security" \
+            --item "audit.json" "security" \
+            --output security-telemetry.manifest.json
       - name: Run internal security audit
         run: python scripts/security_audit.py --json --output audit.json
         continue-on-error: true
@@ -478,4 +594,5 @@ jobs:
             safety-report.json
             audit.json
             audit_summary.md
+            security-telemetry.manifest.json
           retention-days: 30

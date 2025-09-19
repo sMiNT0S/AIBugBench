@@ -12,9 +12,13 @@ runs:
     - name: Install base hashed dependencies
       shell: bash
       run: |
-        python -m pip install --upgrade pip
-        pip install 'pip-tools>=7.5.0'
+        python -m pip install -U "pip==24.3.1" "pip-tools==7.5.0"
         pip install --require-hashes -r requirements.lock
+    - name: Install dev lock (when needed)
+      if: ${{inputs.install-dev == 'true' || inputs.install-test == 'true' || inputs.install-security == 'true'}}
+      shell: bash
+      run: |
+        pip install --require-hashes -r requirements-dev.lock
     - name: Install dev tools
       if: ${{inputs.install-dev == 'true'}}
       shell: bash
@@ -35,7 +39,7 @@ runs:
       if: ${{inputs.install-security == 'true'}}
       shell: bash
       run: |
-        pip install 'pip-tools>=7.5.0'
+        # pip-tools already installed above; install security tools only
         pip install bandit==${{env.BANDIT_VERSION}} safety
 inputs:
   python-version:

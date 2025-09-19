@@ -58,11 +58,9 @@ def _require_modern_piptools() -> str | None:
 
 def _rewrite_header(lock_path: Path, req_name: str, allow_unsafe: bool = True) -> None:
     """Normalize header comment to canonical form used by CI.
-
     CI generates an ephemeral file via:
         pip-compile --allow-unsafe --generate-hashes \
             --output-file=new.requirements.lock requirements.txt
-
     We intentionally mirror this exact command (argument ordering included)
     inside the committed lock for deterministic diffs.
     """
@@ -85,7 +83,6 @@ def _rewrite_header(lock_path: Path, req_name: str, allow_unsafe: bool = True) -
 
 def _strip_platform_specific(lock_path: Path) -> None:
     """Remove Windows-only requirement blocks for deterministic cross-OS locks.
-
     Strips any requirement line containing one of:
       ; sys_platform == "win32"  |  'win32'
       ; platform_system == "Windows"  |  'Windows'
@@ -121,7 +118,6 @@ def _strip_platform_specific(lock_path: Path) -> None:
 
 def _dedupe_provenance(lock_path: Path) -> None:
     """Remove redundant provenance lines like '# via -r requirements.txt'.
-
     On some platforms (observed on Windows) pip-compile emits an extra line
     `# via -r requirements.txt` immediately following an existing
     `# via <package>` provenance comment for the same requirement. On Linux
@@ -201,7 +197,6 @@ def _canonicalize_via_lines(lock_path: Path) -> None:
 
 def _norm_for_compare(text: str) -> list[str]:
     """Canonicalize lock text for drift comparison.
-
     - normalize CRLF/CR to LF
     - drop the volatile 'by the following command' header line
       and the immediately following '# pip-compile ...' line
@@ -239,17 +234,19 @@ def _norm_for_compare(text: str) -> list[str]:
             out.append(ln)
             i += 1
 
+    # Drop trailing blank lines introduced by split when text ends with a newline
+    while out and out[-1] == "":
+        out.pop()
+
     return out
 
 
 def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bool) -> int:
     """Run pip-tools compile producing the given output path for req file.
-
     Uses relative requirement filename (stable across platforms) and injects a
     --custom-compile-command so the header in the generated lock file matches
     the committed canonical command. This keeps diffs stable between Linux,
     macOS, and Windows (avoids absolute path leakage).
-
     If allow_unsafe=True, adds --allow-unsafe to capture tooling packages
     like pip/setuptools/wheel (useful for reproducible isolated environments).
     """
@@ -276,6 +273,14 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
 
 
 def main() -> int:
+    """
+    Updates or checks the consistency of
+    requirements.lock files based on specified options and flags.
+    :return: The `main()` function returns an integer exit code, which indicates the status of the
+    script execution. The possible return values and their meanings are defined in the
+    `EXIT_CODE_LEGEND` dictionary. The exit code is then used to determine the meaning of the return
+    value and is printed along with its corresponding description before the script exits.
+    """
     parser = argparse.ArgumentParser(
         description="Update or check requirements(.lock) consistency (runtime or dev)"
     )

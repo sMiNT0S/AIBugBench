@@ -19,13 +19,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHON_VERSION: '3.13'
+  PYTHON_VERSION: '3.13.7'
   BANDIT_VERSION: '1.8.6'
 
 jobs:
   tier1-reference:
     name: Reference Implementations
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -35,22 +35,23 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
           python-version: ${{env.PYTHON_VERSION}}
+          check-latest: false
 
       - name: Install dependencies (pinned security tools)
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          python -m pip install -U "pip==24.3.1" "pip-tools==7.5.0"
+          pip install --require-hashes -r requirements.lock -r requirements-dev.lock
           pip install bandit==${{env.BANDIT_VERSION}}
 
       - name: Lint reference
         run: |
-          if [-d "submissions/reference_implementations"]; then
+          if [ -d "submissions/reference_implementations" ]; then
             ruff check submissions/reference_implementations/
           fi
 
       - name: Security scan
         run: |
-          if [-d "submissions/reference_implementations"]; then
+          if [ -d "submissions/reference_implementations" ]; then
             bandit -c bandit.yaml -r submissions/reference_implementations/
           fi
 
@@ -59,7 +60,7 @@ jobs:
 
   tier2-templates:
     name: Templates (Non-blocking)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     continue-on-error: true
     permissions:
       contents: read
@@ -70,16 +71,17 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
           python-version: ${{env.PYTHON_VERSION}}
+          check-latest: false
 
       - name: Install dependencies (pinned security tools)
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          python -m pip install -U "pip==24.3.1" "pip-tools==7.5.0"
+          pip install --require-hashes -r requirements.lock -r requirements-dev.lock
           pip install bandit==${{env.BANDIT_VERSION}}
 
       - name: Basic checks
         run: |
-          if [-d "submissions/templates"]; then
+          if [ -d "submissions/templates" ]; then
             ruff check submissions/templates/ --config .ruff-tier2.toml || true
             bandit -c bandit-tier2.yaml -r submissions/templates/ || true
           fi

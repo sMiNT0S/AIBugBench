@@ -87,7 +87,7 @@ repos:
   - repo: local
     hooks:
       - id: verify-lock-sync
-        name: verify lock files are in sync with requirements
+        name: verify lock files are in sync with requirements (skips on Windows; set FORCE_LOCK_VERIFY=1 to force)
         entry: python scripts/verify_lock_sync.py
         language: python
         language_version: python3.13

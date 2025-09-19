@@ -363,6 +363,23 @@ jobs:
           key: ${{runner.os}}-pip-${{matrix.python-version}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
             ${{runner.os}}-pip-${{matrix.python-version}}-
+      - name: Cleanup | Remove stale .egg-info (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Cleaning stale build artifacts (.egg-info, build/, dist/)"
+          find . -type d -name '*.egg-info' -prune -print -exec rm -rf {} + || true
+          find . -type d -name 'build'      -prune -print -exec rm -rf {} + || true
+          find . -type d -name 'dist'       -prune -print -exec rm -rf {} + || true
+      - name: Cleanup | Remove stale .egg-info (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Cleaning stale build artifacts (*.egg-info, build, dist)"
+          Get-ChildItem -Path . -Recurse -Directory -Filter '*.egg-info' | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+          Get-ChildItem -Path . -Recurse -Directory -Filter 'build'       | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+          Get-ChildItem -Path . -Recurse -Directory -Filter 'dist'        | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
       - name: Debug | Tool versions
         run: |
           python -V
@@ -379,6 +396,34 @@ jobs:
           print(f"[debug] prepare_metadata_for_build_wheel({meta!r})")
           try:
             import setuptools.build_meta as bm
+            # Monkey-patch _find_info_directory to log candidates and tolerate multiples for diagnostics
+            orig_find = getattr(bm, "_find_info_directory", None)
+            def _debug_find_info_directory(metadata_directory, suffix):
+              from pathlib import Path
+              try:
+                candidates = [p for p in Path(metadata_directory).iterdir() if p.is_dir() and p.name.endswith(suffix)]
+              except FileNotFoundError:
+                candidates = []
+              print(f"[debug] _find_info_directory called; suffix={suffix}; candidates:")
+              for c in candidates:
+                print(f"  - {c}")
+              # Try original behavior first (may assert if multiple)
+              if orig_find:
+                try:
+                  return orig_find(metadata_directory, suffix)
+                except AssertionError as e:
+                  print(f"[debug] original _find_info_directory raised: {e!r}")
+              # Persist candidate list to a marker file for artifacting
+              try:
+                marker = Path(metadata_directory) / "_candidates.txt"
+                marker.write_text("\n".join(str(x) for x in candidates), encoding="utf-8")
+              except Exception as werr:
+                print(f"[debug] failed to write candidates marker: {werr!r}")
+              # Return first candidate to allow bubbling to proceed so we can list directory contents
+              return candidates[0] if candidates else orig_find(metadata_directory, suffix)
+
+            if orig_find is not None:
+              bm._find_info_directory = _debug_find_info_directory  # type: ignore[attr-defined]
             res = bm.prepare_metadata_for_build_wheel(meta)
             print("[debug] returned:", res)
           except Exception as e:
@@ -406,6 +451,34 @@ jobs:
           print(f"[debug] prepare_metadata_for_build_wheel({meta!r})")
           try:
             import setuptools.build_meta as bm
+            # Monkey-patch _find_info_directory to log candidates and tolerate multiples for diagnostics
+            orig_find = getattr(bm, "_find_info_directory", None)
+            def _debug_find_info_directory(metadata_directory, suffix):
+              from pathlib import Path
+              try:
+                candidates = [p for p in Path(metadata_directory).iterdir() if p.is_dir() and p.name.endswith(suffix)]
+              except FileNotFoundError:
+                candidates = []
+              print(f"[debug] _find_info_directory called; suffix={suffix}; candidates:")
+              for c in candidates:
+                print(f"  - {c}")
+              # Try original behavior first (may assert if multiple)
+              if orig_find:
+                try:
+                  return orig_find(metadata_directory, suffix)
+                except AssertionError as e:
+                  print(f"[debug] original _find_info_directory raised: {e!r}")
+              # Persist candidate list to a marker file for artifacting
+              try:
+                marker = Path(metadata_directory) / "_candidates.txt"
+                marker.write_text("\n".join(str(x) for x in candidates), encoding="utf-8")
+              except Exception as werr:
+                print(f"[debug] failed to write candidates marker: {werr!r}")
+              # Return first candidate to allow bubbling to proceed so we can list directory contents
+              return candidates[0] if candidates else orig_find(metadata_directory, suffix)
+
+            if orig_find is not None:
+              bm._find_info_directory = _debug_find_info_directory  # type: ignore[attr-defined]
             res = bm.prepare_metadata_for_build_wheel(meta)
             print("[debug] returned:", res)
           except Exception as e:

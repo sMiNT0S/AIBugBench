@@ -9,6 +9,7 @@ explicit `--cov=bootstrap_repo` invocation.
 def test_bootstrap_module_imports():
     from pathlib import Path
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
     import bootstrap_repo  # import triggers top-level definitions only
 

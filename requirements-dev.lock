@@ -219,15 +219,6 @@ click==8.3.0 \
     #   pip-tools
     #   safety
     #   typer
-colorama==0.4.6 \
-    --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
-    --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via
-    #   bandit
-    #   build
-    #   click
-    #   pytest
-    #   tqdm
 coverage[toml]==7.10.6 \
     --hash=sha256:073711de3181b2e204e4870ac83a7c4853115b42e9cd4d145f2231e12d670930 \
     --hash=sha256:081b98395ced0d9bcf60ada7661a0b75f36b78b9d7e39ea0790bb4ed8da14747 \

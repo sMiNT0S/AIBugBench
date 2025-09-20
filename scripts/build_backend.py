@@ -22,9 +22,12 @@ import glob
 import io
 import os
 import pathlib
+import shutil
 import sys
+import tempfile
 import traceback
 import typing as t
+import zipfile
 
 from setuptools import build_meta as _orig
 
@@ -158,6 +161,67 @@ def _dump_tree(root: str, out_path: str | None = None) -> None:
         return
 
 
+def _wheel_metadata_fallback(
+    metadata_directory: str,
+    config_settings: dict[str, t.Any] | None = None,
+    editable: bool = False
+) -> str:
+    """Fallback strategy: build wheel and extract .dist-info metadata.
+
+    When prepare_metadata_for_build_wheel fails with zero candidates,
+    PEP 517 allows using wheel metadata as an alternative. This builds
+    a wheel temporarily and copies the .dist-info into metadata_directory.
+    """
+    with tempfile.TemporaryDirectory() as tmp_wheel_dir:
+        sys.stderr.write(f"[meta-debug] Building wheel in temp directory: {tmp_wheel_dir}\n")
+
+        # Build the wheel using the appropriate method
+        if editable:
+            wheel_filename = _orig.build_editable(tmp_wheel_dir, config_settings)
+        else:
+            wheel_filename = _orig.build_wheel(tmp_wheel_dir, config_settings)
+
+        wheel_path = os.path.join(tmp_wheel_dir, wheel_filename)
+        sys.stderr.write(f"[meta-debug] Built wheel: {wheel_path}\n")
+
+        # Extract .dist-info from the wheel
+        with zipfile.ZipFile(wheel_path, 'r') as wheel_zip:
+            # Find the .dist-info directory in the wheel
+            dist_info_entries = [
+                name for name in wheel_zip.namelist()
+                if name.endswith('.dist-info/') and '/' not in name[:-1]
+            ]
+
+            if not dist_info_entries:
+                raise RuntimeError("No .dist-info directory found in built wheel")
+
+            if len(dist_info_entries) > 1:
+                msg = f"Multiple .dist-info directories found in wheel: {dist_info_entries}"
+                raise RuntimeError(msg)
+
+            dist_info_name = dist_info_entries[0][:-1]  # Remove trailing '/'
+            sys.stderr.write(f"[meta-debug] Extracting {dist_info_name} from wheel\n")
+
+            # Extract all .dist-info files to metadata_directory
+            for entry in wheel_zip.namelist():
+                if entry.startswith(dist_info_name + '/'):
+                    # Calculate relative path within .dist-info
+                    rel_path = entry[len(dist_info_name) + 1:]
+                    target_path = os.path.join(metadata_directory, dist_info_name, rel_path)
+
+                    if entry.endswith('/'):
+                        # It's a directory
+                        os.makedirs(target_path, exist_ok=True)
+                    else:
+                        # It's a file
+                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                        with wheel_zip.open(entry) as src, open(target_path, 'wb') as dst:
+                            shutil.copyfileobj(src, dst)
+
+        sys.stderr.write(f"[meta-debug] Wheel metadata fallback successful: {dist_info_name}\n")
+        return dist_info_name
+
+
 def prepare_metadata_for_build_wheel(
     metadata_directory: str, config_settings: dict[str, t.Any] | None = None
 ) -> str:
@@ -182,7 +246,14 @@ def prepare_metadata_for_build_wheel(
         _dump_tree(metadata_directory, os.path.join(metadata_directory, "_tree.txt"))
         # Print full traceback for precise failure location in setuptools.
         traceback.print_exc(file=sys.stderr)
-        raise
+
+        # Fallback: use wheel metadata when egg-info fails
+        sys.stderr.write("[meta-debug] Attempting wheel metadata fallback...\n")
+        try:
+            return _wheel_metadata_fallback(metadata_directory, config_settings)
+        except Exception as wheel_exc:
+            sys.stderr.write(f"[meta-debug] Wheel fallback failed: {wheel_exc}\n")
+            raise
 
 
 def prepare_metadata_for_build_editable(
@@ -206,7 +277,14 @@ def prepare_metadata_for_build_editable(
         _dump_all_egg_info(os.getcwd(), also_write_into=metadata_directory)
         _dump_tree(metadata_directory, os.path.join(metadata_directory, "_tree.txt"))
         traceback.print_exc(file=sys.stderr)
-        raise
+
+        # Fallback: use wheel metadata when egg-info fails
+        sys.stderr.write("[meta-debug] Attempting wheel metadata fallback...\n")
+        try:
+            return _wheel_metadata_fallback(metadata_directory, config_settings, editable=True)
+        except Exception as wheel_exc:
+            sys.stderr.write(f"[meta-debug] Wheel fallback failed: {wheel_exc}\n")
+            raise
 
 
 # Delegate remaining hooks directly to setuptools.build_meta

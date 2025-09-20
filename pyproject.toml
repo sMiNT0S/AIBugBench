@@ -44,6 +44,7 @@ backend-path = ["scripts"]
 line-length = 100
 target-version = "py313"
 exclude = [
+  ".git/",
   "test_data/",
   "venv/",
   "submissions/user_submissions/",

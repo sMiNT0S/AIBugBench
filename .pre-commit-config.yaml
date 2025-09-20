@@ -25,7 +25,7 @@ exclude: |
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.7
+    rev: v0.12.1
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -45,17 +45,26 @@ repos:
     rev: 1.7.9
     hooks:
       - id: bandit
-        args:
-          [
-            "-r",
-            ".",
-            "-ll",
-            "--configfile",
-            "pyproject.toml",
-            "-x",
-            "tests,submissions",
-          ]
-        pass_filenames: false
+        # Scan only tracked Python files that pre-commit passes in
+        args: ["-ll", "--configfile", "pyproject.toml"]
+        types: [python]
+        exclude: >-
+          (?x) ^(
+            tests/
+            | submissions/
+            | \.git/
+            | \.git/\.pre-commit-cache/
+            | \.venv/
+            | venv/
+            | build/
+            | dist/
+            | coverage/
+            | htmlcov/
+            | \.mypy_cache/
+            | \.ruff_cache/
+            | \.pytest_cache/
+            | .*/__pycache__/
+          )
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.10.0
@@ -77,17 +86,15 @@ repos:
   # Local/system hooks (use your current Python; no bash required)
   - repo: local
     hooks:
-      - id: lock-sync-check
-        name: Check requirements.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check --allow-unsafe
-        language: system
+      - id: verify-lock-sync
+        name: verify lock files are in sync with requirements (skips on Windows; set FORCE_LOCK_VERIFY=1 to force)
+        entry: python scripts/verify_lock_sync.py
+        language: python
+        language_version: python3.13
         pass_filenames: false
-        always_run: true
-      - id: lock-sync-check-dev
-        name: Check requirements-dev.lock is up to date
-        entry: python scripts/update_requirements_lock.py --check --dev --allow-unsafe
-        language: system
-        pass_filenames: false
+        additional_dependencies:
+          - pip-tools==7.5.0
+        stages: [pre-commit, pre-push]
         always_run: true
 
       - id: smoke-pytest
@@ -102,3 +109,10 @@ repos:
         language: system
         pass_filenames: false
         files: "^README\\.md$"
+
+      - id: ci-encodings
+        name: Ensure YAML/JSON/requirements locks are UTF-8 LF
+        entry: python .ci/check_encodings.py
+        language: system
+        pass_filenames: true
+        files: '^(\.github/workflows/.*\.ya?ml|\.ci/.*\.json|requirements.*\.lock)$'

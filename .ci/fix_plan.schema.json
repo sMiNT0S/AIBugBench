@@ -1,0 +1,11 @@
+{
+  "type":"object",
+  "required":["phase","scope_path","intent","diff_preview"],
+  "properties":{
+    "phase":{"type":"string"},
+    "scope_path":{"type":"string"},
+    "intent":{"type":"string"},
+    "diff_preview":{"type":"string"},
+    "assertions":{"type":"array","items":{"type":"string"}}
+  }
+}

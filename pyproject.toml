@@ -2,8 +2,7 @@
 name = "aibugbench"
 version = "0.9.0-beta"
 description = "AI code generation benchmarking tool"
-license = { text = "Apache-2.0" }
-classifiers = ["License :: OSI Approved :: Apache Software License"]
+license = {text = "Apache-2.0"}
 authors = [{ name = "sMiNT0S" }]
 maintainers = [{ name = "AIBugBench Maintainers" }]
 readme = "README.md"
@@ -11,13 +10,38 @@ requires-python = ">=3.13,<3.15"
 dependencies = [
   "PyYAML==6.0.2",
   "requests==2.32.5",
+  "psutil==7.0.0",
   "pywin32==311; sys_platform == 'win32'"
 ]
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/sMiNT0S/AIBugBench"
+Documentation = "https://smintos.github.io/AIBugBench/"
+Issues = "https://github.com/sMiNT0S/AIBugBench/issues"
+Source = "https://github.com/sMiNT0S/AIBugBench"
+
+[project.scripts]
+run-benchmark = "run_benchmark:main"
+
+[tool.setuptools]
+packages = ["benchmark"]
+py-modules = ["run_benchmark"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 100
 target-version = "py313"
 exclude = [
+  ".git/",
   "test_data/",
   "venv/",
   "submissions/user_submissions/",
@@ -26,7 +50,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-# Strict set; expect noise, then burn it down with autofix + small PRs.
+# Strict set;
 select = [
   "E",   # pycodestyle errors (correctness)
   "F",   # pyflakes (unused vars, etc.)
@@ -56,6 +80,7 @@ quote-style = "double"
 python_version = "3.13"
 ignore_missing_imports = true
 plugins = []  # explicit (currently none configured)
+explicit_package_bases = true
 exclude = [
   "submissions/reference_implementations/example_model/",
   "submissions/templates/",
@@ -75,7 +100,7 @@ warn_unused_ignores = true
 warn_return_any = true
 warn_unreachable = true
 show_error_codes = true
-disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-overload"]
+disable_error_code = ["var-annotated", "assignment", "operator", "index", "call-overload", "import-untyped"]
 
 # Strict-on-core override: enforce stronger typing only for core packages
 [[tool.mypy.overrides]]
@@ -94,9 +119,10 @@ disallow_any_generics = true
 # Tests may use asserts, long lines, and a controlled subprocess call pattern.
 "tests/**" = ["S101", "E501", "S102", "SIM102", "F841", "S603"]
 # Core files with audited exceptions
-"benchmark/validators.py" = ["S603", "S506"]       # subprocess call + safe YAML loader override
+"benchmark/validators.py" = ["S603", "S506", "UP047"]  # subprocess call + safe YAML loader override + generic modernization ignore
 "benchmark/runner.py"     = ["S603", "S404"]       # audited subprocess usage
 "test_data/process_records.py" = ["S506", "S404"]  # fixture: yaml.load + subprocess import
+"benchmark/typing_helpers.py" = ["UP047"]            # preserve legacy generic style intentionally
 
 [tool.bandit]
 # Exclude directories with intentionally hostile test cases and generated content

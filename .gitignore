@@ -8,6 +8,10 @@ __pycache__/
 .installed.cfg
 *.egg
 
+# packaging trash
+*.egg-info/
+*.dist-info/
+
 # Build and distribution
 build/
 develop-eggs/
@@ -47,6 +51,7 @@ Thumbs.db
 .cache
 htmlcov/
 .tox/
+installed.txt
 
 # Test Coverage
 .coverage
@@ -104,7 +109,7 @@ audit_summary.md
 bandit-report.json
 safety-report.json
 semgrep-secrets.json
-trufflehog-results.json
+trufflehog-results.json 
 
 # Coverage & pytest extra outputs (already partially covered)
 .pytest_cache/
@@ -132,6 +137,9 @@ status/
 *.tmp
 *.bak
 .temp/
+node_modules/
+package.json
+package-lock.json
 
 # Keep canonical template directory
 !submissions/templates/template/
@@ -142,16 +150,10 @@ status/
 # This keeps the shared .gitignore focused on universally generated artifacts.
 # Local exclude currently contains (for reference only — do not copy back):
 #   .vscode/, .idea/
-#   showcase_results.json, *_results.json,
-#   temp_test.py, scan_status.ps1, setup-security.ps1, showcase_cli.py
-#   test_new_user_experience.ps1, 2025-*.txt
-#   .mcp.json
+#   *_results.json, 2025-*.txt, .mcp.json
 # -------------------------------------------------------------
 
 # Documentation artifacts (exclude planning docs)
-docs_private/
-scripts/audit_local.json
-audit_local.json
 .mypy_report/index.txt
 *~
 .DS_Store
@@ -162,3 +164,10 @@ venv/
 .env
 __pycache__/
 coverage.xml
+artifacts/new.requirements-dev.lock
+artifacts/new.requirements.lock
+.mcp/
+
+# Local CI cache and telemetry (stay uncommitted)
+.ci/local/
+.ci/*.ndjson

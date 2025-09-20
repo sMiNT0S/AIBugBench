@@ -1,81 +1,28 @@
-# Dependabot configuration for AIBugBench
-# Automated dependency vulnerability scanning and updates
-
 version: 2
 updates:
-  # Python dependencies (requirements.txt, requirements-dev.txt, pyproject.toml if present)
   - package-ecosystem: "pip"
     directory: "/"
-    schedule:  # Move to daily so security patches land faster
-      interval: "daily"
-      time: "09:00"
-      timezone: "Etc/UTC"
-    open-pull-requests-limit: 5
-    versioning-strategy: increase-if-necessary  # Avoid needless major bumps
-    assignees:
-      - "sMiNT0S"
-    commit-message:
-      prefix: "deps"
-      prefix-development: "deps-dev"
-      include: "scope"
-    labels:
-      - "dependencies"
-    allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
-    groups:  # Broaden grouping to cut PR noise
-      requests-group:
-        patterns:
-          - "requests*"
-          - "urllib3"
-          - "certifi"
-      yaml-group:
-        patterns:
-          - "pyyaml"
-          - "yaml*"
-      dev-tools:
-        patterns:
-          - "ruff"
-          - "mypy"
-          - "pytest*"
-          - "coverage*"
-          - "bandit"
-          - "safety"
-          - "pip-audit"
-          - "pip-tools"
-      security-tools:
-        patterns:
-          - "bandit"
-          - "safety"
-          - "pip-audit"
-      typing:
-        patterns:
-          - "types-*"
-
-  # GitHub Actions (will only update if using tags; pinned SHAs will not auto-update)
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Etc/UTC"
+    schedule: {interval: "daily", time: "09:00", timezone: "Etc/UTC"}
     open-pull-requests-limit: 5
     versioning-strategy: increase-if-necessary
-    assignees:
-      - "sMiNT0S"
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-    allow:
-      - dependency-type: "direct"
+    assignees: ["sMiNT0S"]
+    commit-message: {prefix: "deps", prefix-development: "deps-dev", include: "scope"}
+    labels: ["dependencies"]
+    allow: [{dependency-type: "direct"}]
     groups:
-      github-actions-core:
-        patterns:
-          - "actions/*"
-      github-actions-security:
-        patterns:
-          - "github/codeql-action*"
-          - "aquasecurity/*"
+      requests-group: {patterns: ["requests*", "urllib3", "certifi"]}
+      yaml-group: {patterns: ["pyyaml", "yaml*"]}
+      dev-tools: {patterns: ["ruff", "mypy", "pytest*", "coverage*", "pip-tools"]}
+      security-tools: {patterns: ["bandit", "safety", "pip-audit"]}
+      typing: {patterns: ["types-*"]}
+      docs-stack: {patterns: ["mkdocs*", "pymdown-extensions*", "sphinx*"]}
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: {interval: "weekly", day: "monday", time: "09:00", timezone: "Etc/UTC"}
+    open-pull-requests-limit: 5
+    assignees: ["sMiNT0S"]
+    commit-message: {prefix: "ci", include: "scope"}
+    labels: ["dependencies"]
+    groups:
+      github-actions-core: {patterns: ["actions/*"]}
+      github-actions-security: {patterns: ["github/codeql-action*", "aquasecurity/*"]}

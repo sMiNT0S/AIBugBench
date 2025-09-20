@@ -1,3 +1,5 @@
+-c requirements.lock
+-r requirements.txt
 # Development and Security Dependencies
 # Install with: pip install -r requirements-dev.txt
 
@@ -11,7 +13,7 @@ coverage>=7.0.0,<8.0.0        # Code coverage measurement
 bandit==1.8.6          # Static security analysis (pinned for CI consistency)
 safety>=3.0.0          # Known vulnerability scanning  
 pip-audit>=2.0.0       # Dependency vulnerability checking
-pip-tools>=7.5.0       # Dependency management (>=7.5.0 for pip 24 compatibility)
+pip-tools==7.5.0       # Dependency management (==7.5.0 for pip 24 compatibility)
 
 # Code quality and linting
 ruff>=0.1.0            # Fast Python linter
@@ -20,7 +22,5 @@ types-PyYAML>=6.0.0    # Type stubs for PyYAML
 types-requests>=2.32.0 # Type stubs for requests
 yamllint>=1.35.0       # YAML style and schema linting
 
-# Documentation generation
-mkdocs>=1.5.0          # Documentation site generator
-mkdocs-material>=9.0.0 # Material design theme for MkDocs
-mkdocs-include-markdown-plugin>=6.0.0 # Include markdown files plugin
+# Performance / system introspection (used in tests only)
+psutil==7.0.0          # Align with CI composite action pin; required by performance regression tests

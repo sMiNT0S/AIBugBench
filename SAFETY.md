@@ -57,7 +57,7 @@
 ## 6) Resource limits
 
 - **POSIX**: CPU time, address space, file size, and open files are limited via `resource.setrlimit`.
-- **Windows**: OS-level hard caps via Job Objects (memory/CPU/pids/kill-on-close) are planned. Current release enforces wall-clock timeouts and child termination; hard limits arrive in the next milestone.
+- **Windows**: OS-level hard caps via Job Objects (memory limits, process caps, kill-on-close) are implemented when `pywin32` is available. If unavailable, the runner enforces wall-clock timeouts with full process-tree termination as a fallback.
 - **Global watchdog** kills the entire child process tree on timeout; no orphans.
 
 ## 7) Pre-run security audit (local and CI)

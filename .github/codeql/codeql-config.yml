@@ -15,7 +15,7 @@ queries:
 paths:
   - "benchmark/"
   - "run_benchmark.py"
-  - "setup.py"
+  - "scripts/bootstrap_repo.py"
 
 # Exclude paths that contain intentional test patterns
 paths-ignore:

@@ -35,21 +35,22 @@ jobs:
   # Secret Scanning for Git History and Current Code
   secret-scan:
     name: Git History Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
           # Fetch full history for comprehensive secret scanning
           fetch-depth: 0
 
       - name: Setup Python for secret scanning
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
+          check-latest: false
 
       - name: Install TruffleHog for secret scanning
         run: |
@@ -181,7 +182,7 @@ jobs:
           EOF
 
       - name: Upload security scan results
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: security-scan-results
@@ -194,7 +195,7 @@ jobs:
   # CodeQL Security Analysis
   codeql-analysis:
     name: CodeQL Security Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       security-events: write
       contents: read
@@ -206,10 +207,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@e2b3eafc8d227b0241d48be5f425d47c2d750a13  # v3.26.10
+        uses: github/codeql-action/init@192325c86100d080feab897ff886c34abd4c83a3  # v3.30.3
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
@@ -224,17 +225,19 @@ jobs:
               - submissions/example_model/**
 
       - name: Setup Python for CodeQL
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
+          check-latest: false
 
       - name: Install dependencies for CodeQL analysis
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -U "pip==24.3.1"
+          # CodeQL doesn't require installing project deps, but if needed use the locked runtime set
+          pip install --require-hashes -r requirements.lock
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@e2b3eafc8d227b0241d48be5f425d47c2d750a13  # v3.26.10
+        uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3  # v3.30.3
         with:
           category: "/language:${{matrix.language}}"
           upload: true
@@ -242,18 +245,19 @@ jobs:
   # Dependency Vulnerability Scanning
   dependency-scan:
     name: Dependency Vulnerability Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Setup Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
+          check-latest: false
 
       - name: Install Safety for dependency scanning
         run: |
@@ -261,7 +265,7 @@ jobs:
 
       - name: Run Safety scan on dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --require-hashes -r requirements.lock
           safety scan --file=requirements.lock --json > safety-report.json || echo "Safety scan completed"
           cat safety-report.json
 
@@ -327,7 +331,7 @@ jobs:
           EOF
 
       - name: Upload dependency scan results
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: dependency-scan-results
@@ -340,7 +344,7 @@ jobs:
   # Security Summary Report
   security-summary:
     name: Security Summary Report
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [secret-scan, codeql-analysis, dependency-scan]
     if: always()
     permissions:
@@ -348,7 +352,7 @@ jobs:
       actions: read
     steps:
       - name: Download all security scan results
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           pattern: "*-scan-results"
           merge-multiple: true
@@ -418,7 +422,7 @@ jobs:
           EOF
 
       - name: Upload comprehensive security report
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: security-comprehensive-report
           path: security-comprehensive-report.json

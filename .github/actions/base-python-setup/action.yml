@@ -8,35 +8,39 @@ runs:
     - name: Set up Python
       uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
       with:
-        python-version: ${{ inputs.python-version }}
+        python-version: ${{inputs.python-version}}
     - name: Install base hashed dependencies
       shell: bash
       run: |
-        python -m pip install --upgrade pip
-        pip install 'pip-tools>=7.5.0'
+        python -m pip install -U "pip==24.3.1" "pip-tools==7.5.0"
         pip install --require-hashes -r requirements.lock
+    - name: Install dev lock (when needed)
+      if: ${{inputs.install-dev == 'true' || inputs.install-test == 'true' || inputs.install-security == 'true'}}
+      shell: bash
+      run: |
+        pip install --require-hashes -r requirements-dev.lock
     - name: Install dev tools
-      if: ${{ inputs.install-dev == 'true' }}
+      if: ${{inputs.install-dev == 'true'}}
       shell: bash
       run: |
         pip install \
-          ruff==${{ env.RUFF_VERSION }} \
-          mypy==${{ env.MYPY_VERSION }} \
-          pytest==${{ env.PYTEST_VERSION }}
+          ruff==${{env.RUFF_VERSION}} \
+          mypy==${{env.MYPY_VERSION}} \
+          pytest==${{env.PYTEST_VERSION}}
     - name: Install test tooling
-      if: ${{ inputs.install-test == 'true' }}
+      if: ${{inputs.install-test == 'true'}}
       shell: bash
       run: |
         pip install \
-          pytest==${{ env.PYTEST_VERSION }} \
-          pytest-cov==${{ env.PYTEST_COV_VERSION }} \
-          coverage==${{ env.COVERAGE_VERSION }}
+          pytest==${{env.PYTEST_VERSION}} \
+          pytest-cov==${{env.PYTEST_COV_VERSION}} \
+          coverage==${{env.COVERAGE_VERSION}}
     - name: Install security tooling
-      if: ${{ inputs.install-security == 'true' }}
+      if: ${{inputs.install-security == 'true'}}
       shell: bash
       run: |
-        pip install 'pip-tools>=7.5.0'
-        pip install bandit==${{ env.BANDIT_VERSION }} safety
+        # pip-tools already installed above; install security tools only
+        pip install bandit==${{env.BANDIT_VERSION}} safety
 inputs:
   python-version:
     description: Python version to use

@@ -42,7 +42,12 @@ import time
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from validation.docs_core import Command, CommandType, Platform
+from validation.docs_core import (
+    Command,
+    CommandType,
+    DocumentationValidator as CoreDocParser,
+    Platform,
+)
 
 
 @dataclass
@@ -81,7 +86,45 @@ class ValidationSummary:
     results: list[ValidationResult] = field(default_factory=list)
 
 
-class DocumentationValidator:
+def _is_os_neutral_command(cmd: str) -> bool:
+    """Heuristic: commands likely to run on all platforms.
+
+    Conservative rules:
+    - Must start with a common cross-platform CLI (python/pip/pytest/uv/git)
+    - Must NOT contain obvious POSIX or Windows built-ins in the same line
+    """
+    low = cmd.strip().lower()
+    # Evaluate predicates without early returns to avoid mypy "unreachable" on mixed indent/scopes
+    has_prefix = bool(re.match(r"^(python(3)?|pip(3)?|pytest|uv|git)\b", low)) if low else False
+    has_posix_builtin = bool(re.search(r"\b(ls|cp|mv|rm|export|chmod|chown)\b", low))
+    has_windows_builtin = bool(re.search(r"\b(dir|copy|move|del|set\s)\b", low))
+    return bool(low) and has_prefix and not has_posix_builtin and not has_windows_builtin
+
+
+def _platform_counts_with_neutral(
+    plat_counts: dict[Platform, int], commands: list[Command] | list[ExtendedCommand]
+) -> dict[str, int]:
+    """Return platform counts including a pseudo 'neutral' bucket.
+
+    - neutral = subset of macos_linux commands that look OS-neutral
+    - macos_linux is reduced by neutral to reflect POSIX-specific commands only
+    """
+    generic_mac = sum(
+        1
+        for c in commands
+        if c.platform == Platform.MACOS_LINUX and _is_os_neutral_command(c.content)
+    )
+    mac_total = plat_counts.get(Platform.MACOS_LINUX, 0)
+    mac_remaining = max(0, mac_total - generic_mac)
+    return {
+        Platform.WINDOWS_CMD.value: plat_counts.get(Platform.WINDOWS_CMD, 0),
+        Platform.WINDOWS_POWERSHELL.value: plat_counts.get(Platform.WINDOWS_POWERSHELL, 0),
+        "neutral": generic_mac,
+        Platform.MACOS_LINUX.value: mac_remaining,
+    }
+
+
+class DocsValidationRunner:
     """Main class for validating documentation commands."""
 
     def __init__(
@@ -108,34 +151,40 @@ class DocumentationValidator:
         # Now detect platform (which may need to log warnings)
         self.current_platform = self._detect_platform()
 
-        # Documentation files to scan
-        self.doc_files = [
+        # Documentation files to scan (seed a core set, then auto-discover)
+        seeded = {
             "README.md",
             "QUICKSTART.md",
             "EXAMPLE_SUBMISSION.md",
-            "docs/adding_models.md",
-            "docs/interpreting_results.md",
-            "docs/scoring_rubric.md",
+            "SECURITY.md",
             # Updated canonical template path (legacy submissions/template removed)
             "submissions/templates/template/README.md",
-        ]
-
-        # Command block patterns for different platforms
-        self.command_patterns = {
-            Platform.WINDOWS_CMD: [
-                (r"```cmd\s*\n(.*?)\n```", re.DOTALL),
-                (r"```batch\s*\n(.*?)\n```", re.DOTALL),
-            ],
-            Platform.WINDOWS_POWERSHELL: [
-                (r"```powershell\s*\n(.*?)\n```", re.DOTALL),
-                (r"```ps1\s*\n(.*?)\n```", re.DOTALL),
-            ],
-            Platform.MACOS_LINUX: [
-                (r"```bash\s*\n(.*?)\n```", re.DOTALL),
-                (r"```sh\s*\n(.*?)\n```", re.DOTALL),
-                (r"```shell\s*\n(.*?)\n```", re.DOTALL),
-            ],
         }
+        discovered: set[str] = set()
+        # Include all docs/*.md recursively
+        docs_dir = self.project_root / "docs"
+        if docs_dir.exists():
+            for p in docs_dir.rglob("*.md"):
+                try:
+                    rel = p.relative_to(self.project_root).as_posix()
+                except Exception:
+                    rel = str(p)
+                # Skip private/internal docs by default
+                if "/docs_private/" in rel or rel.startswith("docs_private/"):
+                    continue
+                discovered.add(rel)
+        # Include root-level common docs
+        for root_doc in ["CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "RELEASE_NOTES.md"]:
+            if (self.project_root / root_doc).exists():
+                discovered.add(root_doc)
+        # Include scripts/README.md if present (has examples)
+        if (self.project_root / "scripts/README.md").exists():
+            discovered.add("scripts/README.md")
+        # Merge and sort
+        self.doc_files = sorted(seeded | discovered)
+
+        # Core parser responsible for patterns and splitting heuristics
+        self.core_parser = CoreDocParser(project_root=self.project_root)
 
         # Expected output patterns
         self.output_pattern = r"```\s*\n(.*?)\n```"
@@ -196,142 +245,33 @@ class DocumentationValidator:
 
         lines = content.split("\n")
 
-        # Extract commands for each platform
-        for platform, patterns in self.command_patterns.items():
-            for pattern, flags in patterns:
-                matches = re.finditer(pattern, content, flags)
-
-                for match in matches:
-                    command_block = match.group(1).strip()
-                    if not command_block:
+        # Extract commands for each platform using core parser patterns
+        for platform, patterns in self.core_parser.COMMAND_BLOCK_PATTERNS.items():
+            for pattern in patterns:
+                for match in re.finditer(pattern, content, re.DOTALL):
+                    block = match.group(1).strip()
+                    if not block:
                         continue
 
-                    # Find line number for context
-                    line_num = content[: match.start()].count("\n") + 1
+                    start_line = content[: match.start()].count("\n") + 1
 
-                    # Split command block into individual commands
-                    individual_commands = self._split_command_block(command_block)
+                    # Split block using core heuristics (already filters to command-like lines)
+                    for offset, cmd in enumerate(self.core_parser._split_block(block)):
+                        # Look for expected output after the code block (shared for block)
+                        expected_output = self._find_expected_output(content, match.end())
 
-                    for i, cmd in enumerate(individual_commands):
-                        if cmd.strip():
-                            # Look for expected output after the command block
-                            expected_output = self._find_expected_output(content, match.end())
-
-                            command = ExtendedCommand(
-                                content=cmd.strip(),
+                        commands.append(
+                            ExtendedCommand(
+                                content=cmd,
                                 platform=platform,
                                 file_path=str(file_path),
-                                line_number=line_num + i,
+                                line_number=start_line + offset,
                                 expected_output=expected_output,
-                                context=self._get_context(lines, line_num, 3),
+                                context=self._get_context(lines, start_line, 3),
                             )
-                            commands.append(command)
+                        )
 
         return commands
-
-    def _split_command_block(self, command_block: str) -> list[str]:
-        """Split a command block into individual commands."""
-        commands = []
-
-        # Handle different command separators
-        lines = command_block.split("\n")
-        current_command = []
-
-        for line in lines:
-            line = line.strip()
-
-            # Skip empty lines and comments
-            if not line or line.startswith("#"):
-                continue
-
-            # Skip lines that look like markdown formatting or explanations
-            if (
-                line.startswith("**")
-                or (line.startswith("*") and not line.startswith("* "))
-                or line.startswith(">")
-                or (line.startswith("-") and not line.startswith("- "))
-                or line.startswith("```")
-                or line.startswith("For ")
-                or line.startswith("All ")
-                or line.startswith("This ")
-                or line.startswith("The ")
-                or "(CMD)" in line
-                or "(PowerShell)" in line
-                or "(Bash)" in line
-            ):
-                continue
-
-            # Check if this is a continuation line
-            if line.endswith("\\"):
-                current_command.append(line[:-1].strip())
-                continue
-
-            current_command.append(line)
-
-            # Join and add the complete command
-            if current_command:
-                full_command = " ".join(current_command).strip()
-                if full_command and self._looks_like_command(full_command):
-                    commands.append(full_command)
-                current_command = []
-
-        # Handle any remaining command
-        if current_command:
-            full_command = " ".join(current_command).strip()
-            if full_command and self._looks_like_command(full_command):
-                commands.append(full_command)
-
-        return commands
-
-    def _looks_like_command(self, text: str) -> bool:
-        """Check if text looks like an actual command."""
-        # Skip if it's too short or too long to be a reasonable command
-        if len(text) < 2 or len(text) > 500:
-            return False
-
-        # Skip if it contains markdown or formatting characters
-        if (
-            "**" in text
-            or text.count("`") > 0
-            or text.startswith("Note:")
-            or text.startswith("Tip:")
-            or text.startswith("Example:")
-            or text.startswith("Important:")
-        ):
-            return False
-
-        # Skip descriptive text
-        descriptive_starters = [
-            "for",
-            "this",
-            "the",
-            "all",
-            "ensure",
-            "make sure",
-            "you can",
-            "you should",
-            "it will",
-            "here is",
-            "as you can see",
-            "note that",
-            "remember that",
-        ]
-
-        text_lower = text.lower()
-        for starter in descriptive_starters:
-            if text_lower.startswith(starter + " "):
-                return False
-
-        # Must contain at least one typical command pattern
-        command_patterns = [
-            r"^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)*\s+",  # executable_name args
-            r"^(cd|ls|dir|echo|cat|mkdir|cp|mv|rm|del|copy|move|xcopy)\s+",  # common commands
-            r"^(python|node|npm|git|pip|docker)\s+",  # common tools
-            r"^[a-zA-Z]:.*",  # Windows path
-            r"^[./~].*",  # Unix path
-        ]
-
-        return any(re.match(pattern, text, re.IGNORECASE) for pattern in command_patterns)
 
     def _find_expected_output(self, content: str, start_pos: int) -> str | None:
         """Find expected output after a command block."""
@@ -533,7 +473,7 @@ class DocumentationValidator:
 
         # Copy essential project files to sandbox
         essential_files = [
-            "setup.py",
+            "scripts/bootstrap_repo.py",
             "requirements.txt",
             "run_benchmark.py",
         ]
@@ -827,7 +767,7 @@ def main():
     print("")
 
     # Create validator
-    validator = DocumentationValidator(
+    validator = DocsValidationRunner(
         project_root=project_root,
         verbose=args.verbose,
         skip_destructive=args.skip_destructive,
@@ -847,8 +787,9 @@ def main():
     print(f"Found {len(commands)} commands across {len(validator.doc_files)} files")
 
     # Show command breakdown
-    platform_counts = {}
-    type_counts = {}
+    # Pre-initialize to show zero-count categories as well
+    platform_counts = dict.fromkeys(list(Platform), 0)
+    type_counts = dict.fromkeys(list(CommandType), 0)
 
     for command in commands:
         platform_counts[command.platform] = platform_counts.get(command.platform, 0) + 1
@@ -856,8 +797,24 @@ def main():
 
     print("\nCommand breakdown:")
     print("Platforms:")
-    for platform, count in platform_counts.items():
-        print(f"  {platform.value}: {count}")
+    # Split macOS/Linux into a pseudo 'neutral' bucket + remaining macOS/Linux
+    generic_mac = sum(
+        1
+        for c in commands
+        if c.platform == Platform.MACOS_LINUX and _is_os_neutral_command(c.content)
+    )
+    mac_total = platform_counts.get(Platform.MACOS_LINUX, 0)
+    mac_remaining = max(0, mac_total - generic_mac)
+
+    # Print in a stable, readable order
+    print(f"  {Platform.WINDOWS_CMD.value}: {platform_counts.get(Platform.WINDOWS_CMD, 0)}")
+    print(
+        f"  {Platform.WINDOWS_POWERSHELL.value}: "
+        f"{platform_counts.get(Platform.WINDOWS_POWERSHELL, 0)}"
+    )
+    if generic_mac > 0:
+        print(f"  neutral: {generic_mac}")
+    print(f"  {Platform.MACOS_LINUX.value}: {mac_remaining}")
 
     print("Types:")
     for cmd_type, count in type_counts.items():
@@ -874,7 +831,7 @@ def main():
             print("\n--docs-only specified, skipping command execution.")
 
         if args.json:
-            by_platform: dict[str, int] = {p.value: c for p, c in platform_counts.items()}
+            by_platform: dict[str, int] = _platform_counts_with_neutral(platform_counts, commands)
             by_type: dict[str, int] = {t.value: c for t, c in type_counts.items()}
 
             json_payload = {
@@ -910,13 +867,15 @@ def main():
     report = validator.generate_report(summary, output_file)
 
     if args.json:
+        # Recompute neutral split for JSON too (use the original command list)
+        json_platform_counts = _platform_counts_with_neutral(platform_counts, commands)
         json_summary = {
             "mode": "validate",
             "total": summary.total_commands,
             "successful": summary.successful,
             "failed": summary.failed,
             "skipped": summary.skipped,
-            "platform_counts": {k.value: v for k, v in summary.platform_counts.items()},
+            "platform_counts": json_platform_counts,
             "type_counts": {k.value: v for k, v in summary.type_counts.items()},
         }
         if args.json_file:

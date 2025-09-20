@@ -35,7 +35,7 @@ except ImportError:  # pragma: no cover - platform specific
 
 # ---- Platform RLIMIT typing shim (Windows-safe) ----
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 try:
     import resource as _resource  # POSIX only
@@ -419,11 +419,15 @@ class SecureRunner:
             try:
                 # Apply CPU limit
                 if resource and hasattr(resource, "setrlimit") and hasattr(resource, "RLIMIT_CPU"):
-                    resource.setrlimit(RLIMIT_CPU, (timeout, timeout))
+                    _setrlimit = getattr(resource, "setrlimit", None)
+                    if _setrlimit and isinstance(RLIMIT_CPU, int) and RLIMIT_CPU:
+                        _setrlimit(RLIMIT_CPU, (timeout, timeout))
                 # Apply address space (best-effort)
                 if resource and hasattr(resource, "setrlimit") and hasattr(resource, "RLIMIT_AS"):
-                    bytes_limit = memory_mb * 1024 * 1024
-                    resource.setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))
+                    _setrlimit = getattr(resource, "setrlimit", None)
+                    if _setrlimit and isinstance(RLIMIT_AS, int) and RLIMIT_AS:
+                        bytes_limit = memory_mb * 1024 * 1024
+                        _setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))
                 result = func(*args)
                 queue.put(("ok", result))
             except Exception as exc:  # Broad exception boundary acceptable at sandbox edge
@@ -492,28 +496,48 @@ class SecureRunner:
 
                 def _limits() -> None:
                     with suppress(Exception):
+                        _setrlimit = getattr(resource, "setrlimit", None)
                         has_setrlimit_cpu = (
                             resource
                             and hasattr(resource, "setrlimit")
+                            and _setrlimit
                             and hasattr(resource, "RLIMIT_CPU")
                         )
-                        if has_setrlimit_cpu:
-                            resource.setrlimit(RLIMIT_CPU, (timeout, timeout))  # type: ignore[attr-defined]
+                        if (
+                            has_setrlimit_cpu
+                            and isinstance(RLIMIT_CPU, int)
+                            and RLIMIT_CPU
+                            and _setrlimit
+                        ):
+                            # Guarded: RLIMIT_CPU may be 0 placeholder on non-POSIX
+                            _setrlimit(RLIMIT_CPU, (timeout, timeout))
                         has_setrlimit_as = (
                             resource
                             and hasattr(resource, "setrlimit")
+                            and _setrlimit
                             and hasattr(resource, "RLIMIT_AS")
                         )
-                        if has_setrlimit_as:
+                        if (
+                            has_setrlimit_as
+                            and isinstance(RLIMIT_AS, int)
+                            and RLIMIT_AS
+                            and _setrlimit
+                        ):
                             bytes_limit = memory_mb * 1024 * 1024
-                            resource.setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))  # type: ignore[attr-defined]
+                            _setrlimit(RLIMIT_AS, (bytes_limit, bytes_limit))
                         has_setrlimit_fsize = (
                             resource
                             and hasattr(resource, "setrlimit")
+                            and _setrlimit
                             and hasattr(resource, "RLIMIT_FSIZE")
                         )
-                        if has_setrlimit_fsize:
-                            resource.setrlimit(  # type: ignore[attr-defined]
+                        if (
+                            has_setrlimit_fsize
+                            and isinstance(RLIMIT_FSIZE, int)
+                            and RLIMIT_FSIZE
+                            and _setrlimit
+                        ):
+                            _setrlimit(
                                 RLIMIT_FSIZE,
                                 (10 * 1024 * 1024, 10 * 1024 * 1024),
                             )
@@ -561,7 +585,12 @@ class SecureRunner:
             )
 
         # Create Job Object with resource limits
-        job = win32job.CreateJobObject(None, "")
+        # Note: pywin32 accepts None for SECURITY_ATTRIBUTES at runtime, but stubs may not.
+        # Cast to Any to satisfy the type checker without changing behavior.
+        job = win32job.CreateJobObject(cast(Any, None), "")
+        if job is None:
+            # Narrow type for static analysis and fail fast if handle creation failed
+            raise RuntimeError("CreateJobObject failed (NULL handle)")
 
         # Configure memory and process limits
         info = win32job.QueryInformationJobObject(job, win32job.JobObjectExtendedLimitInformation)

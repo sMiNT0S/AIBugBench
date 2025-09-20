@@ -3,8 +3,7 @@
 """Core documentation validation primitives.
 
 Parsing and classification logic for documentation command blocks. Execution,
-sandboxing, and reporting are handled by higher-level orchestration (no legacy
-script shims retained in this private repository).
+sandboxing, and reporting are handled by higher-level orchestration.
 """
 
 from __future__ import annotations

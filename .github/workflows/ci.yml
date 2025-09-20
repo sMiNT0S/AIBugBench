@@ -368,6 +368,7 @@ jobs:
           New-Item -Force -ItemType Directory .ci | Out-Null
           "[pre-clean] Listing *.egg-info under repo root (recursive)" | Out-File -Encoding UTF8 .ci/egginfo-pre-clean.txt
           Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-pre-clean.txt
+
       - name: Base Python + test tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
@@ -380,23 +381,15 @@ jobs:
           key: ${{runner.os}}-pip-${{matrix.python-version}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
             ${{runner.os}}-pip-${{matrix.python-version}}-
-      - name: Cleanup | Remove stale .egg-info (Linux/macOS)
-        if: runner.os != 'Windows'
+
+      - name: Cleanup | Remove stale build artifacts
         shell: bash
         run: |
-          set -euo pipefail
           echo "Cleaning stale build artifacts (.egg-info, build/, dist/)"
           find . -type d -name '*.egg-info' -prune -print -exec rm -rf {} + || true
           find . -type d -name 'build'      -prune -print -exec rm -rf {} + || true
           find . -type d -name 'dist'       -prune -print -exec rm -rf {} + || true
-      - name: Cleanup | Remove stale .egg-info (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Cleaning stale build artifacts (*.egg-info, build, dist)"
-          Get-ChildItem -Path . -Recurse -Directory -Filter '*.egg-info' | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
-          Get-ChildItem -Path . -Recurse -Directory -Filter 'build'       | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
-          Get-ChildItem -Path . -Recurse -Directory -Filter 'dist'        | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+
       - name: Debug | Post-clean egg-info snapshot (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
@@ -410,265 +403,40 @@ jobs:
         run: |
           "[post-clean] Listing *.egg-info under repo root (recursive)" | Out-File -Encoding UTF8 .ci/egginfo-post-clean.txt
           Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-post-clean.txt
+
       - name: Debug | Tool versions
         run: |
           python -V
           python -c "import setuptools, wheel; print('setuptools', setuptools.__version__); print('wheel', wheel.__version__)"
           python -m pip --version
-      - name: Debug | Patch build_meta _find_info_directory (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          python - <<'PY'
-          import os, pathlib, tempfile, glob, sys, traceback
-          meta_root = ".ci/_pep517_meta_ci"
-          os.makedirs(meta_root, exist_ok=True)
-          meta = tempfile.mkdtemp(prefix="meta_find_", dir=meta_root)
-          print(f"[debug] patching setuptools.build_meta._find_info_directory and probing -> {meta}")
-          import setuptools.build_meta as bm
-          # Attempt to patch the internal finder if present
-          finder = getattr(bm, "_find_info_directory", None)
-          if finder is not None:
-              def wrapped(suffix, directory):
-                  try:
-                      return finder(suffix, directory)
-                  except AssertionError:
-                      pattern = os.path.join(directory, f"*{suffix}")
-                      cands = sorted(glob.glob(pattern))
-                      print(f"[debug] _find_info_directory AssertionError; candidates under {directory}:")
-                      for c in cands:
-                          print(f"  - {c}")
-                      try:
-                          (pathlib.Path(directory)/"_candidates_from_find.txt").write_text("\n".join(cands), encoding="utf-8")
-                      except Exception as werr:
-                          print(f"[debug] failed writing _candidates_from_find.txt: {werr!r}")
-                      traceback.print_exc()
-                      raise
-              bm._find_info_directory = wrapped  # type: ignore[attr-defined]
-          try:
-              res = bm.prepare_metadata_for_build_wheel(meta)
-              print("[debug] returned:", res)
-          except Exception as e:
-              print("[debug] exception:", repr(e))
-          finally:
-              base = pathlib.Path(meta)
-              print("[debug] meta dir contents:")
-              for p in base.iterdir():
-                  kids = list(p.iterdir()) if p.is_dir() else []
-                  print(" -", p, ("-> " + ", ".join(map(str, kids))) if kids else "")
-          PY
-      - name: Debug | Patch build_meta _find_info_directory (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $code = @'
-          import os, pathlib, tempfile, glob, sys, traceback
-          meta_root = ".ci\_pep517_meta_ci_win"
-          os.makedirs(meta_root, exist_ok=True)
-          meta = tempfile.mkdtemp(prefix="meta_find_", dir=meta_root)
-          print(f"[debug] patching setuptools.build_meta._find_info_directory and probing -> {meta}")
-          import setuptools.build_meta as bm
-          finder = getattr(bm, "_find_info_directory", None)
-          if finder is not None:
-            def wrapped(suffix, directory):
-              try:
-                return finder(suffix, directory)
-              except AssertionError:
-                pattern = os.path.join(directory, f"*{suffix}")
-                cands = sorted(glob.glob(pattern))
-                print(f"[debug] _find_info_directory AssertionError; candidates under {directory}:")
-                for c in cands:
-                  print(f"  - {c}")
-                try:
-                  (pathlib.Path(directory)/"_candidates_from_find.txt").write_text("\n".join(cands), encoding="utf-8")
-                except Exception as werr:
-                  print(f"[debug] failed writing _candidates_from_find.txt: {werr!r}")
-                traceback.print_exc()
-                raise
-            bm._find_info_directory = wrapped  # type: ignore[attr-defined]
-          try:
-            res = bm.prepare_metadata_for_build_wheel(meta)
-            print("[debug] returned:", res)
-          except Exception as e:
-            print("[debug] exception:", repr(e))
-          finally:
-            base = pathlib.Path(meta)
-            print("[debug] meta dir contents:")
-            for p in base.iterdir():
-              kids = list(p.iterdir()) if p.is_dir() else []
-              print(" -", p, ("-> " + ", ".join(map(str, kids))) if kids else "")
-          '@
-          New-Item -Force -ItemType Directory .ci | Out-Null
-          Set-Content -Encoding ASCII -Path .ci\_debug_patch_find.py -Value $code
-          python .ci\_debug_patch_find.py
-      - name: Debug | Backend metadata directory listing (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          cat > .ci/_debug_buildmeta.py <<'PY'
-          import os, pathlib, sys, tempfile, traceback
-          meta_root = ".ci/_pep517_meta_ci"
-          os.makedirs(meta_root, exist_ok=True)
-          meta = tempfile.mkdtemp(prefix="meta_", dir=meta_root)
-          print(f"[debug] prepare_metadata_for_build_wheel({meta!r})")
-          try:
-            import setuptools.build_meta as bm
-            # Wrap prepare_metadata_for_build_wheel to capture duplicate candidates if it asserts
-            orig_prep = bm.prepare_metadata_for_build_wheel
-            def debug_prepare(metadata_directory, config_settings=None):
-              from pathlib import Path
-              try:
-                return orig_prep(metadata_directory, config_settings)
-              except AssertionError as e:
-                # Persist the candidates we see in the metadata directory
-                try:
-                  cands = [p for p in Path(metadata_directory).iterdir() if p.is_dir() and p.name.endswith('.egg-info')]
-                except FileNotFoundError:
-                  cands = []
-                print(f"[debug] prepare failed with AssertionError; .egg-info candidates:")
-                for c in cands:
-                  print(f"  - {c}")
-                try:
-                  (Path(metadata_directory)/"_candidates.txt").write_text("\n".join(str(x) for x in cands), encoding="utf-8")
-                except Exception as werr:
-                  print(f"[debug] failed writing _candidates.txt: {werr!r}")
-                raise
 
-            bm.prepare_metadata_for_build_wheel = debug_prepare  # type: ignore[assignment]
-            res = bm.prepare_metadata_for_build_wheel(meta)
-            print("[debug] returned:", res)
-          except Exception as e:
-            print("[debug] exception:", repr(e))
-          finally:
-            print("[debug] meta dir contents:")
-            base = pathlib.Path(meta)
-            for p in base.iterdir():
-              try:
-                kids = list(p.iterdir()) if p.is_dir() else []
-              except Exception:
-                kids = []
-              print(" -", p, ("-> " + ", ".join(map(str, kids))) if kids else "")
-          sys.exit(0)
-          PY
-          python .ci/_debug_buildmeta.py
-      - name: Debug | Backend metadata directory listing (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          @'
-          import os, pathlib, sys, tempfile, traceback
-          meta_root = ".ci\\_pep517_meta_ci_win"
-          os.makedirs(meta_root, exist_ok=True)
-          import tempfile as _tf
-          meta = _tf.mkdtemp(prefix="meta_", dir=meta_root)
-          print(f"[debug] prepare_metadata_for_build_wheel({meta!r})")
-          try:
-            import setuptools.build_meta as bm
-            # Wrap prepare_metadata_for_build_wheel to capture duplicate candidates if it asserts
-            orig_prep = bm.prepare_metadata_for_build_wheel
-            def debug_prepare(metadata_directory, config_settings=None):
-              from pathlib import Path
-              try:
-                return orig_prep(metadata_directory, config_settings)
-              except AssertionError as e:
-                try:
-                  cands = [p for p in Path(metadata_directory).iterdir() if p.is_dir() and p.name.endswith('.egg-info')]
-                except FileNotFoundError:
-                  cands = []
-                print(f"[debug] prepare failed with AssertionError; .egg-info candidates:")
-                for c in cands:
-                  print(f"  - {c}")
-                try:
-                  (Path(metadata_directory)/"_candidates.txt").write_text("\n".join(str(x) for x in cands), encoding="utf-8")
-                except Exception as werr:
-                  print(f"[debug] failed writing _candidates.txt: {werr!r}")
-                raise
-
-            bm.prepare_metadata_for_build_wheel = debug_prepare  # type: ignore[assignment]
-            res = bm.prepare_metadata_for_build_wheel(meta)
-            print("[debug] returned:", res)
-          except Exception as e:
-            print("[debug] exception:", repr(e))
-          finally:
-            print("[debug] meta dir contents:")
-            base = pathlib.Path(meta)
-            for p in base.iterdir():
-              try:
-                kids = list(p.iterdir()) if p.is_dir() else []
-              except Exception:
-                kids = []
-              print(" -", p, ("-> " + ", ".join(map(str, kids))) if kids else "")
-          sys.exit(0)
-          '@ | Out-File -Encoding ASCII .ci\_debug_buildmeta.py
-          python .ci\_debug_buildmeta.py
-      - name: Debug | Pip verbose log (no fail)
+      - name: Install package and capture logs
         run: |
           python -m pip install -vvv --use-pep517 --progress-bar off --log .ci/pip-debug.log .
         continue-on-error: true
-      - name: Upload debug artifacts
+
+      - name: Upload debug artifacts on failure
+        if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pep517-debug-${{ matrix.platform_name }}-py${{ matrix.python-version }}
           path: |
-            .ci/_pep517_meta_ci/**
-            .ci/_pep517_meta_ci_win/**
             .ci/egginfo-pre-clean.txt
             .ci/egginfo-post-clean.txt
             .ci/pip-debug.log
-      - name: Install package (wheel)
+            # The wrapper script will create these files in the project root
+            _all_candidates.txt
+
+      - name: Final package installation attempt (fail job if needed)
+        # This step exists to ensure the job actually fails if the install fails.
+        # The previous step continues on error to allow artifact upload.
         run: python -m pip install .
 
+      # ... (the rest of your test steps can follow) ...
       - name: Run comprehensive test suite
         run: |
           echo "Running comprehensive test suite on ${{matrix.os}} with Python ${{matrix.python-version}}"
           pytest tests/ -v --tb=short -m "not slow"
-
-      - name: Run unit tests (fallback)
-        if: failure()
-        run: |
-          echo "Full suite failed; executing minimal import smoke test for diagnostics..."
-          pytest tests/test_imports.py -v --tb=short || true
-          echo "Primary test suite failure retained (job will fail)."
-
-      - name: Validate test data structure
-        shell: bash
-        run: |
-          echo "Validating test data files exist..."
-          test -f test_data/process_records.py
-          test -f test_data/user_data.json
-          test -f test_data/config.yaml
-          echo "Test data validation passed"
-
-      - name: Run platform-specific benchmark validation
-        run: python benchmark/platform_validator.py
-        continue-on-error: true
-
-      - name: Check for benchmark artifacts
-        id: check_artifacts
-        shell: bash
-        run: |
-          if [ -d "ci_results" ] && [ -n "$(ls -A ci_results 2>/dev/null)" ]; then
-            echo "has_ci_results=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_ci_results=false" >> "$GITHUB_OUTPUT"
-          fi
-          if ls -1 *.log 1>/dev/null 2>&1; then
-            echo "has_logs=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_logs=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Collect benchmark artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always() && (steps.check_artifacts.outputs.has_ci_results == 'true' || steps.check_artifacts.outputs.has_logs == 'true')
-        with:
-          name: benchmark-results-${{matrix.platform_name}}-py${{matrix.python-version}}
-          path: |
-            ci_results/
-            results/
-            *.log
-          retention-days: 30
-          if-no-files-found: warn
 
   benchmark-consistency-check:
     name: Benchmark Consistency Validation

@@ -12,7 +12,7 @@ This section covers the three primary error/failure modes introduced with the en
 
 | Scenario | Symptom / Message | Meaning | Action |
 |----------|-------------------|---------|--------|
-| Missing submissions dir | `ERROR: Submissions directory 'submissions' not found!` (summary line absent) | Root submissions directory isn't present | Run `python setup.py` or create `submissions/` then re-run |
+| Missing submissions dir | `ERROR: Submissions directory 'submissions' not found!` (summary line absent) | Root submissions directory isn't present | Run `python scripts/bootstrap_repo.py` or create `submissions/` then re-run |
 | Empty tiered structure | `Discovered models: reference=0 user=0 templates=OK` followed later by `No models found in submissions directory` | Layout exists but no models present | Copy template to new model: `cp -r submissions/templates/template submissions/user_submissions/my_model` then implement files |
 | Template missing | `Discovered models: reference=X user=Y templates=MISSING` | Required `submissions/templates/template/` not found | Recreate template: `python -c "from benchmark.utils import create_submission_template; import pathlib; create_submission_template(pathlib.Path('submissions'))"` |
 | Legacy layout detected | Process aborts with SystemExit: message starts `Legacy submissions layout detected (e.g. submissions/example_model).` | Old flat layout present without new tiers (no fallback) | Migrate: create `reference_implementations/`, `templates/template/`, `user_submissions/`; move old `example_model/` into `reference_implementations/` |
@@ -85,7 +85,7 @@ FileNotFoundError: [Errno 2] No such file or directory: 'test_data/config.yaml'
 
 ```bash
 # Run setup to create test data
-python setup.py
+python scripts/bootstrap_repo.py
 # Verify test data exists
 ls -la test_data/
 ```
@@ -403,7 +403,7 @@ find . -name "*.pyc" -delete
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python setup.py
+python scripts/bootstrap_repo.py
 ```
 
 ### Restore Default Test Data
@@ -413,7 +413,7 @@ python setup.py
 mv test_data test_data_backup_$(date +%Y%m%d_%H%M%S)
 
 # Regenerate clean test data
-python setup.py
+python scripts/bootstrap_repo.py
 
 # Verify generation
 ls -la test_data/

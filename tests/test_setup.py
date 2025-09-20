@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2024-2025 sMiNT0S
 # SPDX-License-Identifier: Apache-2.0
 """
-Tests for setup.py functionality.
+Tests for scripts/bootstrap_repo.py functionality.
 
 Tests the setup process, particularly AI prompt file creation and detection.
 """
@@ -15,13 +15,13 @@ import pytest
 
 
 class TestSetupFunctionality:
-    """Test setup.py core functionality."""
+    """Test scripts/bootstrap_repo.py core functionality."""
 
     def test_create_ai_prompt_file_new(self, temp_dir):
         """Test that create_ai_prompt_file creates ai_prompt.md when it doesn't exist."""
-        # Import setup module
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from setup import create_ai_prompt_file
+        # Import bootstrap module
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        from bootstrap_repo import create_ai_prompt_file
 
         # Set up temp directory with prompts subdirectory
         prompts_dir = temp_dir / "prompts"
@@ -37,7 +37,7 @@ class TestSetupFunctionality:
                     return prompts_dir
                 return Path(path_str)
 
-            with patch("setup.Path", side_effect=mock_path):
+            with patch("bootstrap_repo.Path", side_effect=mock_path):
                 # Run the function
                 result = create_ai_prompt_file()
 
@@ -60,8 +60,8 @@ class TestSetupFunctionality:
 
     def test_create_ai_prompt_file_exists(self, temp_dir):
         """Test that create_ai_prompt_file detects existing ai_prompt.md."""
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from setup import create_ai_prompt_file
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        from bootstrap_repo import create_ai_prompt_file
 
         prompts_dir = temp_dir / "prompts"
         prompts_dir.mkdir()
@@ -76,7 +76,7 @@ class TestSetupFunctionality:
             return Path(path_str)
 
         with (
-            patch("setup.Path", side_effect=mock_path),
+            patch("bootstrap_repo.Path", side_effect=mock_path),
             patch("sys.stdout", new_callable=StringIO) as mock_stdout,
         ):
             result = create_ai_prompt_file()
@@ -86,9 +86,9 @@ class TestSetupFunctionality:
 
     def test_ai_prompt_content_structure(self, temp_dir):
         """Test that created ai_prompt.md has correct structure and content."""
-        # Import setup module
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from setup import create_ai_prompt_file
+        # Import bootstrap module
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        from bootstrap_repo import create_ai_prompt_file
 
         # Set up temp directory
         prompts_dir = temp_dir / "prompts"
@@ -99,7 +99,7 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch("setup.Path", side_effect=mock_path):
+        with patch("bootstrap_repo.Path", side_effect=mock_path):
             # Create the file
             result = create_ai_prompt_file()
 
@@ -129,9 +129,9 @@ class TestSetupFunctionality:
 
     def test_ai_prompt_requires_prompts_directory(self, temp_dir):
         """Test that create_ai_prompt_file requires prompts directory to exist."""
-        # Import setup module
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from setup import create_ai_prompt_file
+        # Import bootstrap module
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        from bootstrap_repo import create_ai_prompt_file
 
         # Verify directory doesn't exist initially
         prompts_dir = temp_dir / "prompts"

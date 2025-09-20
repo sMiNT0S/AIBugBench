@@ -1,14 +1,17 @@
-"""Lightweight import test for setup.py.
+"""Lightweight import test for scripts/bootstrap_repo.py.
 
 Ensures the module is imported during a default `pytest -q` run so that
 regressions (e.g. syntax errors, guard logic) surface without requiring
-explicit `--cov=setup` invocation.
+explicit `--cov=bootstrap_repo` invocation.
 """
 
 
-def test_setup_module_imports():
-    import setup  # import triggers top-level definitions only
+def test_bootstrap_module_imports():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+    import bootstrap_repo  # import triggers top-level definitions only
 
     # Guard variable should not trigger main bootstrap automatically
-    assert hasattr(setup, "main")
+    assert hasattr(bootstrap_repo, "main")
     # AIBUGBENCH_BOOTSTRAP not set, so side-effect directories shouldn't be created here.

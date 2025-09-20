@@ -29,7 +29,7 @@ A comprehensive validation script that automatically tests all documented comman
 Commands are automatically classified into these safety levels:
 
 - **SAFE**: Read-only commands (ls, dir, echo, python --version)
-- **SANDBOX**: File-modifying commands that can be safely isolated (mkdir, cp, python setup.py)
+- **SANDBOX**: File-modifying commands that can be safely isolated (mkdir, cp, python scripts/bootstrap_repo.py)
 - **NETWORK**: Commands that access network resources (git clone, curl, wget)
 - **DESTRUCTIVE**: Potentially dangerous commands (rm -rf, format, shutdown) - skipped by default
 

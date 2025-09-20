@@ -46,7 +46,7 @@ source venv/bin/activate
 **All Platforms:**
 
 ```bash
-python setup.py
+python scripts/bootstrap_repo.py
 pip install -r requirements.txt
 ```
 
@@ -71,7 +71,7 @@ python run_benchmark.py --model example_model
 Core structure:
 
 - `run_benchmark.py` - Orchestrates scoring
-- `setup.py` - Generates sabotage fixtures and prompt file
+- `scripts/bootstrap_repo.py` - Generates sabotage fixtures and prompt file
 - `benchmark/` - Validation and scoring engine
 - `prompts/` - Challenge definitions
 - `test_data/` - Deliberately broken inputs
@@ -150,7 +150,7 @@ Historical runs accumulate; each benchmark invocation creates a new `<RUN_TS>` d
 
 - **"No module named 'yaml'":** Run `pip install pyyaml requests`
 - **"Permission denied" (Windows PowerShell):** Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-- **"FileNotFoundError: test_data":** Ensure you ran `python setup.py`
+- **"FileNotFoundError: test_data":** Ensure you ran `python scripts/bootstrap_repo.py`
 - **All scores are 0.00:** Check that your files contain actual code, not explanations
 - **Virtual environment issues:** Try `python3` instead of `python`, or `py` on Windows
 

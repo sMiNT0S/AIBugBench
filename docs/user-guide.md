@@ -9,7 +9,7 @@ Comprehensive guide for running benchmarks and understanding AIBugBench results.
 1. **Setup** (one-time):
 
    ```bash
-   python setup.py
+   python scripts/bootstrap_repo.py
    pip install -r requirements.txt
    ```
 
@@ -286,7 +286,7 @@ Example GitHub Actions workflow:
 ```yaml
 - name: Run AIBugBench
   run: |
-    python setup.py
+    python scripts/bootstrap_repo.py
     python run_benchmark.py --model ${{ matrix.model }} --quiet
     
 - name: Check Score Threshold

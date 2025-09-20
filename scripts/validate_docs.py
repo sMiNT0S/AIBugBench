@@ -473,7 +473,7 @@ class DocsValidationRunner:
 
         # Copy essential project files to sandbox
         essential_files = [
-            "setup.py",
+            "scripts/bootstrap_repo.py",
             "requirements.txt",
             "run_benchmark.py",
         ]

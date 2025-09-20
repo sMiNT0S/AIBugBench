@@ -47,16 +47,16 @@ def test_use_safe_unicode_branches(repo_root, tmp_path, monkeypatch):
     # Case 2: interactive but limited encoding cp1252 -> True
     fake_stdout = SimpleNamespace(isatty=lambda: True, encoding="cp1252")
     monkeypatch.setattr(sys, "stdout", fake_stdout)
-    assert setup.use_safe_unicode() is True
+    assert bootstrap.use_safe_unicode() is True
 
     # Case 3: interactive utf-8 and emoji supported -> False
     fake_stdout = SimpleNamespace(isatty=lambda: True, encoding="utf-8", write=lambda *_: None)
     monkeypatch.setattr(sys, "stdout", fake_stdout)
-    assert setup.use_safe_unicode() is False
+    assert bootstrap.use_safe_unicode() is False
 
 
 def test_display_ai_prompt_skip_noninteractive(repo_root, monkeypatch):
-    setup = _import_setup(repo_root)
+    bootstrap = _import_bootstrap(repo_root)
     monkeypatch.setenv("AIBUGBENCH_NONINTERACTIVE", "1")
     buf = StringIO()
     fake_tty = SimpleNamespace(isatty=lambda: True, encoding="utf-8", write=buf.write)
@@ -85,7 +85,7 @@ def test_display_ai_prompt_safe_mode(repo_root, monkeypatch):
 
 
 def test_display_ai_prompt_unicode_mode(repo_root, monkeypatch):
-    setup = _import_setup(repo_root)
+    bootstrap = _import_bootstrap(repo_root)
     buf = StringIO()
     fake_stdout = SimpleNamespace(isatty=lambda: True, encoding="utf-8", write=buf.write)
     fake_stdin = SimpleNamespace(isatty=lambda: True)

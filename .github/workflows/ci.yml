@@ -347,10 +347,27 @@ jobs:
           - os: macos-15
             platform_name: macos
     runs-on: ${{matrix.os}}
+    env:
+      PEP517_BUILD_DEBUG: "1"
     permissions:
       contents: read
       actions: read
     steps:
+      - name: Debug | Pre-build egg-info snapshot (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ci
+          echo "[pre-clean] Listing *.egg-info under repo root (recursive)" | tee .ci/egginfo-pre-clean.txt
+          find . -name '*.egg-info' -print | tee -a .ci/egginfo-pre-clean.txt || true
+      - name: Debug | Pre-build egg-info snapshot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -Force -ItemType Directory .ci | Out-Null
+          "[pre-clean] Listing *.egg-info under repo root (recursive)" | Out-File -Encoding UTF8 .ci/egginfo-pre-clean.txt
+          Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-pre-clean.txt
       - name: Base Python + test tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
@@ -380,11 +397,110 @@ jobs:
           Get-ChildItem -Path . -Recurse -Directory -Filter '*.egg-info' | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
           Get-ChildItem -Path . -Recurse -Directory -Filter 'build'       | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
           Get-ChildItem -Path . -Recurse -Directory -Filter 'dist'        | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+      - name: Debug | Post-clean egg-info snapshot (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "[post-clean] Listing *.egg-info under repo root (recursive)" | tee .ci/egginfo-post-clean.txt
+          find . -name '*.egg-info' -print | tee -a .ci/egginfo-post-clean.txt || true
+      - name: Debug | Post-clean egg-info snapshot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          "[post-clean] Listing *.egg-info under repo root (recursive)" | Out-File -Encoding UTF8 .ci/egginfo-post-clean.txt
+          Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-post-clean.txt
       - name: Debug | Tool versions
         run: |
           python -V
           python -c "import setuptools, wheel; print('setuptools', setuptools.__version__); print('wheel', wheel.__version__)"
           python -m pip --version
+      - name: Debug | Patch build_meta _find_info_directory (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, pathlib, tempfile, glob, sys, traceback
+          meta_root = ".ci/_pep517_meta_ci"
+          os.makedirs(meta_root, exist_ok=True)
+          meta = tempfile.mkdtemp(prefix="meta_find_", dir=meta_root)
+          print(f"[debug] patching setuptools.build_meta._find_info_directory and probing -> {meta}")
+          import setuptools.build_meta as bm
+          # Attempt to patch the internal finder if present
+          finder = getattr(bm, "_find_info_directory", None)
+          if finder is not None:
+              def wrapped(suffix, directory):
+                  try:
+                      return finder(suffix, directory)
+                  except AssertionError:
+                      pattern = os.path.join(directory, f"*{suffix}")
+                      cands = sorted(glob.glob(pattern))
+                      print(f"[debug] _find_info_directory AssertionError; candidates under {directory}:")
+                      for c in cands:
+                          print(f"  - {c}")
+                      try:
+                          (pathlib.Path(directory)/"_candidates_from_find.txt").write_text("\n".join(cands), encoding="utf-8")
+                      except Exception as werr:
+                          print(f"[debug] failed writing _candidates_from_find.txt: {werr!r}")
+                      traceback.print_exc()
+                      raise
+              bm._find_info_directory = wrapped  # type: ignore[attr-defined]
+          try:
+              res = bm.prepare_metadata_for_build_wheel(meta)
+              print("[debug] returned:", res)
+          except Exception as e:
+              print("[debug] exception:", repr(e))
+          finally:
+              base = pathlib.Path(meta)
+              print("[debug] meta dir contents:")
+              for p in base.iterdir():
+                  kids = list(p.iterdir()) if p.is_dir() else []
+                  print(" -", p, ("-> " + ", ".join(map(str, kids))) if kids else "")
+          PY
+      - name: Debug | Patch build_meta _find_info_directory (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $code = @'
+          import os, pathlib, tempfile, glob, sys, traceback
+          meta_root = ".ci\_pep517_meta_ci_win"
+          os.makedirs(meta_root, exist_ok=True)
+          meta = tempfile.mkdtemp(prefix="meta_find_", dir=meta_root)
+          print(f"[debug] patching setuptools.build_meta._find_info_directory and probing -> {meta}")
+          import setuptools.build_meta as bm
+          finder = getattr(bm, "_find_info_directory", None)
+          if finder is not None:
+            def wrapped(suffix, directory):
+              try:
+                return finder(suffix, directory)
+              except AssertionError:
+                pattern = os.path.join(directory, f"*{suffix}")
+                cands = sorted(glob.glob(pattern))
+                print(f"[debug] _find_info_directory AssertionError; candidates under {directory}:")
+                for c in cands:
+                  print(f"  - {c}")
+                try:
+                  (pathlib.Path(directory)/"_candidates_from_find.txt").write_text("\n".join(cands), encoding="utf-8")
+                except Exception as werr:
+                  print(f"[debug] failed writing _candidates_from_find.txt: {werr!r}")
+                traceback.print_exc()
+                raise
+            bm._find_info_directory = wrapped  # type: ignore[attr-defined]
+          try:
+            res = bm.prepare_metadata_for_build_wheel(meta)
+            print("[debug] returned:", res)
+          except Exception as e:
+            print("[debug] exception:", repr(e))
+          finally:
+            base = pathlib.Path(meta)
+            print("[debug] meta dir contents:")
+            for p in base.iterdir():
+              kids = list(p.iterdir()) if p.is_dir() else []
+              print(" -", p, ("-> " + ", ".join(map(str, kids))) if kids else "")
+          '@
+          New-Item -Force -ItemType Directory .ci | Out-Null
+          Set-Content -Encoding ASCII -Path .ci\_debug_patch_find.py -Value $code
+          python .ci\_debug_patch_find.py
       - name: Debug | Backend metadata directory listing (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
@@ -496,6 +612,8 @@ jobs:
           path: |
             .ci/_pep517_meta_ci/**
             .ci/_pep517_meta_ci_win/**
+            .ci/egginfo-pre-clean.txt
+            .ci/egginfo-post-clean.txt
             .ci/pip-debug.log
       - name: Install package (wheel)
         run: python -m pip install .

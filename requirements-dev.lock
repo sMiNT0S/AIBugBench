@@ -39,7 +39,6 @@ certifi==2025.8.3 \
     --hash=sha256:f6c12493cfb1b06ba2ff328595af9350c65d6644968e5d3a2ffd78699af217a5
     # via
     #   -c requirements.lock
-    #   -r requirements.txt
     #   httpcore
     #   httpx
     #   requests
@@ -211,7 +210,6 @@ charset-normalizer==3.4.3 \
     --hash=sha256:fdabf8315679312cfa71302f9bd509ded4f2f263fb5b765cf1433b39106c3cc9
     # via
     #   -c requirements.lock
-    #   -r requirements.txt
     #   requests
 click==8.3.0 \
     --hash=sha256:9b9f285302c6e3064f4330c05f05b81945b2a39544279343e6e7c5f27a9baddc \
@@ -221,6 +219,15 @@ click==8.3.0 \
     #   pip-tools
     #   safety
     #   typer
+colorama==0.4.6 \
+    --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
+    --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
+    # via
+    #   bandit
+    #   build
+    #   click
+    #   pytest
+    #   tqdm
 coverage[toml]==7.10.6 \
     --hash=sha256:073711de3181b2e204e4870ac83a7c4853115b42e9cd4d145f2231e12d670930 \
     --hash=sha256:081b98395ced0d9bcf60ada7661a0b75f36b78b9d7e39ea0790bb4ed8da14747 \
@@ -406,7 +413,6 @@ idna==3.10 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
     # via
     #   -c requirements.lock
-    #   -r requirements.txt
     #   anyio
     #   httpx
     #   requests
@@ -671,7 +677,6 @@ psutil==7.0.0 \
     # via
     #   -c requirements.lock
     #   -r requirements-dev.txt
-    #   -r requirements.txt
     #   safety
 py-serializable==2.1.0 \
     --hash=sha256:9d5db56154a867a9b897c0163b33a793c804c80cee984116d02d49e4578fc103 \
@@ -865,7 +870,6 @@ pyyaml==6.0.2 \
     --hash=sha256:ff3824dc5261f50c9b0dfb3be22b4567a6f938ccce4587b38952d85fd9e9afe4
     # via
     #   -c requirements.lock
-    #   -r requirements.txt
     #   bandit
     #   yamllint
 regex==2025.9.18 \
@@ -990,7 +994,6 @@ requests==2.32.5 \
     --hash=sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf
     # via
     #   -c requirements.lock
-    #   -r requirements.txt
     #   cachecontrol
     #   pip-audit
     #   safety
@@ -1143,7 +1146,6 @@ urllib3==2.5.0 \
     --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
     # via
     #   -c requirements.lock
-    #   -r requirements.txt
     #   requests
     #   types-requests
 wheel==0.45.1 \

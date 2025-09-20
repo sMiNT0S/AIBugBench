@@ -1,5 +1,4 @@
 -c requirements.lock
--r requirements.txt
 # Development and Security Dependencies
 # Install with: pip install -r requirements-dev.txt
 

@@ -71,7 +71,7 @@ def _patch_find() -> None:
             traceback.print_exc(file=sys.stderr)
             raise
 
-    _orig._find_info_directory = wrapped  # type: ignore[attr-defined]
+    _orig._find_info_directory = wrapped
     _FIND_PATCHED = True
 
 
@@ -162,9 +162,7 @@ def _dump_tree(root: str, out_path: str | None = None) -> None:
 
 
 def _wheel_metadata_fallback(
-    metadata_directory: str,
-    config_settings: dict[str, t.Any] | None = None,
-    editable: bool = False
+    metadata_directory: str, config_settings: dict[str, t.Any] | None = None, editable: bool = False
 ) -> str:
     """Fallback strategy: build wheel and extract .dist-info metadata.
 
@@ -185,11 +183,12 @@ def _wheel_metadata_fallback(
         sys.stderr.write(f"[meta-debug] Built wheel: {wheel_path}\n")
 
         # Extract .dist-info from the wheel
-        with zipfile.ZipFile(wheel_path, 'r') as wheel_zip:
+        with zipfile.ZipFile(wheel_path, "r") as wheel_zip:
             # Find the .dist-info directory in the wheel
             dist_info_entries = [
-                name for name in wheel_zip.namelist()
-                if name.endswith('.dist-info/') and '/' not in name[:-1]
+                name
+                for name in wheel_zip.namelist()
+                if name.endswith(".dist-info/") and "/" not in name[:-1]
             ]
 
             if not dist_info_entries:
@@ -204,18 +203,18 @@ def _wheel_metadata_fallback(
 
             # Extract all .dist-info files to metadata_directory
             for entry in wheel_zip.namelist():
-                if entry.startswith(dist_info_name + '/'):
+                if entry.startswith(dist_info_name + "/"):
                     # Calculate relative path within .dist-info
-                    rel_path = entry[len(dist_info_name) + 1:]
+                    rel_path = entry[len(dist_info_name) + 1 :]
                     target_path = os.path.join(metadata_directory, dist_info_name, rel_path)
 
-                    if entry.endswith('/'):
+                    if entry.endswith("/"):
                         # It's a directory
                         os.makedirs(target_path, exist_ok=True)
                     else:
                         # It's a file
                         os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                        with wheel_zip.open(entry) as src, open(target_path, 'wb') as dst:
+                        with wheel_zip.open(entry) as src, open(target_path, "wb") as dst:
                             shutil.copyfileobj(src, dst)
 
         sys.stderr.write(f"[meta-debug] Wheel metadata fallback successful: {dist_info_name}\n")

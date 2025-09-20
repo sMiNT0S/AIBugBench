@@ -142,7 +142,7 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch("setup.Path", side_effect=mock_path):
+        with patch("bootstrap_repo.Path", side_effect=mock_path):
             # This should fail because prompts directory doesn't exist
             with pytest.raises(FileNotFoundError):
                 create_ai_prompt_file()
@@ -156,12 +156,12 @@ class TestSetupFunctionality:
             assert ai_prompt_path.exists()
             assert "Welcome to AIBugBench!" in result
 
-    @patch("setup.use_safe_unicode")
+    @patch("bootstrap_repo.use_safe_unicode")
     def test_unicode_fallback_modes(self, mock_safe_unicode, temp_dir):
         """Test that setup works in both Unicode and safe modes."""
-        # Import setup module
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from setup import create_ai_prompt_file
+        # Import bootstrap module
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        from bootstrap_repo import create_ai_prompt_file
 
         prompts_dir = temp_dir / "prompts"
         prompts_dir.mkdir()
@@ -174,7 +174,7 @@ class TestSetupFunctionality:
         # Test safe mode (Windows fallback)
         mock_safe_unicode.return_value = True
         with (
-            patch("setup.Path", side_effect=mock_path),
+            patch("bootstrap_repo.Path", side_effect=mock_path),
             patch("sys.stdout", new_callable=StringIO) as mock_stdout,
         ):
             result = create_ai_prompt_file()
@@ -192,7 +192,7 @@ class TestSetupFunctionality:
         # Test Unicode mode
         mock_safe_unicode.return_value = False
         with (
-            patch("setup.Path", side_effect=mock_path),
+            patch("bootstrap_repo.Path", side_effect=mock_path),
             patch("sys.stdout", new_callable=StringIO) as mock_stdout,
         ):
             result = create_ai_prompt_file()
@@ -204,9 +204,9 @@ class TestSetupFunctionality:
 
     def test_prompts_ai_prompt_reliably_present(self, temp_dir):
         """Test that prompts/ai_prompt.md is reliably present after setup behavior."""
-        # Import setup module
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from setup import create_ai_prompt_file
+        # Import bootstrap module
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        from bootstrap_repo import create_ai_prompt_file
 
         # Set up temp directory with prompts subdirectory
         prompts_dir = temp_dir / "prompts"
@@ -217,7 +217,7 @@ class TestSetupFunctionality:
                 return prompts_dir
             return Path(path_str)
 
-        with patch("setup.Path", side_effect=mock_path):
+        with patch("bootstrap_repo.Path", side_effect=mock_path):
             # Run setup function (simulating setup behavior)
             create_ai_prompt_file()
 

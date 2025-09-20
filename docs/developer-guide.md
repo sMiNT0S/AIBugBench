@@ -87,7 +87,7 @@ Ensure you have access to the AI model you want to test:
 For best results, provide context to your AI model by using the `ai_prompt.md` file generated during setup:
 
 ```bash
-# This file is created by setup.py
+# This file is created by scripts/bootstrap_repo.py
 cat ai_prompt.md
 ```
 

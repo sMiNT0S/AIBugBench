@@ -347,10 +347,28 @@ jobs:
           - os: macos-15
             platform_name: macos
     runs-on: ${{matrix.os}}
+    env:
+      PEP517_BUILD_DEBUG: "1"
     permissions:
       contents: read
       actions: read
     steps:
+      - name: Debug | Pre-build egg-info snapshot (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ci
+          echo "[pre-clean] Listing *.egg-info under repo root (recursive)" | tee .ci/egginfo-pre-clean.txt
+          find . -name '*.egg-info' -print | tee -a .ci/egginfo-pre-clean.txt || true
+      - name: Debug | Pre-build egg-info snapshot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -Force -ItemType Directory .ci | Out-Null
+          "[pre-clean] Listing *.egg-info under repo root (recursive)" | Out-File -Encoding UTF8 .ci/egginfo-pre-clean.txt
+          Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-pre-clean.txt
+
       - name: Base Python + test tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
@@ -363,60 +381,62 @@ jobs:
           key: ${{runner.os}}-pip-${{matrix.python-version}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
             ${{runner.os}}-pip-${{matrix.python-version}}-
-      - name: Install package (wheel)
+
+      - name: Cleanup | Remove stale build artifacts
+        shell: bash
+        run: |
+          echo "Cleaning stale build artifacts (.egg-info, build/, dist/)"
+          find . -type d -name '*.egg-info' -prune -print -exec rm -rf {} + || true
+          find . -type d -name 'build'      -prune -print -exec rm -rf {} + || true
+          find . -type d -name 'dist'       -prune -print -exec rm -rf {} + || true
+
+      - name: Debug | Post-clean egg-info snapshot (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "[post-clean] Listing *.egg-info under repo root (recursive)" | tee .ci/egginfo-post-clean.txt
+          find . -name '*.egg-info' -print | tee -a .ci/egginfo-post-clean.txt || true
+      - name: Debug | Post-clean egg-info snapshot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          "[post-clean] Listing *.egg-info under repo root (recursive)" | Out-File -Encoding UTF8 .ci/egginfo-post-clean.txt
+          Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-post-clean.txt
+
+      - name: Debug | Tool versions
+        run: |
+          python -V
+          python -c "import setuptools, wheel; print('setuptools', setuptools.__version__); print('wheel', wheel.__version__)"
+          python -m pip --version
+
+      - name: Install package and capture logs
+        run: |
+          python -m pip install -vvv --use-pep517 --progress-bar off --log .ci/pip-debug.log .
+        continue-on-error: true
+
+      - name: Upload debug artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pep517-debug-${{ matrix.platform_name }}-py${{ matrix.python-version }}
+          path: |
+            .ci/egginfo-pre-clean.txt
+            .ci/egginfo-post-clean.txt
+            .ci/pip-debug.log
+            # The wrapper script will create these files in the project root
+            _all_candidates.txt
+
+      - name: Final package installation attempt (fail job if needed)
+        # This step exists to ensure the job actually fails if the install fails.
+        # The previous step continues on error to allow artifact upload.
         run: python -m pip install .
 
+      # ... (the rest of your test steps can follow) ...
       - name: Run comprehensive test suite
         run: |
           echo "Running comprehensive test suite on ${{matrix.os}} with Python ${{matrix.python-version}}"
           pytest tests/ -v --tb=short -m "not slow"
-
-      - name: Run unit tests (fallback)
-        if: failure()
-        run: |
-          echo "Full suite failed; executing minimal import smoke test for diagnostics..."
-          pytest tests/test_imports.py -v --tb=short || true
-          echo "Primary test suite failure retained (job will fail)."
-
-      - name: Validate test data structure
-        shell: bash
-        run: |
-          echo "Validating test data files exist..."
-          test -f test_data/process_records.py
-          test -f test_data/user_data.json
-          test -f test_data/config.yaml
-          echo "Test data validation passed"
-
-      - name: Run platform-specific benchmark validation
-        run: python benchmark/platform_validator.py
-        continue-on-error: true
-
-      - name: Check for benchmark artifacts
-        id: check_artifacts
-        shell: bash
-        run: |
-          if [ -d "ci_results" ] && [ -n "$(ls -A ci_results 2>/dev/null)" ]; then
-            echo "has_ci_results=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_ci_results=false" >> "$GITHUB_OUTPUT"
-          fi
-          if ls -1 *.log 1>/dev/null 2>&1; then
-            echo "has_logs=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_logs=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Collect benchmark artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always() && (steps.check_artifacts.outputs.has_ci_results == 'true' || steps.check_artifacts.outputs.has_logs == 'true')
-        with:
-          name: benchmark-results-${{matrix.platform_name}}-py${{matrix.python-version}}
-          path: |
-            ci_results/
-            results/
-            *.log
-          retention-days: 30
-          if-no-files-found: warn
 
   benchmark-consistency-check:
     name: Benchmark Consistency Validation

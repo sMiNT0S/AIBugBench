@@ -2,7 +2,7 @@
 name = "aibugbench"
 version = "0.9.0-beta"
 description = "AI code generation benchmarking tool"
-license = "Apache-2.0"
+license = {text = "Apache-2.0"}
 authors = [{ name = "sMiNT0S" }]
 maintainers = [{ name = "AIBugBench Maintainers" }]
 readme = "README.md"
@@ -14,7 +14,6 @@ dependencies = [
   "pywin32==311; sys_platform == 'win32'"
 ]
 classifiers = [
-  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.13",
   "Operating System :: OS Independent",
@@ -35,13 +34,14 @@ packages = ["benchmark"]
 py-modules = ["run_benchmark"]
 
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 100
 target-version = "py313"
 exclude = [
+  ".git/",
   "test_data/",
   "venv/",
   "submissions/user_submissions/",

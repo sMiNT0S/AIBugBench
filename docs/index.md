@@ -38,7 +38,7 @@ AIBugBench benchmarks AI-generated code across four progressive challenges with 
 # Install and run your first benchmark
 git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
-python setup.py
+python scripts/bootstrap_repo.py
 python run_benchmark.py --model example_model
 ```
 

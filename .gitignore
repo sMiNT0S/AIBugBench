@@ -8,6 +8,10 @@ __pycache__/
 .installed.cfg
 *.egg
 
+# packaging trash
+*.egg-info/
+*.dist-info/
+
 # Build and distribution
 build/
 develop-eggs/

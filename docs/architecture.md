@@ -35,7 +35,7 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 
 ### Core Components
 
-#### 1. Setup System (`setup.py`)
+#### 1. Setup System (`scripts/bootstrap_repo.py`)
 
 Responsible for generating test data with intentional sabotage patterns:
 

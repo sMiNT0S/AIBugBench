@@ -27,7 +27,7 @@
 
 # (Optional) If you really want to exclude CI/workflow files, leave the next line.
 # Recommended: COMMENT OUT to let trufflehog scan workflows for secrets.
-^\.github/.*$
+# ^\.github/.*$
 
 ############################################################
 # FILE EXTENSION EXCLUSIONS (binary / unlikely to contain secrets)

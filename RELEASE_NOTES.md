@@ -101,7 +101,7 @@ This release represents a comprehensive code quality transformation that achieve
 - `benchmark/validators.py` - Core validation logic modernization
 - `benchmark/runner.py` - Collection operations and formatting
 - `run_benchmark.py` - Line length optimization and structure improvements
-- `setup.py` - Consistency and formatting enhancements
+- `scripts/bootstrap_repo.py` - Consistency and formatting enhancements
 - `pyproject.toml` - Comprehensive tooling configuration
 
 **Validation Results:**
@@ -125,7 +125,7 @@ This release establishes a solid foundation for future development with:
 ```bash
 git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
-python setup.py
+python scripts/bootstrap_repo.py
 pip install -r requirements.txt
 python run_benchmark.py --model example_model
 ```

@@ -44,6 +44,8 @@ jobs:
     permissions:
       contents: read
       actions: read
+      pull-requests: write
+      checks: write
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
@@ -214,6 +216,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      checks: write
     runs-on: ubuntu-24.04
     steps:
       # remove any malformed 'uses: sMiNT0S/AIBugBench/.' step; use the pinned composite action
@@ -247,6 +250,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      checks: write
     env:
       CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
     runs-on: ubuntu-24.04
@@ -352,6 +356,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      checks: write
     steps:
       - name: Debug | Pre-build egg-info snapshot (Linux/macOS)
         if: runner.os != 'Windows'
@@ -446,6 +451,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      checks: write
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Base Python setup
@@ -540,6 +546,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      checks: write
     steps:
       - name: Base Python + security tooling
         uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61

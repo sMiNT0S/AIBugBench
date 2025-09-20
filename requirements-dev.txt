@@ -1,11 +1,10 @@
 -c requirements.lock
--r requirements.txt
 # Development and Security Dependencies
 # Install with: pip install -r requirements-dev.txt
 
 # Testing framework and coverage
 pytest>=8.0.0,<9.0.0          # Testing framework with Python 3.13 support
-pytest-cov>=4.0.0,<8.0.0      # Code coverage reporting (compatible with coverage 7.x)
+pytest-cov>=4.0.0,<7.0.0      # Code coverage reporting (compatible with coverage 7.x)
 pytest-mock>=3.10.0           # Mock fixtures for pytest
 coverage>=7.0.0,<8.0.0        # Code coverage measurement
 
@@ -21,11 +20,6 @@ mypy>=1.0.0            # Type checking
 types-PyYAML>=6.0.0    # Type stubs for PyYAML
 types-requests>=2.32.0 # Type stubs for requests
 yamllint>=1.35.0       # YAML style and schema linting
-
-# Documentation generation
-mkdocs>=1.5.0          # Documentation site generator
-mkdocs-material>=9.0.0 # Material design theme for MkDocs
-mkdocs-include-markdown-plugin>=6.0.0 # Include markdown files plugin
 
 # Performance / system introspection (used in tests only)
 psutil==7.0.0          # Align with CI composite action pin; required by performance regression tests

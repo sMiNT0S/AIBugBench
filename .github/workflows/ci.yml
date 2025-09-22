@@ -2,7 +2,6 @@ name: CI
 
 env:
   PYTHON_DEFAULT_VERSION: "3.13.7"
-  PIP_VERSION: "24.3.1"
   BANDIT_VERSION: "1.8.6"
   RUFF_VERSION: "0.12.11"  # Upgraded to align with local environment (supports UP047 rule)
   MYPY_VERSION: "1.11.2"
@@ -66,7 +65,7 @@ jobs:
         env:
           PYTHONUTF8: "1"
         run: |
-          python -m pip install -U "pip==${{ env.PIP_VERSION }}" "pip-tools==7.5.0"
+          python -m pip install -U pip "pip-tools==7.5.0"
           # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
           python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
           python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
@@ -194,7 +193,7 @@ jobs:
       - name: Recompile locks for artifact (on fail)
         if: failure()
         run: |
-          python -m pip install -U "pip==${{ env.PIP_VERSION }}" "pip-tools==7.5.0"
+          python -m pip install -U pip "pip-tools==7.5.0"
           pip-compile --allow-unsafe --generate-hashes -o new.requirements.lock requirements.txt
           pip-compile --allow-unsafe --generate-hashes -o new.requirements-dev.lock requirements-dev.txt
       - name: Upload recompiled locks

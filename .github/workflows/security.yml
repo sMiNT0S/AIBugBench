@@ -73,18 +73,25 @@ jobs:
             --max-depth=50 \
             > trufflehog-results.json || echo "Potential secrets found"
 
-      - name: Install semgrep for pattern-based secret detection
-        run: |
-          pip install semgrep==1.134.0
-
       - name: Run Semgrep Secret Patterns
+        uses: semgrep/semgrep-action@c146b96c7c262cf896b025a0d4f18b28e4b9194f  # v1
+        with:
+          config: >-
+            p/secrets
+            p/security-audit
+          generateSarif: "0"
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Convert Semgrep output to JSON
         run: |
-          semgrep \
-            --config=p/secrets \
-            --config=p/security-audit \
-            --json \
-            --output=semgrep-secrets.json \
-            . || echo "Semgrep analysis completed"
+          # Semgrep action outputs to semgrep.json by default
+          if [ -f semgrep.json ]; then
+            cp semgrep.json semgrep-secrets.json
+          else
+            echo '{"results": []}' > semgrep-secrets.json
+          fi
 
       - name: Process and validate secret scan results
         run: |
@@ -224,7 +231,7 @@ jobs:
               - submissions/templates/template/**
               - submissions/example_model/**
 
-      - uses: ./.github/actions/base-python-setup
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: "3.13.7"
 
@@ -245,7 +252,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: ./.github/actions/base-python-setup
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: "3.13.7"
           install-security: 'true'

@@ -15,20 +15,20 @@ runs:
         python -m pip install --upgrade pip
         python -m pip install --retries 5 --timeout 60 -U "pip-tools==7.5.0"
         pip install --require-hashes -r requirements.lock
-    - name: Windows | match pip to lock version
+    - name: Windows | pre-satisfy pip pin from lock
       if: runner.os == 'Windows'
-      shell: bash
+      shell: pwsh
       run: |
-        set -euo pipefail
-        # extract pinned pip from either lock file
-        PIP_PIN=$(grep -m1 -E '^pip==[0-9]+' requirements-dev.lock || true)
-        if [ -z "$PIP_PIN" ]; then
-          PIP_PIN=$(grep -m1 -E '^pip==[0-9]+' requirements.lock || true)
-        fi
-        if [ -n "$PIP_PIN" ]; then
-          V="${PIP_PIN#pip==}"
-          python -m pip install --upgrade "pip==${V}"
-        fi
+        $lock = Test-Path 'requirements-dev.lock' ? 'requirements-dev.lock' : 'requirements.lock'
+        $m = Select-String -Path $lock -Pattern '^pip==([0-9][^;\s]+)' | Select-Object -First 1
+        if ($m) {
+          $ver = $m.Matches[0].Groups[1].Value.Trim()
+          Write-Host "Upgrading pip to $ver..."
+          python -m pip install --upgrade ("pip==" + $ver)
+          python -m pip --version
+        } else {
+          Write-Host "No pip pin; skipping."
+        }
     - name: Show pip version before locked install
       shell: bash
       run: python -m pip --version

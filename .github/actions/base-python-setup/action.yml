@@ -28,6 +28,9 @@ runs:
           V="${PIP_PIN#pip==}"
           python -m pip install --upgrade "pip==${V}"
         fi
+    - name: Show pip version before locked install
+      shell: bash
+      run: python -m pip --version
     - name: Install dev lock (when needed)
       if: ${{inputs.install-dev == 'true' || inputs.install-test == 'true' || inputs.install-security == 'true'}}
       shell: bash

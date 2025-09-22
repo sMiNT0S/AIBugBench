@@ -34,7 +34,7 @@ jobs:
       - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: ${{env.PYTHON_VERSION}}
-          install-security: 'true'
+          install-dev: 'true'
 
       - name: Lint reference
         run: |
@@ -63,7 +63,7 @@ jobs:
       - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: ${{env.PYTHON_VERSION}}
-          install-security: 'true'
+          install-dev: 'true'
 
       - name: Basic checks
         run: |

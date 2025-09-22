@@ -26,7 +26,7 @@ jobs:
       - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
         with:
           python-version: "3.13.7"
-          install-security: 'true'
+          install-dev: 'true'
 
       - name: Ruff Security Rules (S rules)
         run: ruff check --select=S .

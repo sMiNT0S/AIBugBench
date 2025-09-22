@@ -14,6 +14,20 @@ runs:
       run: |
         python -m pip install -U "pip==24.3.1" "pip-tools==7.5.0"
         pip install --require-hashes -r requirements.lock
+    - name: Windows | match pip to lock version
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        set -euo pipefail
+        # extract pinned pip from either lock file
+        PIP_PIN=$(grep -m1 -E '^pip==[0-9]+' requirements-dev.lock || true)
+        if [ -z "$PIP_PIN" ]; then
+          PIP_PIN=$(grep -m1 -E '^pip==[0-9]+' requirements.lock || true)
+        fi
+        if [ -n "$PIP_PIN" ]; then
+          V="${PIP_PIN#pip==}"
+          python -m pip install --upgrade "pip==${V}"
+        fi
     - name: Install dev lock (when needed)
       if: ${{inputs.install-dev == 'true' || inputs.install-test == 'true' || inputs.install-security == 'true'}}
       shell: bash

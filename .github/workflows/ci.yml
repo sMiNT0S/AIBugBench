@@ -41,14 +41,24 @@ jobs:
         run: |
           set -euo pipefail
           echo "Verifying that all actions are pinned to full SHAs..."
-          # Offenders: lines using tags (vX...) or non-SHA refs
-          offenders=$(grep -RnE '^[[:space:]]*uses:[[:space:]].*@([[:alpha:]]|v[0-9])' .github/workflows/*.yml || true)
-          # Also flag short hex refs (<40 chars)
-          short_refs=$(grep -RnE '^[[:space:]]*uses:[[:space:]].*@([0-9a-fA-F]{7,39})([[:space:]]|$)' .github/workflows/*.yml || true)
-          if [ -n "$offenders$short_refs" ]; then
-            echo "Found unpinned or short-ref actions:" >&2
-            [ -n "$offenders" ] && echo "$offenders" >&2 || true
-            [ -n "$short_refs" ] && echo "$short_refs" >&2 || true
+          offenders=$(grep -RnE '^[[:space:]]*uses:[[:space:]][^@]+@([^[:space:]]+)' .github/workflows/*.yml | \
+            awk '
+              {
+                line=$0;
+                if (match(line, /@([^[:space:]]+)/, m)) {
+                  ref=m[1];
+                  # Accept only exact 40-hex commit SHAs
+                  if (ref ~ /^[0-9a-fA-F]{40}$/) {
+                    next;
+                  } else {
+                    print line;
+                  }
+                }
+              }
+            ' || true)
+          if [ -n "$offenders" ]; then
+            echo "Found unpinned or non-SHA action refs:" >&2
+            echo "$offenders" >&2
             echo "Pin all actions to full 40-character commit SHAs." >&2
             exit 1
           fi

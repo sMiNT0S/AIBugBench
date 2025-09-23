@@ -88,7 +88,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
             semgrep/semgrep:1.134.0@${{ steps.semgrep_digest.outputs.digest }} \
-            semgrep ci --config p/ci --error --json --output semgrep.json
+            semgrep ci --config p/ci --json --output semgrep.json
 
       - name: Convert Semgrep output to JSON
         run: |

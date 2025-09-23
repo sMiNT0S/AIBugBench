@@ -241,7 +241,8 @@ jobs:
       - name: Format check with ruff
         run: ruff format --check .
       - name: CLI smoke test
-        run: python -c "import run_benchmark as m; assert callable(getattr(m,'main',None))"
+        run: |
+          python -c "import runpy; ns=runpy.run_path('run_benchmark.py'); assert callable(ns.get('main')), 'main() missing'"
 
   test-coverage:
     name: Test Coverage Analysis
@@ -536,7 +537,7 @@ jobs:
           path: |
             consistency_report.md
             collected-results/
-          retention-days: 90
+          retention-days: 30
 
   security-scan:
     name: Security Scan

@@ -46,7 +46,7 @@ jobs:
           # Fetch full history for comprehensive secret scanning and analysis
           fetch-depth: 0
 
-      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@eb64bae5fb50751c3d6a1163348676d0eae3c4d6
         with:
           python-version: "3.13.7"
           install-dev: 'true'
@@ -238,7 +238,7 @@ jobs:
               - submissions/templates/template/**
               - submissions/example_model/**
 
-      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@eb64bae5fb50751c3d6a1163348676d0eae3c4d6
         with:
           python-version: "3.13.7"
 
@@ -259,7 +259,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@eb64bae5fb50751c3d6a1163348676d0eae3c4d6
         with:
           python-version: "3.13.7"
           install-security: 'true'

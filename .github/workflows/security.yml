@@ -265,9 +265,15 @@ jobs:
           install-security: 'true'
 
       - name: Run Safety scan on dependencies
+        env:
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+          SAFETY_DISABLE_ANALYTICS: "1"
+          CI: "true"
         run: |
-          safety scan --file=requirements.lock --json > safety-report.json || echo "Safety scan completed"
-          cat safety-report.json
+          test -n "$SAFETY_API_KEY" || { echo "Missing SAFETY_API_KEY"; exit 2; }
+          safety scan --key "$SAFETY_API_KEY" \
+            --file=requirements.lock \
+            --json > safety-report.json
 
       - name: Run pip-audit for comprehensive dependency analysis
         run: |

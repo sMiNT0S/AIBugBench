@@ -1,12 +1,9 @@
 # AIBugBench
 
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://python.org)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://sMiNT0S.github.io/AIBugBench/)
 [![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
-[![Security Analysis](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/security.yml)
-[![Tiered Validation](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/tiered-validation.yml)
-![Type Checking](https://img.shields.io/badge/mypy-strict--core%20clean-brightgreen)
+[![codecov trend](https://codecov.io/github/smint0s/aibugbench/graph/badge.svg?token=0G9SHU4AZ7)](https://codecov.io/github/smint0s/aibugbench)
+![safety](https://img.shields.io/endpoint?url=https://smint0s.github.io/AIBugBench/badges/safety.json)
 
 ## Welcome to AIBugBench
 

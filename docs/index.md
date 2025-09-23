@@ -1,5 +1,9 @@
 # AIBugBench
 
+[![CI](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sMiNT0S/AIBugBench/actions/workflows/ci.yml)
+[![codecov trend](https://codecov.io/github/smint0s/aibugbench/graph/badge.svg?token=0G9SHU4AZ7)](https://codecov.io/github/smint0s/aibugbench)
+![safety](https://img.shields.io/endpoint?url=https://smint0s.github.io/AIBugBench/badges/safety.json)
+
 AIBugBench benchmarks AI-generated code across four progressive challenges with a 7-category scoring system (syntax, structure, execution, quality, security, performance, maintainability). It uses deliberately flawed fixtures to test real corrective ability, not pattern copying. Results are deterministic and saved locally.
 
 ## Quick Navigation

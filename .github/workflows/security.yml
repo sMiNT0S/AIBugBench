@@ -43,14 +43,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
-          # Fetch full history for comprehensive secret scanning
+          # Fetch full history for comprehensive secret scanning and analysis
           fetch-depth: 0
 
-      - name: Setup Python for secret scanning
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: "3.13.7"
-          check-latest: false
+          install-dev: 'true'
+        env:
+          INSTALL_DEV_DEPS: "1"
 
       - name: Install TruffleHog for secret scanning
         run: |
@@ -73,18 +74,31 @@ jobs:
             --max-depth=50 \
             > trufflehog-results.json || echo "Potential secrets found"
 
-      - name: Install semgrep for pattern-based secret detection
+      - name: Resolve Semgrep image digest
+        id: semgrep_digest
         run: |
-          pip install semgrep==1.134.0
+          set -euo pipefail
+          # Pull the tagged image first so we can read its RepoDigests reliably
+          docker pull --quiet semgrep/semgrep:1.134.0
+          # Extract the manifest list digest from RepoDigests (format: name@sha256:...)
+          DIGEST="$(docker image inspect semgrep/semgrep:1.134.0 --format '{{ index .RepoDigests 0 }}' | awk -F@ '{print $2}')"
+          test -n "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
-      - name: Run Semgrep Secret Patterns
+      - name: Semgrep via container (pinned)
         run: |
-          semgrep \
-            --config=p/secrets \
-            --config=p/security-audit \
-            --json \
-            --output=semgrep-secrets.json \
-            . || echo "Semgrep analysis completed"
+          docker run --rm -v "$PWD:/src" -w /src \
+            semgrep/semgrep@${{ steps.semgrep_digest.outputs.digest }} \
+            semgrep ci --config p/ci --json --output semgrep.json
+
+      - name: Convert Semgrep output to JSON
+        run: |
+          # Ensure semgrep-secrets.json exists for downstream processing
+          if [ -f semgrep.json ]; then
+            cp semgrep.json semgrep-secrets.json
+          else
+            echo '{"results": []}' > semgrep-secrets.json
+          fi
 
       - name: Process and validate secret scan results
         run: |
@@ -224,17 +238,9 @@ jobs:
               - submissions/templates/template/**
               - submissions/example_model/**
 
-      - name: Setup Python for CodeQL
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: "3.13.7"
-          check-latest: false
-
-      - name: Install dependencies for CodeQL analysis
-        run: |
-          python -m pip install -U "pip==24.3.1"
-          # CodeQL doesn't require installing project deps, but if needed use the locked runtime set
-          pip install --require-hashes -r requirements.lock
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3  # v3.30.3
@@ -253,19 +259,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - name: Setup Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: "3.13.7"
-          check-latest: false
-
-      - name: Install Safety for dependency scanning
-        run: |
-          pip install safety==3.6.1 pip-audit==2.9.0
+          install-security: 'true'
 
       - name: Run Safety scan on dependencies
         run: |
-          pip install --require-hashes -r requirements.lock
           safety scan --file=requirements.lock --json > safety-report.json || echo "Safety scan completed"
           cat safety-report.json
 

@@ -10,7 +10,10 @@ coverage>=7.0.0,<8.0.0        # Code coverage measurement
 
 # Security tools
 bandit==1.8.6          # Static security analysis (pinned for CI consistency)
-safety>=3.0.0          # Known vulnerability scanning  
+click==8.1.8           # For command line interface creation
+rich==13.7.1           # For rich text and beautiful formatting in the terminal
+colorama==0.4.6        # For colored terminal text (required by ruff)
+safety>=3.0.0          # Known vulnerability scanning
 pip-audit>=2.0.0       # Dependency vulnerability checking
 pip-tools==7.5.0       # Dependency management (==7.5.0 for pip 24 compatibility)
 

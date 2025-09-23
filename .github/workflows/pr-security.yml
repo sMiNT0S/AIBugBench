@@ -23,16 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - name: Setup Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: "3.13.7"
-          check-latest: false
-      - name: Install dev dependencies with hash verification (pinned toolchain)
-        run: |
-          python -m pip install -U "pip==24.3.1" "pip-tools==7.5.0"
-          pip install --require-hashes -r requirements.lock -r requirements-dev.lock
-          pip install bandit==${{env.BANDIT_VERSION}}
+          install-dev: 'true'
 
       - name: Ruff Security Rules (S rules)
         run: ruff check --select=S .

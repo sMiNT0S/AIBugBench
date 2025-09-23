@@ -2,7 +2,6 @@ name: CI
 
 env:
   PYTHON_DEFAULT_VERSION: "3.13.7"
-  PIP_VERSION: "24.3.1"
   BANDIT_VERSION: "1.8.6"
   RUFF_VERSION: "0.12.11"  # Upgraded to align with local environment (supports UP047 rule)
   MYPY_VERSION: "1.11.2"
@@ -66,7 +65,7 @@ jobs:
         env:
           PYTHONUTF8: "1"
         run: |
-          python -m pip install -U "pip==${{ env.PIP_VERSION }}" "pip-tools==7.5.0"
+          python -m pip install -U pip "pip-tools==7.5.0"
           # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
           python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
           python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
@@ -194,7 +193,7 @@ jobs:
       - name: Recompile locks for artifact (on fail)
         if: failure()
         run: |
-          python -m pip install -U "pip==${{ env.PIP_VERSION }}" "pip-tools==7.5.0"
+          python -m pip install -U pip "pip-tools==7.5.0"
           pip-compile --allow-unsafe --generate-hashes -o new.requirements.lock requirements.txt
           pip-compile --allow-unsafe --generate-hashes -o new.requirements-dev.lock requirements-dev.txt
       - name: Upload recompiled locks
@@ -221,7 +220,7 @@ jobs:
     steps:
       # remove any malformed 'uses: sMiNT0S/AIBugBench/.' step; use the pinned composite action
       - name: Base Python + dev tools
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-dev: "true"
@@ -256,7 +255,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Base Python + test tooling
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-test: "true"
@@ -375,7 +374,7 @@ jobs:
           Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-pre-clean.txt
 
       - name: Base Python + test tooling
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: ${{matrix.python-version}}
           install-test: "true"
@@ -455,7 +454,7 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Base Python setup
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
 
@@ -549,7 +548,7 @@ jobs:
       checks: write
     steps:
       - name: Base Python + security tooling
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@ab149f501046408f307d3ac6a7c0991e08b74d61
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@d7b2e2cf30c00020de02ef40e6c70c445c84e1b4
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-security: "true"

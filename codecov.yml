@@ -1,0 +1,53 @@
+codecov:
+  require_ci_to_pass: true   # only post statuses when CI succeeds
+
+github_checks:
+  annotations: true          # inline file annotations on PRs (no extra PR comment)
+
+coverage:
+  precision: 2               # show two decimals in the UI
+  round: down                # deterministic rounding
+  range: "70..100"           # display range for coverage graphs
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 2%        # allow tiny drift on overall project
+        base: auto           # let Codecov pick a sensible base commit
+    patch:
+      default:
+        target: 70%          # new/changed code should be covered
+
+# Define flags to group coverage by upload. Our CI uploads once from Linux with the "unittests" flag.
+flags:
+  unittests:
+    carryforward: false      # do not carry flag coverage across commits by default
+    # Optionally scope to relevant source paths if you add more uploads later.
+    # paths:
+    #   - benchmark/
+    #   - run_benchmark.py
+
+comment: false                # disable PR comment, use Checks UI instead
+
+# Exclude non-source/generated content from coverage calculations
+ignore:
+  - "tests/**"               # test code itself
+  - "docs/**"                # project docs
+  - "site/**"                # mkdocs build output
+  - "**/__pycache__/**"
+  - "aibugbench.egg-info/**"
+  - "build/**"
+  - "dist/**"
+  - "venv/**"
+  - ".venv/**"
+  - "reports/**"
+  - "results/**"
+  - "submissions/**"
+  - "test_data/**"
+  - "personal_scripts/**"
+  - "prompts/**"
+
+# If coverage paths ever contain absolute prefixes (rare on GitHub-hosted Linux),
+# you can map them back to repo-relative paths using "fixes". Example template:
+# fixes:
+#   - "/home/runner/work/AIBugBench/AIBugBench/::"

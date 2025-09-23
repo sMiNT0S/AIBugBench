@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scheduled dependency refresh automation using pinned `peter-evans/create-pull-request` with diff stat in job summary (idempotent single PR model).
 - CI action pin verification job enforcing full SHA usage across all workflows.
 
+- **Refactor scaffolding (Phase 0 — no behavior change)**: initial package structure & stubs for future DRY/SRP refactor:
+  - Core placeholder packages (`io/`, `config/`, `orchestration/`, `validation/`) created.
+  - Coverage configuration and `.gitignore` updated for new scaffold & artifacts.
+  - Basic I/O and validation facades delegating to legacy implementations (import surface stabilization).
+  - Artifact path resolution helper and CLI runner stub established for upcoming orchestration split.
+  - Initial seam tests added (artifact precedence, validation contract, runner API `xfail`) to lock external behavior.
+  - Documentation updated (`REFACTOR_PLAN.md`, `DRY_OP_REVISED.md`) outlining Phase 0 structure & importability checks.
+
 ### Changed
 
 - README license reference corrected to Apache-2.0; `pyproject.toml` enriched with `[project.urls]` and classifiers.

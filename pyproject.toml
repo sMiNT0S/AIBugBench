@@ -30,8 +30,13 @@ Source = "https://github.com/sMiNT0S/AIBugBench"
 run-benchmark = "run_benchmark:main"
 
 [tool.setuptools]
-packages = ["benchmark"]
+# Explicit module for legacy root CLI shim; packages discovered below.
 py-modules = ["run_benchmark"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+# Include existing core package plus new Phase-0 scaffold package.
+include = ["benchmark", "aibugbench", "validation"]
 
 [build-system]
 requires = ["setuptools>=69"]
@@ -69,7 +74,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["benchmark", "validation", "run_benchmark"]
+known-first-party = ["benchmark", "validation", "aibugbench", "run_benchmark"]
 combine-as-imports = true
 force-sort-within-sections = true
 
@@ -109,6 +114,8 @@ module = [
   "benchmark.*",
   "validation",
   "validation.*",
+  "aibugbench",
+  "aibugbench.*",
   "run_benchmark"
 ]
 disallow_untyped_defs = true

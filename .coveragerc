@@ -1,29 +1,47 @@
-# .coveragerc
 [run]
 branch = True
-parallel = True
-# Limit measurement to the code that matters
+# Only measure our code, not plugins, not tests
 source =
-    benchmark
-    validation
-    run_benchmark.py
-# Don’t accidentally measure generated artifacts or venvs
+    AIBugBench
+    src/AIBugBench
+relative_files = True
+parallel = True
+concurrency = multiprocessing,thread
+# Avoid noise when Phase 0 has little code exercised
+disable_warnings = no-data-collected,already-imported
 omit =
-    venv/*
-    .venv/*
-    **/.tox/*
-    **/.mypy_cache/*
-    **/.pytest_cache/*
-    **/htmlcov/*
-    **/build/*
-    **/dist/*
     tests/*
-
-[report]
-show_missing = True
-skip_covered = False
+    scripts/*
+    **/.venv/*
+    **/venv/*
+    **/__pypackages__/*
+    **/site-packages/*
+    **/node_modules/*
 
 [paths]
-# Normalize paths across CI runners if needed later
+# Unify paths so Codecov merges Windows/Linux/installed wheels
 source =
-    .
+    aibugbench
+    src/aibugbench
+    */site-packages/aibugbench
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+# Phase-0: keep the bar modest. Raise later per phase or via CI flags.
+fail_under = 15
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    @overload
+    @abstractmethod
+    raise NotImplementedError
+    ^\s*pass\s*$
+    ^\s*if __name__ == ["']__main__["']:$
+
+[html]
+directory = .coverage_html
+
+[xml]
+output = coverage.xml

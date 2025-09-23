@@ -74,10 +74,20 @@ jobs:
             --max-depth=50 \
             > trufflehog-results.json || echo "Potential secrets found"
 
-      - name: Semgrep (CI mode)
+      - name: Resolve Semgrep image digest
+        id: semgrep_digest
         run: |
-          semgrep --version
-          semgrep ci --config p/ci --error --json --output semgrep.json
+          set -euo pipefail
+          DIGEST="$(docker manifest inspect semgrep/semgrep:1.134.0 -v \
+            | jq -r '.Descriptor.digest')"
+          test -n "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Semgrep via container (pinned)
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            semgrep/semgrep:1.134.0@${{ steps.semgrep_digest.outputs.digest }} \
+            semgrep ci --config p/ci --error --json --output semgrep.json
 
       - name: Convert Semgrep output to JSON
         run: |

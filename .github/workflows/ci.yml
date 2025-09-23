@@ -295,6 +295,7 @@ jobs:
       contents: read
       actions: read
       checks: write
+      id-token: write
     runs-on: ubuntu-24.04
     steps:
       - name: Base Python + test tooling
@@ -354,11 +355,12 @@ jobs:
           retention-days: 7
       # Detect presence of Codecov secret without job-level env
       - name: Upload coverage to Codecov
-        if: ${{ hashFiles('coverage.xml') != '' && runner.os == 'Linux' }}
+        if: runner.os == 'Linux' && hashFiles('coverage.xml') != ''
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
         with:
-          files: coverage.xml
+          files: ./coverage.xml
           flags: unittests
+          use_oidc: true
           fail_ci_if_error: true
           verbose: true
   multi-platform-tests:

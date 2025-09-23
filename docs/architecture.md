@@ -10,7 +10,7 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Interface Layer                    │
-│                  (CLI: run_benchmark.py)                    │
+│                  (CLI: scripts/bootstrap_repo.py)           │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐

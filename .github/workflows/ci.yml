@@ -15,6 +15,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      validate_telemetry:
+        description: "Enable telemetry schema validation"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
@@ -32,10 +39,30 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Verify all actions pinned to full SHAs
         run: |
-          if grep -R "uses: .*@v[0-9]" .github/workflows/*.yml; then
-            echo "Found unpinned actions. Pin to full SHAs." >&2
+          set -euo pipefail
+          echo "Verifying that all actions are pinned to full SHAs..."
+          offenders=$(grep -RnE '^[[:space:]]*uses:[[:space:]][^@]+@([^[:space:]]+)' .github/workflows/*.yml | \
+            awk '
+              {
+                line=$0;
+                if (match(line, /@([^[:space:]]+)/, m)) {
+                  ref=m[1];
+                  # Accept only exact 40-hex commit SHAs
+                  if (ref ~ /^[0-9a-fA-F]{40}$/) {
+                    next;
+                  } else {
+                    print line;
+                  }
+                }
+              }
+            ' || true)
+          if [ -n "$offenders" ]; then
+            echo "Found unpinned or non-SHA action refs:" >&2
+            echo "$offenders" >&2
+            echo "Pin all actions to full 40-character commit SHAs." >&2
             exit 1
           fi
+          echo "All actions are pinned to full SHAs."
 
   lock-verification:
     name: Dependency Lock Sync (runtime + dev)
@@ -59,7 +86,13 @@ jobs:
         run: |
           set -eu
           python --version
-          python -c "import importlib.metadata as m; print('pip-tools', m.version('pip-tools'))" || true
+          python - <<'PY' || true
+          try:
+              import importlib.metadata as m
+              print('pip-tools', m.version('pip-tools'))
+          except Exception:
+              print('pip-tools not installed yet')
+          PY
           git config --global core.autocrlf false || true
       - name: Verify dependency lock determinism
         env:
@@ -93,8 +126,14 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ -f .ci/local/enable_telemetry_validate ]; then
+          set -euo pipefail
+          INPUT_FLAG="${{ inputs.validate_telemetry }}"
+          VAR_FLAG="${{ vars.TELEMETRY_VALIDATE }}"
+          if [ "$INPUT_FLAG" = "true" ] || [ "$VAR_FLAG" = "1" ] || [ -f .ci/local/enable_telemetry_validate ]; then
+            echo "telemetry: enabled (input=$INPUT_FLAG, var=$VAR_FLAG, file=$([ -f .ci/local/enable_telemetry_validate ] && echo 1 || echo 0))"
             echo "TELEMETRY_VALIDATE=1" >> "$GITHUB_ENV"
+          else
+            echo "telemetry: disabled (input=$INPUT_FLAG, var=$VAR_FLAG)"
           fi
 
       - name: Validate telemetry schema
@@ -241,7 +280,13 @@ jobs:
       - name: Format check with ruff
         run: ruff format --check .
       - name: CLI smoke test
-        run: python -c "import run_benchmark as m; assert callable(getattr(m,'main',None))"
+        run: |
+          python - <<'PY'
+          import runpy
+          ns = runpy.run_path('run_benchmark.py')
+          assert callable(ns.get('main')), 'main() missing'
+          print('CLI smoke test: main() found')
+          PY
 
   test-coverage:
     name: Test Coverage Analysis
@@ -250,8 +295,7 @@ jobs:
       contents: read
       actions: read
       checks: write
-    env:
-      CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
+      id-token: write
     runs-on: ubuntu-24.04
     steps:
       - name: Base Python + test tooling
@@ -279,6 +323,8 @@ jobs:
             --cov-report=xml:coverage.xml \
             --cov-report=html:htmlcov
           coverage combine || true
+            # Export XML for Codecov
+            coverage xml -o coverage.xml || true
           coverage report -m
 
       - name: Coverage summary
@@ -308,32 +354,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       # Detect presence of Codecov secret without job-level env
-      - name: Detect Codecov token
-        shell: bash
-        run: |
-          if [ -n "${{secrets.CODECOV_TOKEN}}" ]; then
-          echo "HAVE_CODECOV=1" >> "$GITHUB_ENV"
-          else
-          echo "HAVE_CODECOV=0" >> "$GITHUB_ENV"
-          fi
-
-      - name: Upload to Codecov
-        if: ${{ env.HAVE_CODECOV == '1' && hashFiles('coverage.xml') != '' }}
+      - name: Upload coverage to Codecov
+        if: runner.os == 'Linux' && hashFiles('coverage.xml') != ''
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
-
         with:
-          files: coverage.xml
-          token: ${{secrets.CODECOV_TOKEN}}
+          files: ./coverage.xml
+          flags: unittests
+          use_oidc: true
           fail_ci_if_error: true
-
-      - name: Skip Codecov (no token present)
-        if: ${{env.HAVE_CODECOV != '1' || steps.coverage_file.outputs.present != 'true'}}
-        run: |
-          if [ "$HAVE_CODECOV" != '1' ]; then
-            echo "Codecov token not provided; skipping upload (private repo)."
-          elif [ "${{steps.coverage_file.outputs.present}}" != 'true' ]; then
-            echo "coverage.xml missing; skipping Codecov upload."
-          fi
+          verbose: true
   multi-platform-tests:
     name: Multi-Platform Tests
     needs: test-coverage
@@ -536,7 +565,7 @@ jobs:
           path: |
             consistency_report.md
             collected-results/
-          retention-days: 90
+          retention-days: 30
 
   security-scan:
     name: Security Scan

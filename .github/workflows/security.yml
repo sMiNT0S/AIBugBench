@@ -52,7 +52,6 @@ jobs:
           install-dev: 'true'
         env:
           INSTALL_DEV_DEPS: "1"
-      - uses: docker/setup-buildx-action@f03ac48505955848960e80bbb68046aa35c7b9e7
 
       - name: Install TruffleHog for secret scanning
         run: |
@@ -79,15 +78,17 @@ jobs:
         id: semgrep_digest
         run: |
           set -euo pipefail
-          DIGEST="$(docker buildx imagetools inspect semgrep/semgrep:1.134.0 \
-            | awk '/^Digest:/{print $2; exit}')"
+          # Pull the tagged image first so we can read its RepoDigests reliably
+          docker pull --quiet semgrep/semgrep:1.134.0
+          # Extract the manifest list digest from RepoDigests (format: name@sha256:...)
+          DIGEST="$(docker image inspect semgrep/semgrep:1.134.0 --format '{{ index .RepoDigests 0 }}' | awk -F@ '{print $2}')"
           test -n "$DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Semgrep via container (pinned)
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
-            semgrep/semgrep:1.134.0@${{ steps.semgrep_digest.outputs.digest }} \
+            semgrep/semgrep@${{ steps.semgrep_digest.outputs.digest }} \
             semgrep ci --config p/ci --json --output semgrep.json
 
       - name: Convert Semgrep output to JSON

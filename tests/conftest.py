@@ -12,8 +12,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 
 import pytest
+
+# Phase-0 scaffolding: ensure repository root on sys.path so provisional
+# 'aibugbench' package (not yet part of original setup config) resolves.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 @pytest.fixture

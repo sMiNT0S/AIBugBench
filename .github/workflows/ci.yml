@@ -12,9 +12,13 @@ env:
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - refactor/**
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - refactor/**
   workflow_dispatch:
     inputs:
       validate_telemetry:

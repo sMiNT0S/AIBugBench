@@ -16,7 +16,10 @@ CASES = [
 def test_artifact_precedence_matrix(monkeypatch):
     for args, env, defaults, src in CASES:
         # Apply env to monkeypatch to avoid side-effects
-        monkeypatch.setenv("ARTIFACT", env.get("ARTIFACT", ""))
+        if "ARTIFACT" in env:
+            monkeypatch.setenv("ARTIFACT", env["ARTIFACT"])
+        else:
+            monkeypatch.delenv("ARTIFACT", raising=False)
         got_path = choose_artifact_path(args, os.environ, defaults)
         if src == "args":
             assert got_path == "/from/args"

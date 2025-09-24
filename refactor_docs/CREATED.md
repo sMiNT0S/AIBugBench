@@ -1,11 +1,11 @@
-# Phase-0 Scaffolding – Files Created
+# Phase-0 and Phase-1 Files Created
 
 This document is generated automatically by the scaffold script.  It lists
 all brand-new files added in Phase 0 and confirms that the new package is
 importable.
 
 ```
-AIBugBench/
+aibugbench/
   __init__.py
   io/__init__.py
   io/fs.py
@@ -37,13 +37,13 @@ AIBugBench/
 python - <<'PY'
 import importlib, json, sys
 mods = [
-    "AIBugBench",
-    "AIBugBench.io.fs",
-    "AIBugBench.io.paths",
-    "AIBugBench.config.artifacts",
-    "AIBugBench.orchestration.runner",
-    "AIBugBench.validation.base",
-    "AIBugBench.validation.adapters.legacy_validator",
+    "aibugbench",
+    "aibugbench.io.fs",
+    "aibugbench.io.paths",
+    "aibugbench.config.artifacts",
+    "aibugbench.orchestration.runner",
+    "aibugbench.validation.base",
+    "aibugbench.validation.adapters.legacy_validator",
 ]
 print(json.dumps({m: bool(importlib.import_module(m)) for m in mods}, indent=2))
 PY

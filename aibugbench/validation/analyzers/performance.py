@@ -15,7 +15,6 @@ LINE_LEN_WARN = 120
 COMPLEXITY_NODES = (ast.If, ast.For, ast.While, ast.BoolOp)
 
 _LARGE_FILE_THRESHOLD = 1_000_000  # bytes (~1 MB)
-_UNUSED = (MAX_FILE_BYTES, LINE_LEN_WARN, COMPLEXITY_NODES)
 
 
 def run(run_dir: str) -> tuple[list[dict[str, Any]], dict[str, int]]:

@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import ast
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
 from aibugbench.validation.errors import raise_retriable
 
-MAX_FILE_BYTES = 65536  # 64 KiB cap per file read
 MAX_FILES_SCANNED = 200
-LINE_LEN_WARN = 120
-COMPLEXITY_NODES = (ast.If, ast.For, ast.While, ast.BoolOp)
 
 _LARGE_FILE_THRESHOLD = 1_000_000  # bytes (~1 MB)
 

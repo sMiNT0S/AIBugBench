@@ -1,14 +1,16 @@
+# .coveragerc — Phase 3 (validators migrated; legacy still present)
+# Collect data for both new + legacy, but enforce the gate only on aibugbench/*
 [run]
 branch = True
-# Only measure our code, not plugins, not tests
-source =
-    AIBugBench
-    src/AIBugBench
-relative_files = True
 parallel = True
+relative_files = True
 concurrency = multiprocessing,thread
-# Avoid noise when Phase 0 has little code exercised
 disable_warnings = no-data-collected,already-imported
+source =
+    aibugbench
+    src/aibugbench
+    benchmark
+
 omit =
     tests/*
     scripts/*
@@ -17,20 +19,25 @@ omit =
     **/__pypackages__/*
     **/site-packages/*
     **/node_modules/*
+    **/.pytest_cache/*
+    */__pycache__/*
 
 [paths]
-# Unify paths so Codecov merges Windows/Linux/installed wheels
+# Unify paths across editable installs, wheels, and OSes
 source =
     aibugbench
     src/aibugbench
     */site-packages/aibugbench
+    *\site-packages\aibugbench
 
 [report]
+# Only report/enforce on the new package; legacy shows up in HTML but doesn't gate PRs
+include =
+    aibugbench/*
+fail_under = 45
 precision = 2
 show_missing = True
 skip_covered = False
-# Phase-0: keep the bar modest. Raise later per phase or via CI flags.
-fail_under = 15
 exclude_lines =
     pragma: no cover
     if TYPE_CHECKING:
@@ -38,7 +45,7 @@ exclude_lines =
     @abstractmethod
     raise NotImplementedError
     ^\s*pass\s*$
-    ^\s*if __name__ == ["']__main__["']:$
+    ^\s*if __name__ == ['"]__main__['"]:\s*$
 
 [html]
 directory = .coverage_html

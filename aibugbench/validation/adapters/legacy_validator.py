@@ -7,7 +7,7 @@ finished.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, cast
 
 from aibugbench.validation.base import Validator
@@ -41,6 +41,15 @@ score_result: Callable[[dict[str, Any]], float] = cast(
 
 
 class LegacyValidatorAdapter(Validator):
+    def __init__(
+        self,
+        *,
+        prompt_id: str | None = None,
+        env: Mapping[str, str] | None = None,
+    ) -> None:
+        self._prompt_id = prompt_id
+        self._env = dict(env or {})
+
     def analyze(self, run_dir: str) -> dict[str, Any]:
         return analyze_run(run_dir)
 

@@ -1,31 +1,35 @@
-"""Phase 3.B scaffolding tests (xfail placeholders)."""
+"""Smoke tests covering Prompt 1 analyzer scaffolding now implemented."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
-import pytest
-
 from aibugbench.validation.analyzers import maintainability, performance, security
-from aibugbench.validation.impl.prompt1 import Prompt1Validator
 
 
-@pytest.mark.parametrize(
-    "analyzer",
-    [security.run, maintainability.run, performance.run],
-)
-@pytest.mark.xfail(strict=True, reason="Phase 3 analyzers not yet implemented")
-def test_analyzers_placeholder(analyzer: Callable[[str], object], tmp_path) -> None:
-    analyzer(str(tmp_path))
+def test_security_run_empty_directory(tmp_path) -> None:
+    checks, stats = security.run(str(tmp_path))
+    assert checks == []
+    assert stats == {"files_scanned": 0, "matches_found": 0}
 
 
-@pytest.mark.xfail(strict=True, reason="Prompt1 validator not yet implemented")
-def test_prompt1_validator_placeholder(tmp_path) -> None:
-    validator = Prompt1Validator(env={})
-    validator.analyze(str(tmp_path))
+def test_maintainability_run_empty_directory(tmp_path) -> None:
+    checks, stats = maintainability.run(str(tmp_path))
+    assert len(checks) == 1
+    assert checks[0]["id"] == "maint.too_long_lines"
+    assert checks[0]["ok"] is True
+    assert stats == {
+        "py_file_count": 0,
+        "avg_line_length": 0.0,
+        "complexity_score": 0,
+    }
 
 
-@pytest.mark.xfail(strict=True, reason="Prompt1 score not yet implemented")
-def test_prompt1_validator_score_placeholder() -> None:
-    validator = Prompt1Validator(env={})
-    validator.score({})
+def test_performance_run_empty_directory(tmp_path) -> None:
+    checks, stats = performance.run(str(tmp_path))
+    assert len(checks) == 1
+    assert checks[0]["id"] == "perf.large_file_detected"
+    assert checks[0]["ok"] is True
+    assert stats == {
+        "total_files_scanned": 0,
+        "total_bytes": 0,
+        "largest_file_bytes": 0,
+    }

@@ -543,8 +543,7 @@ class BenchmarkRunner:
         return bool(self._args.get("dry_run"))
 
     def _emit(self, name: str, **fields: Any) -> None:
-        # Logging must never raise; suppress all exceptions deliberately.
-        # Logging must not raise; suppress any logger backend issues.
+        # Logging must never raise; suppress all logger backend exceptions.
         with contextlib.suppress(Exception):
             self._logger.event(name, **fields)
 

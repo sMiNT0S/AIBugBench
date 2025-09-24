@@ -40,6 +40,13 @@ def test_project_root_failure(monkeypatch):
         p = Path(td)
         # Sanity guard: ensure no marker exists in this temp subtree
         assert not any((p / m).exists() for m in (".git", "pyproject.toml"))
-        monkeypatch.chdir(p)
-        with pytest.raises(FileNotFoundError):
-            project_root()
+        # On Windows a TemporaryDirectory cannot be removed while it is the CWD.
+        # We therefore change into it for the assertion and then ALWAYS restore
+        # the original directory before the context manager attempts deletion.
+        orig = Path.cwd()
+        try:
+            monkeypatch.chdir(p)
+            with pytest.raises(FileNotFoundError):
+                project_root()
+        finally:
+            monkeypatch.chdir(orig)

@@ -50,8 +50,7 @@ def choose_artifact_path(
         Parsed CLI arguments (e.g. from vars(argparse.Namespace)). Only the
         ``artifact`` key is consulted.
     env:
-    Environment mapping (``os.environ`` or a stand-in) from which the
-        ``ARTIFACT`` variable may be read.
+        Environment mapping (``os.environ`` or a stand-in) from which the ``ARTIFACT`` variable may be read.
     default:
         Optional fallback directory string (may be relative to project root).
     """

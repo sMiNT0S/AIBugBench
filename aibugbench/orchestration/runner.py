@@ -153,7 +153,7 @@ class BenchmarkRunner:
             default=0,
         )
         # Deterministic, non-cryptographic RNG for jitter/backoff calculations.
-        # Acceptable for scheduling; no security impact. noqa S311
+        # Acceptable for scheduling; no security impact.
         self._rng = random.Random(seed)  # noqa: S311
         self._rng_lock = threading.Lock()
 

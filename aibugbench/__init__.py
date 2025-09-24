@@ -1,7 +1,5 @@
-"""AIBugBench refactor scaffolding package (Phase 0).
+"""AIBugBench refactor scaffolding package."""
 
-Only facades, contracts and stubs live here for now. Real
-implementations arrive in later phases.
-"""
+from __future__ import annotations
 
 __all__: list[str] = []

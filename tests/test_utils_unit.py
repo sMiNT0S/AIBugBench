@@ -41,7 +41,14 @@ def test_validate_submission_structure_partial(temp_dir: Path):
 @pytest.mark.unit
 def test_get_model_statistics_empty():
     stats = utils.get_model_statistics({})
-    assert stats == {}
+    # Function now returns a structured zeroed stats object instead of {}.
+    assert stats["total_models"] == 0
+    assert stats["successful_runs"] == 0
+    assert stats["failed_runs"] == 0
+    assert stats["average_score"] == 0.0
+    assert stats["highest_score"] == 0.0
+    assert stats["lowest_score"] == 0.0
+    assert stats["prompt_stats"] == {}
 
 
 @pytest.mark.unit

@@ -1,4 +1,4 @@
-# Phase-0 and Phase-1 Files Created
+# Phase-0 and Phase-1 Files Created; Phase-2 In Progress - see bottom of this doc
 
 This document is generated automatically by the scaffold script.  It lists
 all brand-new files added in Phase 0 and confirms that the new package is
@@ -58,3 +58,53 @@ pytest -q tests/test_cli_snapshot.py \
        tests/test_validation_contract.py \
        tests/test_runner_contract.py
 ```
+
+=========================================================
+
+## Phase-2A Completion Report
+
+  Goal
+
+> Approach
+
+- Implemented BenchmarkRunner with injected validator/env/fs, artifact resolution via choose_artifact_path, and atomic write handling for non–dry runs.
+- Rewired CLI to build the runner dependencies, delegate execution, and keep the SUMMARY line compatible with existing snapshots.
+- Validated the updated CLI flow with the snapshot test.
+
+  Result
+
+- aibugbench/orchestration/runner.py#L26 now provides a concrete BenchmarkRunner that supports dry-run short-circuiting, validator delegation, and atomic persistence of analysis/summary
+  artifacts.
+- aibugbench/run_benchmark.py#L19 instantiates the runner using LegacyValidatorAdapter, forwards CLI options (including --dry-run), and emits the unchanged SUMMARY payload while
+  optionally listing created artifacts for real runs.
+- Tests: pytest tests/test_cli_snapshot.py.
+
+  Next
+
+- Consider enabling the remaining Phase‑2 tests once the contract assertions are updated.
+
+  CHECKLIST
+
+- changed files: aibugbench/orchestration/runner.py; aibugbench/run_benchmark.py
+- functions implemented: BenchmarkRunner.run_once; CLI main wiring
+- pytest: pytest tests/test_cli_snapshot.py
+
+## Phase 2B Completion Report
+
+> Approach
+
+- Replaced the contract xfail with a real assertion suite using stubbed validator/FS to capture runner effects.
+- Added an integration-style atomic write check leveraging the shared filesystem helper.
+- Ran the targeted runner test modules.
+
+  Result
+
+- tests/test_runner_contract.py:1 now instantiates BenchmarkRunner with injected doubles, asserting summary shape, score propagation, artifact paths, and recorded atomic-write calls.
+- tests/test_runner_writes_atomically.py:1 exercises the runner against aibugbench.io.fs, verifying JSON artifacts exist and no .tmp remnants remain post-run.
+
+  Next
+
+- None; ready for further Phase 2 tasks.
+
+  pytest command: pytest tests/test_runner_contract.py tests/test_runner_writes_atomically.py
+  fixtures/mocks: uses pytest tmp_path; custom stubs defined inline.

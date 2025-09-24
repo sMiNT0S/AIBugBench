@@ -2,9 +2,13 @@ name: PR Security Checks
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - refactor/**
   push:
-    branches: [main]
+    branches:
+      - main
+      - refactor/**
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}

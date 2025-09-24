@@ -17,6 +17,9 @@ class _RecordingFS:
     def atomic_write_json(self, path: str | Path, obj: dict[str, Any]) -> None:
         self.calls.append((Path(path), dict(obj)))
 
+    def load_json(self, path: str | Path) -> Any | None:  # pragma: no cover
+        return None
+
 
 class _StubValidator:
     def __init__(self, score: float = 0.75) -> None:
@@ -59,14 +62,14 @@ def test_runner_returns_minimal_summary(tmp_path):
     assert set(summary["artifacts"].keys()) == {"analysis", "summary"}
 
     recorded_paths = {p.name for p, _ in fs.calls}
-    assert recorded_paths == {"analysis.json", "summary.json"}
+    assert recorded_paths == {"analysis.json", "summary.json", "checkpoint.json"}
     assert validator.last_run_dir == str(run_dir)
 
     analysis_entry = next(obj for path, obj in fs.calls if path.name == "analysis.json")
     summary_entry = next(obj for path, obj in fs.calls if path.name == "summary.json")
+    checkpoint_entry = next(obj for path, obj in fs.calls if path.name == "checkpoint.json")
 
     assert analysis_entry["run_dir"] == str(run_dir)
     assert summary_entry == {"prompt": "p1", "score": 0.42}
-
-    assert summary["artifacts"]["analysis"] == str(run_dir / "analysis.json")
-    assert summary["artifacts"]["summary"] == str(run_dir / "summary.json")
+    assert checkpoint_entry["status"] == "SUCCEEDED"
+    assert checkpoint_entry["summary"]["prompt"] == "p1"

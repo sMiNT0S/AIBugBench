@@ -1,10 +1,12 @@
-# Phase-0 and Phase-1 Files Created; Phase-2 In Progress - see bottom of this doc
+# Phase-0 and Phase-1 Files Created; Phase-2 Reports from line 62 onwards
 
 This document is generated automatically by the scaffold script.  It lists
 all brand-new files added in Phase 0 and confirms that the new package is
 importable.
 
-```
+## Phase-0 and Phase-1
+
+```text
 aibugbench/
   __init__.py
   io/__init__.py
@@ -33,7 +35,7 @@ aibugbench/
 
 ## Importability check
 
-```
+```python
 python - <<'PY'
 import importlib, json, sys
 mods = [
@@ -51,7 +53,7 @@ PY
 
 ## Run seam tests only
 
-```
+```bash
 pytest -q tests/test_cli_snapshot.py \
        tests/test_artifact_precedence.py \
        tests/test_fs_helpers.py \
@@ -108,3 +110,27 @@ pytest -q tests/test_cli_snapshot.py \
 
   pytest command: pytest tests/test_runner_contract.py tests/test_runner_writes_atomically.py
   fixtures/mocks: uses pytest tmp_path; custom stubs defined inline.
+
+## Phase 2.5 Completion Report
+
+> Approach
+
+- Extended BenchmarkRunner to surface concurrency/retry configuration and added resumable checkpoint support per ADR.
+- Implemented run_many workflow with locking, backoff, jitter, and telemetry hooks, reusing atomic writes for idempotence.
+- Added targeted tests covering checkpoint skips, retry/backoff behaviour, and exhausted retry budgets alongside updated contract checks, then ran focused pytest suite.
+
+  Result
+
+- Introduced RunStatus, RunResult, RetriableError, and a configurable run_many pipeline with retry/backoff, checkpointing, and locking in aibugbench/orchestration/
+  runner.py:32,174,295,516, keeping run_once deterministic and checkpoint-aware.
+- Updated the runner contract test to account for checkpoint writes in tests/test_runner_contract.py:64-75.
+- Added resilience tests for skip/resume, deterministic backoff, and exhausted retries in tests/test_runner_resilience.py:27-168.
+
+  Next
+
+- Optional: integrate CLI wiring for run_many once Phase 3 validators land, ensuring concurrency env knobs are documented.
+
+  CHECKLIST
+
+- added functions/classes: RunStatus, RunResult, RetriableError, BenchmarkRunner.run_many, BenchmarkRunner._execute_with_retries, BenchmarkRunner._compute_backoff
+- pytest: pytest tests/test_cli_snapshot.py tests/test_runner_contract.py tests/test_runner_writes_atomically.py tests/test_runner_resilience.py

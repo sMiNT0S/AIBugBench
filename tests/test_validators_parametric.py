@@ -49,7 +49,7 @@ def process_records(filename):
 @pytest.mark.parametrize("name,code,should_pass", PROMPT1_CASES)
 def test_prompt1_parametric(validators_fixture, temp_dir, name, code, should_pass):
     file_path = temp_dir / f"p1_{name}.py"
-    file_path.write_text(code)
+    file_path.write_text(code, newline="\n")
     result = validators_fixture.validate_prompt_1_refactoring(file_path)
     assert result["passed"] is should_pass
 
@@ -75,10 +75,10 @@ PROMPT2_CASES = [
 def test_prompt2_parametric(validators_fixture, temp_dir, name, yaml_text, json_obj, should_pass):
     yaml_file = temp_dir / f"p2_{name}.yaml"
     json_file = temp_dir / f"p2_{name}.json"
-    yaml_file.write_text(yaml_text)
+    yaml_file.write_text(yaml_text, newline="\n")
     import json as _json
 
-    json_file.write_text(_json.dumps(json_obj))
+    json_file.write_text(_json.dumps(json_obj), newline="\n")
     result = validators_fixture.validate_prompt_2_yaml_json(yaml_file, json_file)
     assert result["passed"] is should_pass
 
@@ -121,7 +121,7 @@ def sync_users_to_crm(users, token):
 @pytest.mark.parametrize("name,code,should_pass", PROMPT4_CASES)
 def test_prompt4_parametric(validators_fixture, temp_dir, name, code, should_pass):
     file_path = temp_dir / f"p4_{name}.py"
-    file_path.write_text(code)
+    file_path.write_text(code, newline="\n")
     result = validators_fixture.validate_prompt_4_api(file_path)
     assert isinstance(result["score"], int | float)
     assert result["passed"] is should_pass
@@ -136,7 +136,7 @@ def transform_users(users):
     return [u for u in users if u.get('id')]
 """
     file_path = temp_dir / "p3_simple.py"
-    file_path.write_text(code)
+    file_path.write_text(code, newline="\n")
 
     with patch("json.load", return_value=[{"id": 1}, {"id": 0}]):
         result = validators_fixture.validate_prompt_3_transformation(file_path)

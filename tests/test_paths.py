@@ -17,7 +17,7 @@ def test_project_root_detects_git(tmp_path, monkeypatch):
 def test_project_root_detects_pyproject(tmp_path, monkeypatch):
     repo = tmp_path / "repo2"
     repo.mkdir()
-    (repo / "pyproject.toml").write_text("[build-system]\n")
+    (repo / "pyproject.toml").write_text("[build-system]\n", newline="\n")
     child = repo / "subdir/inner"
     child.mkdir(parents=True)
     monkeypatch.chdir(child)

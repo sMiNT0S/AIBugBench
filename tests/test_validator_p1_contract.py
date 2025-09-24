@@ -22,17 +22,19 @@ def _build_fixture(tmp_path: Path) -> Path:
         "        return True",
         "    return False",
     ]
-    module.write_text("\n".join(long_lines + function_lines) + "\n", encoding="utf-8")
+    module.write_text("\n".join(long_lines + function_lines) + "\n", encoding="utf-8", newline="\n")
 
     (tmp_path / "notes").mkdir()
     (tmp_path / "notes" / "README.md").write_text(
         "Documentation placeholder\n",
         encoding="utf-8",
+        newline="\n",
     )
     (tmp_path / "secrets").mkdir()
     (tmp_path / "secrets" / "leaky.txt").write_text(
         "Credentials AKIA1234567890ABCDE1\n",
         encoding="utf-8",
+        newline="\n",
     )
 
     return tmp_path

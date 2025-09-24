@@ -12,14 +12,13 @@ from aibugbench.validation.errors import raise_retriable
 
 MAX_FILE_BYTES = 65536  # 64 KiB cap per file read
 MAX_FILES_SCANNED = 200
-_unused_LINE_LEN_WARN = 120
-_unused_COMPLEXITY_NODES = (ast.If, ast.For, ast.While, ast.BoolOp)
+_unused_line_len_warn = 120
+_unused_complexity_nodes = (ast.If, ast.For, ast.While, ast.BoolOp)
 
 _ALLOWED_EXTENSIONS = {".py", ".txt", ".md"}
 _SNIFF_BYTES = 4096
 _PRINTABLE_BYTES = {9, 10, 13} | set(range(32, 127))
 _AWS_ACCESS_KEY = re.compile(r"\bAKIA[0-9A-Z]{16}\b")
-
 
 
 def run(run_dir: str) -> tuple[list[dict[str, Any]], dict[str, int]]:

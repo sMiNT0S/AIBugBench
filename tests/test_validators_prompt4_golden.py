@@ -44,7 +44,7 @@ def sync_users_to_crm(user_data, api_token):
             time.sleep(0.05)
     return None if last_exc else []
 """
-    api_file.write_text(module_code, encoding="utf-8")
+    api_file.write_text(module_code, encoding="utf-8", newline="\n")
 
     validator = PromptValidators(test_data_dir)
     result = validator.validate_prompt_4_api(api_file)

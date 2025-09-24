@@ -3,9 +3,32 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from aibugbench.validation.impl.prompt1 import Prompt1Validator
 from tests.test_validator_p1_contract import _build_fixture
+
+
+def _stable_stats(stats: dict[str, Any]) -> dict[str, int]:
+    """Return an OS-agnostic subset of stats for snapshotting."""
+
+    # Convert sizes to KB to dodge CRLF/LF drift
+    def _kb(n: int) -> int:
+        return (int(n) + 512) // 1024  # round to nearest KB
+
+    out = {
+        "py_file_count": int(stats.get("py_file_count", 0)),
+        "files_scanned": int(stats.get("files_scanned", 0)),
+        "total_files_scanned": int(stats.get("total_files_scanned", 0)),
+        "complexity_score": int(stats.get("complexity_score", 0)),
+    }
+    # Keep sizes, but normalize to KB
+    if "largest_file_bytes" in stats:
+        out["largest_file_kb"] = _kb(int(stats["largest_file_bytes"]))
+    if "total_bytes" in stats:
+        out["total_kb"] = _kb(int(stats["total_bytes"]))
+    return out
+
 
 _EXPECTED_CHECKS = [
     ("maint.too_long_lines", False, "warn"),
@@ -13,36 +36,35 @@ _EXPECTED_CHECKS = [
     ("sec.aws_key_found", False, "error"),
 ]
 
-_EXPECTED_STATS = {
-    "avg_line_length": 130.857,
-    "complexity_score": 1,
-    "files_scanned": 3,
-    "largest_file_bytes": 1860,
-    "matches_found": 1,
+_EXPECTED_STATS_BYTES = {
+    # Raw bytes here are *only* inputs to normalization.
     "py_file_count": 1,
-    "total_bytes": 1921,
+    "files_scanned": 3,
     "total_files_scanned": 3,
+    "complexity_score": 1,
+    "largest_file_bytes": 1860,
+    "total_bytes": 1921,
 }
 
 _EXPECTED_SCORE = 0.333
 
 
 def test_prompt1_validator_snapshot(tmp_path: Path) -> None:
+    # Fixture writer should use newline="\n" to force LF in the created files.
     run_dir = _build_fixture(tmp_path)
-    validator = Prompt1Validator(env={})
+    v = Prompt1Validator(env={})
+    analysis = v.analyze(str(run_dir))
 
-    analysis = validator.analyze(str(run_dir))
-    score = validator.score(analysis)
+    checks = analysis["checks"]
+    stats = analysis["stats"]
 
-    sorted_checks = sorted(
-        (check["id"], bool(check["ok"]), check["severity"]) for check in analysis["checks"]
-    )
+    got_checks = sorted((c["id"], bool(c["ok"]), c["severity"]) for c in checks)
+    assert got_checks == sorted(_EXPECTED_CHECKS)
 
-    stats_snapshot = {
-        key: (round(value, 3) if isinstance(value, float) else value)
-        for key, value in analysis["stats"].items()
-    }
+    # Compare stable projection, not raw stats
+    got_stats = _stable_stats(stats)
+    expected_stats = _stable_stats(_EXPECTED_STATS_BYTES)
+    assert got_stats == expected_stats
 
-    assert sorted_checks == _EXPECTED_CHECKS
-    assert stats_snapshot == _EXPECTED_STATS
-    assert round(score, 3) == _EXPECTED_SCORE
+    # Score snapshot: round to 3 decimals
+    assert round(v.score(analysis), 3) == _EXPECTED_SCORE

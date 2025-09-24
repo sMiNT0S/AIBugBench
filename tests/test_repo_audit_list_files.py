@@ -18,7 +18,7 @@ from validation.repo_audit_enhanced import SKIP_DIRS, list_files
 
 def write(p: Path, content: str = "test") -> Path:
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(content, encoding="utf-8")
+    p.write_text(content, encoding="utf-8", newline="\n")
     return p
 
 

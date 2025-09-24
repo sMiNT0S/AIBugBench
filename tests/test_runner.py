@@ -74,7 +74,7 @@ def sync_users_to_crm(users, api_token):
         # Write solutions to both template and example directories
         for model_dir in [template_dir, example_dir]:
             for filename, content in solutions.items():
-                (model_dir / filename).write_text(content)
+                (model_dir / filename).write_text(content, newline="\n")
 
         return submissions_dir
 
@@ -95,7 +95,8 @@ def sync_users_to_crm(users, api_token):
             )
         )
 
-        (test_data_dir / "config.yaml").write_text("""
+        (test_data_dir / "config.yaml").write_text(
+            """
 database:
   host: localhost
   port: 5432
@@ -103,9 +104,12 @@ database:
 api:
   base_url: "https://api.example.com"
   timeout: 30
-""")
+""",
+            newline="\n",
+        )
 
-        (test_data_dir / "process_records.py").write_text("""
+        (test_data_dir / "process_records.py").write_text(
+            """
 import json
 import datetime as datetime
 from datetime import datetime
@@ -128,7 +132,9 @@ def process_records(filename):
             results.append(record)
 
     return results
-""")
+""",
+            newline="\n",
+        )
 
         return test_data_dir
 

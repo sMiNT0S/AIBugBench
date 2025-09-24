@@ -47,6 +47,8 @@ import subprocess
 import sys
 from typing import Any, TypedDict, cast
 
+from aibugbench.io.fs import read_text  # shared helper; replaces local duplicate
+
 try:
     import tomllib  # py311+
 except Exception:  # pragma: no cover - optional
@@ -131,13 +133,6 @@ REQUESTS_CALL_RE = re.compile(r"\brequests\.(get|post|patch|put|delete|head|opti
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 log = logging.getLogger("repo_audit")
-
-
-def read_text(p: Path) -> str:
-    try:
-        return p.read_text(encoding="utf-8", errors="replace")
-    except Exception:  # pragma: no cover - IO fallback
-        return ""
 
 
 def safe_yaml_load(text: str) -> Any:

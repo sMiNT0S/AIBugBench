@@ -17,7 +17,8 @@ def test_cli_smoke(tmp_path):
         text=True,
     )
     assert cp.returncode == 0, cp.stderr
-    summary_line = next(line for line in cp.stdout.splitlines() if line.startswith("SUMMARY:"))
+    summary_line = next((line for line in cp.stdout.splitlines() if line.startswith("SUMMARY:")), None)
+    assert summary_line is not None, "No line starting with 'SUMMARY:' found in CLI output"
     got = json.loads(summary_line.split("SUMMARY:", 1)[1])
     golden = json.loads(FIXTURE.read_text())
     assert set(got.keys()) == set(golden.keys())

@@ -25,6 +25,8 @@ def _run_git(args: list[str], cwd: Path | None = None) -> str | None:
         git_exe = shutil.which("git")
         if not git_exe:
             return None
+        # Security: Calling subprocess with a fixed executable ("git") and trusted arguments.
+        # No shell=True, and PATH resolution for standard developer tooling is acceptable here.
         result = subprocess.run(  # noqa: S603
             [git_exe, *args],
             cwd=str(cwd) if cwd else None,

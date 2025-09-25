@@ -1,29 +1,54 @@
-# .coveragerc
+# .coveragerc — Phase 3 (validators migrated; legacy still present)
+# Collect data for both new + legacy, but enforce the gate only on aibugbench/*
 [run]
 branch = True
 parallel = True
-# Limit measurement to the code that matters
+relative_files = True
+concurrency = multiprocessing,thread
+disable_warnings = no-data-collected,already-imported
 source =
+    aibugbench
+    src/aibugbench
     benchmark
-    validation
-    run_benchmark.py
-# Don’t accidentally measure generated artifacts or venvs
-omit =
-    venv/*
-    .venv/*
-    **/.tox/*
-    **/.mypy_cache/*
-    **/.pytest_cache/*
-    **/htmlcov/*
-    **/build/*
-    **/dist/*
-    tests/*
 
-[report]
-show_missing = True
-skip_covered = False
+omit =
+    tests/*
+    scripts/*
+    **/.venv/*
+    **/venv/*
+    **/__pypackages__/*
+    **/site-packages/*
+    **/node_modules/*
+    **/.pytest_cache/*
+    */__pycache__/*
 
 [paths]
-# Normalize paths across CI runners if needed later
+# Unify paths across editable installs, wheels, and OSes
 source =
-    .
+    aibugbench
+    src/aibugbench
+    */site-packages/aibugbench
+    *\site-packages\aibugbench
+
+[report]
+# Only report/enforce on the new package; legacy shows up in HTML but doesn't gate PRs
+include =
+    aibugbench/*
+fail_under = 45
+precision = 2
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    @overload
+    @abstractmethod
+    raise NotImplementedError
+    ^\s*pass\s*$
+    ^\s*if __name__ == ['"]__main__['"]:\s*$
+
+[html]
+directory = .coverage_html
+
+[xml]
+output = coverage.xml

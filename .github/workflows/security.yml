@@ -5,9 +5,15 @@ name: Security Analysis
 
 "on":
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - refactor/**
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - refactor/**
   schedule:
     # Run security scans weekly on Mondays at 2 AM UTC
     - cron: "0 2 * * 1"

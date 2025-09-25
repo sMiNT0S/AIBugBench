@@ -33,6 +33,8 @@ venv/
 ENV/
 .venv/
 site-packages/
+.env
+.env.*
 
 # MkDocs build output
 site/

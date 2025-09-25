@@ -6,7 +6,7 @@ Utility functions for AI Code Benchmark
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 
 def load_test_data(test_data_dir: Path) -> dict[str, Any]:
@@ -185,18 +185,47 @@ def validate_submission_structure(model_dir: Path) -> dict[str, bool]:
     return validation
 
 
-def get_model_statistics(results: dict[str, Any]) -> dict[str, Any]:
-    """Extract key statistics from benchmark results."""
-    if "models" not in results:
-        return {}
+class _PromptAggregate(TypedDict):
+    average_score: float
+    max_score: float
+    min_score: float
+    pass_rate: float
 
-    stats = {
+
+class _ModelStats(TypedDict):
+    total_models: int
+    successful_runs: int
+    failed_runs: int
+    average_score: float
+    highest_score: float
+    lowest_score: float
+    prompt_stats: dict[str, _PromptAggregate]
+
+
+def get_model_statistics(results: dict[str, Any]) -> _ModelStats:
+    """Extract key statistics from benchmark results.
+
+    Always returns a structured stats object (never an empty dict) so that
+    callers can rely on keys without defensive existence checks.
+    """
+    if "models" not in results:
+        return {
+            "total_models": 0,
+            "successful_runs": 0,
+            "failed_runs": 0,
+            "average_score": 0.0,
+            "highest_score": 0.0,
+            "lowest_score": 0.0,
+            "prompt_stats": {},
+        }
+
+    stats: _ModelStats = {
         "total_models": len(results["models"]),
         "successful_runs": 0,
         "failed_runs": 0,
-        "average_score": 0,
-        "highest_score": 0,
-        "lowest_score": 100,
+        "average_score": 0.0,
+        "highest_score": 0.0,
+        "lowest_score": 100.0,
         "prompt_stats": {},
     }
 
@@ -212,12 +241,12 @@ def get_model_statistics(results: dict[str, Any]) -> dict[str, Any]:
         valid_scores.append(percentage)
 
         if percentage > stats["highest_score"]:
-            stats["highest_score"] = percentage
+            stats["highest_score"] = float(percentage)
         if percentage < stats["lowest_score"]:
-            stats["lowest_score"] = percentage
+            stats["lowest_score"] = float(percentage)
 
     if valid_scores:
-        stats["average_score"] = round(sum(valid_scores) / len(valid_scores), 1)
+        stats["average_score"] = float(round(sum(valid_scores) / len(valid_scores), 1))
 
     # Prompt-specific statistics
     for prompt_id in ["prompt_1", "prompt_2", "prompt_3", "prompt_4"]:
@@ -234,10 +263,10 @@ def get_model_statistics(results: dict[str, Any]) -> dict[str, Any]:
 
         if prompt_scores:
             stats["prompt_stats"][prompt_id] = {
-                "average_score": round(sum(prompt_scores) / len(prompt_scores), 1),
-                "max_score": max(prompt_scores),
-                "min_score": min(prompt_scores),
-                "pass_rate": round(prompt_passes / len(prompt_scores) * 100, 1),
+                "average_score": float(round(sum(prompt_scores) / len(prompt_scores), 1)),
+                "max_score": float(max(prompt_scores)),
+                "min_score": float(min(prompt_scores)),
+                "pass_rate": float(round(prompt_passes / len(prompt_scores) * 100, 1)),
             }
 
     return stats

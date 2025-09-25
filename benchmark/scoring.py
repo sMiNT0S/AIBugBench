@@ -1,10 +1,24 @@
 # SPDX-FileCopyrightText: 2024-2025 sMiNT0S
 # SPDX-License-Identifier: Apache-2.0
-"""
-Scoring system for AI Code Benchmark
-"""
+"""Scoring system for AI Code Benchmark."""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import Any, TypedDict
+
+
+class _Comparison(TypedDict):
+    """Structured result for model comparison.
+
+    Using a TypedDict prevents mypy from collapsing heterogeneous literals into
+    an imprecise ``Collection[Any]`` (which then forbids indexed assignment on
+    the nested mapping keys like ``best_by_prompt``).
+    """
+
+    best_overall: dict[str, Any] | None
+    best_by_prompt: dict[str, dict[str, Any]]
+    consistency_analysis: dict[str, dict[str, Any]]
+    detailed_comparison: list[dict[str, Any]]
 
 
 class BenchmarkScorer:
@@ -155,13 +169,18 @@ class BenchmarkScorer:
 
         return suggestions
 
-    def compare_models(self, all_results: dict[str, Any]) -> dict[str, Any]:
+    def compare_models(self, all_results: dict[str, Any]) -> _Comparison:
         """Generate detailed model comparison analysis."""
         if "models" not in all_results:
-            return {}
+            return {
+                "best_overall": None,
+                "best_by_prompt": {},
+                "consistency_analysis": {},
+                "detailed_comparison": [],
+            }
 
         models = all_results["models"]
-        comparison = {
+        comparison: _Comparison = {
             "best_overall": None,
             "best_by_prompt": {},
             "consistency_analysis": {},

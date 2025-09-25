@@ -29,8 +29,8 @@ def test_validate_submission_structure_partial(temp_dir: Path):
     model_dir = temp_dir / "model_y"
     model_dir.mkdir()
     # Create two required files with content
-    (model_dir / "prompt_1_solution.py").write_text("# impl\nprint('x')\n")
-    (model_dir / "prompt_2_config_fixed.yaml").write_text("a: 1\n")
+    (model_dir / "prompt_1_solution.py").write_text("# impl\nprint('x')\n", newline="\n")
+    (model_dir / "prompt_2_config_fixed.yaml").write_text("a: 1\n", newline="\n")
     validation = utils.validate_submission_structure(model_dir)
     assert validation["prompt_1_solution.py"] is True
     assert validation["prompt_2_config_fixed.yaml"] is True
@@ -41,7 +41,14 @@ def test_validate_submission_structure_partial(temp_dir: Path):
 @pytest.mark.unit
 def test_get_model_statistics_empty():
     stats = utils.get_model_statistics({})
-    assert stats == {}
+    # Function now returns a structured zeroed stats object instead of {}.
+    assert stats["total_models"] == 0
+    assert stats["successful_runs"] == 0
+    assert stats["failed_runs"] == 0
+    assert stats["average_score"] == 0.0
+    assert stats["highest_score"] == 0.0
+    assert stats["lowest_score"] == 0.0
+    assert stats["prompt_stats"] == {}
 
 
 @pytest.mark.unit

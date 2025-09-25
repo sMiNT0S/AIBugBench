@@ -40,7 +40,8 @@ class TestPerformanceRegression:
             model.mkdir()
             for j in range(5):  # 5 files per model
                 (model / f"prompt_{j}_solution.py").write_text(
-                    f"# Reference model {i} solution {j}"
+                    f"# Reference model {i} solution {j}",
+                    newline="\n",
                 )
 
         # Create user submissions (50 models)
@@ -50,7 +51,9 @@ class TestPerformanceRegression:
             model = user_subs / f"user_model_{i}"
             model.mkdir()
             for j in range(5):  # 5 files per model
-                (model / f"prompt_{j}_solution.py").write_text(f"# User model {i} solution {j}")
+                (model / f"prompt_{j}_solution.py").write_text(
+                    f"# User model {i} solution {j}", newline="\n"
+                )
 
         # Create templates
         templates = submissions / "templates"
@@ -58,7 +61,7 @@ class TestPerformanceRegression:
         template = templates / "template"
         template.mkdir()
         for j in range(5):
-            (template / f"prompt_{j}_template.py").write_text(f"# Template {j}")
+            (template / f"prompt_{j}_template.py").write_text(f"# Template {j}", newline="\n")
 
         return submissions
 
@@ -312,7 +315,7 @@ class TestPerformanceRegression:
             for i in range(count):
                 model = user_subs / f"model_{i}"
                 model.mkdir()
-                (model / "solution.py").write_text(f"# Solution {i}")
+                (model / "solution.py").write_text(f"# Solution {i}", newline="\n")
 
             # Measure discovery performance
             start_time = time.time()
@@ -352,7 +355,7 @@ class TestPerformanceRegression:
         for i in range(20):
             model = old_submissions / f"model_{i}"
             model.mkdir()
-            (model / "solution.py").write_text(f"# Model {i}")
+            (model / "solution.py").write_text(f"# Model {i}", newline="\n")
 
         # Create new tiered structure
         new_submissions = tmp_path / "new_submissions"
@@ -364,7 +367,7 @@ class TestPerformanceRegression:
         for i in range(20):
             model = user_subs / f"model_{i}"
             model.mkdir()
-            (model / "solution.py").write_text(f"# Model {i}")
+            (model / "solution.py").write_text(f"# Model {i}", newline="\n")
 
         def benchmark_discovery(submissions_dir, is_old_structure=True):
             """Benchmark model discovery for given structure."""
@@ -444,7 +447,7 @@ def sync_users_to_crm(users, token):
         }
 
         for filename, content in solutions.items():
-            (test_model / filename).write_text(content)
+            (test_model / filename).write_text(content, newline="\n")
 
         # Mock benchmark execution timing
         def mock_benchmark_execution(model_path):

@@ -28,14 +28,20 @@ def tiered_submissions(tmp_path: Path) -> Path:
 
     example = ref_impl / "example_model"
     example.mkdir()
-    (example / "prompt_1_solution.py").write_text("print('ok')\n")
-    (example / "prompt_2_config.json").write_text('{"database": {"host": "localhost"}}')
-    (example / "prompt_2_config_fixed.yaml").write_text("database:\n  host: localhost\n")
+    (example / "prompt_1_solution.py").write_text("print('ok')\n", newline="\n")
+    (example / "prompt_2_config.json").write_text(
+        '{"database": {"host": "localhost"}}', newline="\n"
+    )
+    (example / "prompt_2_config_fixed.yaml").write_text(
+        "database:\n  host: localhost\n", newline="\n"
+    )
     (example / "prompt_3_transform.py").write_text(
-        "def transform_and_enrich_users(users):\n    return users\n"
+        "def transform_and_enrich_users(users):\n    return users\n",
+        newline="\n",
     )
     (example / "prompt_4_api_sync.py").write_text(
-        "def sync_users_to_crm(data, token):\n    return None\n"
+        "def sync_users_to_crm(data, token):\n    return None\n",
+        newline="\n",
     )
     return base
 

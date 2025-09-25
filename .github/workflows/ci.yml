@@ -3,7 +3,7 @@ name: CI
 env:
   PYTHON_DEFAULT_VERSION: "3.13.7"
   BANDIT_VERSION: "1.8.6"
-  RUFF_VERSION: "0.12.11"  # Upgraded to align with local environment (supports UP047 rule)
+  RUFF_VERSION: "0.12.11" # Upgraded to align with local environment (supports UP047 rule)
   MYPY_VERSION: "1.11.2"
   PYTEST_VERSION: "8.3.2"
   PYTEST_COV_VERSION: "5.0.0"
@@ -12,9 +12,13 @@ env:
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - refactor/**
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - refactor/**
   workflow_dispatch:
     inputs:
       validate_telemetry:
@@ -264,7 +268,7 @@ jobs:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-dev: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}
@@ -304,7 +308,7 @@ jobs:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-test: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}
@@ -312,20 +316,48 @@ jobs:
             ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-
 
       - name: Run tests (branch coverage unified)
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1" # isolate from global plugins
+          PYTEST_ADDOPTS: "--basetemp=.pytest_tmp" # consistent temp dir
         run: |
-          coverage erase
-          pytest -q \
+          # Ensure coverage present (only reinstall if missing or mismatched)
+          python - <<'PY'
+          import importlib, subprocess, sys
+          TARGET = f"coverage==${{ env.COVERAGE_VERSION }}"
+          try:
+              importlib.import_module("coverage")
+          except Exception:
+              subprocess.check_call([sys.executable, "-m", "pip", "install", TARGET])
+          else:
+              try:
+                  from importlib.metadata import version
+              except Exception:  # pragma: no cover
+                  from pkg_resources import get_distribution as version  # type: ignore
+              have = version("coverage")
+              want = "${{ env.COVERAGE_VERSION }}"
+              if have != want:
+                  subprocess.check_call([sys.executable, "-m", "pip", "install", TARGET])
+          PY
+
+          # Stable temp dir across platforms
+          python - <<'PY'
+          import pathlib; pathlib.Path('.pytest_tmp').mkdir(exist_ok=True)
+          PY
+
+          coverage erase || true
+          python -m pytest -q -p pytest_cov \
+            --cov=aibugbench \
             --cov=benchmark \
-            --cov=validation \
-            --cov=run_benchmark \
             --cov-branch \
+            --cov-config=.coveragerc \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
             --cov-report=html:htmlcov
+
+          # Combine (noop for single run) & report per .coveragerc include/fail_under.
           coverage combine || true
-            # Export XML for Codecov
-            coverage xml -o coverage.xml || true
-          coverage report -m
+          coverage xml -o coverage.xml || true
+            coverage report -m
 
       - name: Coverage summary
         run: |
@@ -408,7 +440,7 @@ jobs:
           python-version: ${{matrix.python-version}}
           install-test: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{runner.os}}-pip-${{matrix.python-version}}-${{hashFiles('requirements.txt')}}
@@ -582,7 +614,7 @@ jobs:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-security: "true"
       - name: Cache pip
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809  # v4.2.4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ~/.cache/pip
           key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}

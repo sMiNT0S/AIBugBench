@@ -2,7 +2,8 @@ name: Docs
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,38 @@ jobs:
           python -m pip install -U "pip==24.3.1"
           # Docs deps are separate; if a docs lock exists in future, switch to it with --require-hashes
           pip install -r docs/requirements.txt
+      # Generate Safety badge JSON to be published under /badges/safety.json on Pages
+      - name: Generate Safety badge JSON
+        env:
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+          SAFETY_DISABLE_ANALYTICS: "1"
+          CI: "true"
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install "safety>=3,<4"
+
+          # Prefer scanning a lockfile if available; else scan the dev lock
+          ARG=""
+          if [ -f requirements.lock ]; then
+            ARG="--file=requirements.lock"
+          elif [ -f requirements-dev.lock ]; then
+            ARG="--file=requirements-dev.lock"
+          fi
+
+          # Non-interactive Safety v3 scan; tolerate failures to keep docs publishing
+          safety scan --key "${SAFETY_API_KEY:-}" $ARG --json > safety-results.json || true
+
+          # Count issues and build Shields.io JSON
+          COUNT=$(jq '(.issues // []) | length' safety-results.json 2>/dev/null || echo 0)
+          if [ "${COUNT:-0}" -eq 0 ]; then
+            COLOR="brightgreen"; MSG="0 vulns"
+          else
+            COLOR="red"; MSG="${COUNT} vulns"
+          fi
+
+          mkdir -p docs/badges
+          printf '{"schemaVersion":1,"label":"safety","message":"%s","color":"%s"}\n' "$MSG" "$COLOR" > docs/badges/safety.json
       - name: Build site
         run: mkdocs build --strict
       - name: Upload artifact

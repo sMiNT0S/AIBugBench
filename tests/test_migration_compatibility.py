@@ -17,7 +17,8 @@ class TestTieredStructure:
         (subs / "templates" / "template").mkdir(parents=True)
         (subs / "user_submissions").mkdir(parents=True)
         (subs / "reference_implementations" / "example_model" / "prompt_1_solution.py").write_text(
-            "# ok"
+            "# ok",
+            newline="\n",
         )
         return subs
 

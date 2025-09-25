@@ -40,7 +40,9 @@ def test_security_core_file_presence(tmp_path: Path, monkeypatch):
     monkeypatch.setattr("validation.security_core.PROJECT_ROOT", tmp_path)
     # Create one file to verify detection
     (tmp_path / ".github").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".github" / "dependabot.yml").write_text("version: 2", encoding="utf-8")
+    (tmp_path / ".github" / "dependabot.yml").write_text(
+        "version: 2", encoding="utf-8", newline="\n"
+    )
     results = check_security_files()
     assert results[".github/dependabot.yml"] is True
     # At least one expected missing

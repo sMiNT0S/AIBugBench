@@ -68,7 +68,7 @@ class TestSetupFunctionality:
         ai_prompt_path = prompts_dir / "ai_prompt.md"
 
         existing_content = "Existing AI Prompt Content for Testing"
-        ai_prompt_path.write_text(existing_content, encoding="utf-8")
+        ai_prompt_path.write_text(existing_content, encoding="utf-8", newline="\n")
 
         def mock_path(path_str):
             if path_str == "prompts":

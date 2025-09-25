@@ -20,6 +20,7 @@ import time
 from typing import Any, Protocol
 
 from aibugbench.config.artifacts import choose_artifact_path
+from aibugbench.validation.errors import RetriableError
 
 __all__ = [
     "BenchmarkRunner",
@@ -63,10 +64,6 @@ class _SystemClock:
 class _NullLogger:
     def event(self, name: str, **fields: Any) -> None:  # pragma: no cover
         return None
-
-
-class RetriableError(Exception):
-    """Signal that a run may be retried safely."""
 
 
 class _FS(Protocol):

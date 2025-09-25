@@ -21,7 +21,7 @@ def runner(test_data_dir: Path) -> TestRunner:  # uses real test_data_dir for en
 @pytest.mark.unit
 def test_run_python_script_success(runner: TestRunner, temp_dir: Path):
     script = temp_dir / "ok_script.py"
-    script.write_text("print('hello')\n")
+    script.write_text("print('hello')\n", newline="\n")
     result = runner.run_python_script(script)
     assert result["success"] is True
     assert result["return_code"] == 0
@@ -31,7 +31,7 @@ def test_run_python_script_success(runner: TestRunner, temp_dir: Path):
 @pytest.mark.unit
 def test_run_python_script_exception(runner: TestRunner, temp_dir: Path):
     script = temp_dir / "boom.py"
-    script.write_text("raise RuntimeError('boom')\n")
+    script.write_text("raise RuntimeError('boom')\n", newline="\n")
     result = runner.run_python_script(script)
     assert result["success"] is False
     assert result["return_code"] != 0
@@ -50,8 +50,10 @@ def test_run_python_script_timeout(runner: TestRunner, temp_dir: Path):
         time.sleep(2)
         print('done')
         """
-        )
+        ),
+        newline="\n",
     )
+    # Force LF endings for determinism across platforms
     start = time.time()
     result = runner.run_python_script(script, timeout=1)
     elapsed = time.time() - start

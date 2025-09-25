@@ -20,9 +20,9 @@ def is_unicode_safe(stream: TextIO | None = None) -> bool:
 
     The logic mirrors the previous ad-hoc checks scattered in legacy files:
     1. If the stream is not a tty ``isatty()`` -> assume safe (redirected to
-       file or pipe).
+      file or pipe).
     2. On Windows, we rely on UTF-8 mode (code page 65001) or *utf-8* encoding
-       on the text wrapper.
+      on the text wrapper.
     3. Otherwise, check that encoding contains *utf*.
     """
     stream = stream or sys.stdout

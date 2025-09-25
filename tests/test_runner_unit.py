@@ -50,9 +50,10 @@ def test_run_python_script_timeout(runner: TestRunner, temp_dir: Path):
         time.sleep(2)
         print('done')
         """
-        )
+        ),
+        newline="\n",
     )
-    # newline handled by content; no change needed for deterministic endings
+    # Force LF endings for determinism across platforms
     start = time.time()
     result = runner.run_python_script(script, timeout=1)
     elapsed = time.time() - start

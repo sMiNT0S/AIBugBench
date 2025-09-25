@@ -35,6 +35,7 @@ def test_project_root_failure(monkeypatch):
     `project_root()` to discover the real repo root (containing a marker) and
     thus NOT raise. Using a system TemporaryDirectory ensures we are outside
     the repository tree so the ascent terminates at the filesystem root.
+    Note: test shows FileNotFoundError when no .git or pyproject.toml exists in the directory tree.
     """
     with TemporaryDirectory() as td:
         p = Path(td)

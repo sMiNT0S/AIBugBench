@@ -50,7 +50,8 @@ _EXPECTED_SCORE = 0.333
 
 
 def test_prompt1_validator_snapshot(tmp_path: Path) -> None:
-    # Fixture writer should use newline="\n" to force LF in the created files.
+    # Fixture writer should use newline="\n" to force LF line endings in the created files,
+    # ensuring cross-platform determinism regardless of the host OS (e.g., avoiding CRLF on Windows).
     run_dir = _build_fixture(tmp_path)
     v = Prompt1Validator(env={})
     analysis = v.analyze(str(run_dir))

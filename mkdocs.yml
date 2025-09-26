@@ -4,6 +4,7 @@ repo_url: https://github.com/sMiNT0S/AIBugBench
 repo_name: sMiNT0S/AIBugBench
 docs_dir: docs
 strict: true
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -12,6 +13,13 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - toc.integrate
+    - navigation.footer
+    - navigation.tracking
+    - content.action.edit
+    - content.action.view
+    - content.tabs.link
+    - search.share
     - search.suggest
     - search.highlight
     - content.code.copy
@@ -32,6 +40,11 @@ theme:
 plugins:
   - search
   - include-markdown
+  - social
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+  - minify:
+      minify_html: true
 
 nav:
   - Home: index.md

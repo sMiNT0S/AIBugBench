@@ -345,7 +345,7 @@ jobs:
           PY
 
           coverage erase || true
-          python -m pytest -q \
+          python -m pytest -q -p pytest_cov \
             --cov=aibugbench \
             --cov=benchmark \
             --cov-report=term-missing \

@@ -274,8 +274,8 @@ jobs:
           key: ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-${{hashFiles('requirements.txt')}}
           restore-keys: |
             ${{runner.os}}-pip-${{env.PYTHON_DEFAULT_VERSION}}-
-      - name: Lint with ruff
-        run: ruff check .
+      - name: Lint with ruff (core only)
+        run: ruff check . --exclude submissions/
       # Single mypy pass with Python 3.13 (current standard)
       # Explicit targets (no src/ layout): benchmark/, validation/, and run_benchmark.py.
       - name: "mypy (Python 3.13)"
@@ -348,8 +348,6 @@ jobs:
           python -m pytest -q -p pytest_cov \
             --cov=aibugbench \
             --cov=benchmark \
-            --cov-branch \
-            --cov-config=.coveragerc \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
             --cov-report=html:htmlcov

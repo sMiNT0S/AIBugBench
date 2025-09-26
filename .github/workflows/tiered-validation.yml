@@ -68,7 +68,8 @@ jobs:
       - name: Basic checks
         run: |
           if [ -d "submissions/templates" ]; then
-            ruff check submissions/templates/ --config .ruff-tier2.toml || true
+            # Ruff uses pyproject.toml per-file-ignores for templates tier
+            ruff check submissions/templates/ || true
             bandit -c bandit-tier2.yaml -r submissions/templates/ || true
           fi
 

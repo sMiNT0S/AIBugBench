@@ -148,7 +148,6 @@ exclude_dirs = [
 ]
 
 [tool.pytest.ini_options]
-# Consolidated from pytest.ini
 minversion = "7.0"
 testpaths = ["tests"]
 norecursedirs = [
@@ -165,7 +164,6 @@ norecursedirs = [
 addopts = "-q --rootdir=. --confcutdir=. -p no:doctest -p pytest_cov"
 
 [tool.coverage.run]
-# Consolidated from .coveragerc [run]
 branch = true
 parallel = true
 relative_files = true

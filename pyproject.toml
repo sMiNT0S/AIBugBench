@@ -50,7 +50,7 @@ exclude = [
   "test_data/",
   "venv/",
   "submissions/user_submissions/",
-  "submissions/templates/",
+  "submissions/",
   "prompts/"
 ]
 
@@ -130,6 +130,12 @@ disallow_any_generics = true
 "benchmark/runner.py"     = ["S603", "S404"]       # audited subprocess usage
 "test_data/process_records.py" = ["S506", "S404"]  # fixture: yaml.load + subprocess import
 "benchmark/typing_helpers.py" = ["UP047"]            # preserve legacy generic style intentionally
+"submissions/templates/**" = [
+  # Disable families beyond E/F/S for templates
+  "W", "I", "UP", "B", "C4", "SIM", "N", "RUF",
+  # Match .ruff-tier2.toml ignores
+  "E501", "S101", "S301", "S307", "S311", "S506", "S602", "S607"
+]
 
 [tool.bandit]
 # Exclude directories with intentionally hostile test cases and generated content
@@ -140,3 +146,74 @@ exclude_dirs = [
   "prompts",
   "venv"
 ]
+
+[tool.pytest.ini_options]
+# Consolidated from pytest.ini
+minversion = "7.0"
+testpaths = ["tests"]
+norecursedirs = [
+  ".git",
+  ".venv",
+  "venv",
+  ".*",
+  "build",
+  "dist",
+  "node_modules",
+  "AppData"
+]
+# Keep explicit plugin load because CI sets PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+addopts = "-q --rootdir=. --confcutdir=. -p no:doctest -p pytest_cov"
+
+[tool.coverage.run]
+# Consolidated from .coveragerc [run]
+branch = true
+parallel = true
+relative_files = true
+concurrency = ["multiprocessing", "thread"]
+disable_warnings = ["no-data-collected", "already-imported"]
+source = [
+  "aibugbench",
+  "src/aibugbench",
+  "benchmark"
+]
+omit = [
+  "tests/*",
+  "scripts/*",
+  "**/.venv/*",
+  "**/venv/*",
+  "**/__pypackages__/*",
+  "**/site-packages/*",
+  "**/node_modules/*",
+  "**/.pytest_cache/*",
+  "*/__pycache__/*"
+]
+
+[tool.coverage.paths]
+source = [
+  "aibugbench",
+  "src/aibugbench",
+  "*/site-packages/aibugbench",
+  "*\\site-packages\\aibugbench"
+]
+
+[tool.coverage.report]
+include = ["aibugbench/*"]
+fail_under = 45
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "@overload",
+  "@abstractmethod",
+  "raise NotImplementedError",
+  "^\\s*pass\\s*$",
+  "^\\s*if __name__ == ['\"]__main__['\"]:\\s*$"
+]
+
+[tool.coverage.html]
+directory = ".coverage_html"
+
+[tool.coverage.xml]
+output = "coverage.xml"

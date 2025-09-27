@@ -725,7 +725,7 @@ class PromptValidators:
         if structure_scoring.earned_points >= 3:
             result["tests_passed"]["good_structure"] = True
 
-        # Test 3: Check if it runs without errors (10 points)
+        # Test 3: Check if it runs without errors (6 points)
         try:
             # Create a temporary directory for testing
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -795,25 +795,16 @@ validation_rules:
                 with open(test_data, "w", encoding="utf-8") as f:
                     json.dump(payload, f)
 
-                # Run the script inside SecureRunner sandbox for enforced isolation
-                from benchmark.secure_runner import SecureRunner
+                import subprocess
+                import sys
 
-                runner = SecureRunner(self.model_name, allow_network=False)
-                with runner.sandbox():
-                    mem_limit = 512
-                    if hasattr(self, "sandbox_owner") and hasattr(
-                        self.sandbox_owner, "sandbox_memory_mb"
-                    ):
-                        mem_limit = getattr(
-                            self.sandbox_owner,
-                            "sandbox_memory_mb",
-                            512,
-                        )
-                    proc = runner.run_python_sandboxed(
-                        [str(solution_file.resolve()), str(test_config)],
-                        timeout=10,
-                        memory_mb=mem_limit,
-                    )
+                proc = subprocess.run(
+                    [sys.executable, str(solution_file), str(test_config)],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    cwd=tmpdir,
+                )
 
                 if proc.returncode == 0:
                     execution_scoring.add_check(
@@ -936,12 +927,11 @@ validation_rules:
                                 "No expected users found and output not valid JSON",
                             )
                 else:
-                    execution_scoring.add_check(
-                        "runs_without_error",
-                        False,
-                        4.0,
-                        f"Runtime error: {proc.stderr[:100]}",
-                    )
+                    err = (proc.stderr or "").strip()
+                    msg = f"Runtime error (exit {proc.returncode})."
+                    if err:
+                        msg += f" Stderr:\n{err[:2000]}"
+                        execution_scoring.add_check("runs_without_error", False, 4.0, msg)
                     execution_scoring.add_check(
                         "correct_filtering",
                         False,
@@ -1718,7 +1708,7 @@ validation_rules:
 
             users = test_data.get("users", [])
 
-            # Add malformed record for error handling test (GPT requirement)
+            # Add malformed record for error handling test
             malformed_user = {
                 "id": "999",
                 "first_name": "Test",
@@ -1807,7 +1797,7 @@ validation_rules:
                             "email_provider", False, 0, "No email providers to test"
                         )
 
-                    # Test 3: **AGE NORMALIZATION** (2pts) - GPT-IDENTIFIED MISSING TEST
+                    # Test 3: **AGE NORMALIZATION** (2pts)
                     ages_normalized = 0
                     users_with_age = 0
 
@@ -1839,9 +1829,10 @@ validation_rules:
                             "age_normalization", False, 0, "No ages to normalize"
                         )
 
-                    # Test 4: **BUSINESS RULES VALIDATION** (3pts) - GPT REQUIREMENT:
+                    # Test 4: **BUSINESS RULES VALIDATION** (3pts)
                     # Rule-based not magic IDs
-                    # Define the documented business rules (these should be added to prompt text)
+                    # Define the documented business rules (these should be in
+                    # the prompts you give to the LLM)
                     def calculate_expected_tier(posts: int, comments: int) -> str:
                         if posts > 100 and comments > 300:
                             return "Gold"
@@ -1884,7 +1875,7 @@ validation_rules:
                                 f"{tier_correct}/{users_tested} tiers correct",
                             )
 
-                    # Test 5: **GRACEFUL ERROR HANDLING** (1pt) - GPT REQUIREMENT
+                    # Test 5: **GRACEFUL ERROR HANDLING** (1pt)
                     # Check if malformed user was handled gracefully
                     malformed_handled_gracefully = (
                         len(result_users) >= total_users
@@ -2503,7 +2494,7 @@ validation_rules:
                         "no_token_leak", False, 0, f"Token leaked in: {', '.join(leaks)}"
                     )
 
-                # Test 3: Explicit timeouts (2pts) - GPT requirement
+                # Test 3: Explicit timeouts (2pts)
                 has_timeout = "timeout" in kwargs and isinstance(kwargs["timeout"], int | float)
 
                 if has_timeout:

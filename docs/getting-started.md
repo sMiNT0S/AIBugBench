@@ -64,7 +64,7 @@ Test with the built-in example model:
 python run_benchmark.py --model example_model
 ```
 
-**Expected Output:** Scores around 92.17/100 (A grade). If you see "FAILED" results or errors, check that Python 3.13+ is active and all dependencies installed.
+**Expected Output:** Scores around 90/100 (A grade). If you see "FAILED" results or errors, check that Python 3.13+ is active and all dependencies installed.
 
 ## Directory Overview
 

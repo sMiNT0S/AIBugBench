@@ -4,14 +4,14 @@
 
 # Testing framework and coverage
 pytest>=8.0.0,<9.0.0          # Testing framework with Python 3.13 support
-pytest-cov>=4.0.0,<7.0.0      # Code coverage reporting (compatible with coverage 7.x)
+pytest-cov>=4.0.0,<8.0.0      # Code coverage reporting (compatible with coverage 7.x)
 pytest-mock>=3.10.0           # Mock fixtures for pytest
 coverage>=7.0.0,<8.0.0        # Code coverage measurement
 
 # Security tools
 bandit==1.8.6          # Static security analysis (pinned for CI consistency)
-click==8.1.8           # For command line interface creation
-rich==13.7.1           # For rich text and beautiful formatting in the terminal
+click==8.3.0           # For command line interface creation
+rich==14.1.0           # For rich text and beautiful formatting in the terminal
 colorama==0.4.6        # For colored terminal text (required by ruff)
 safety>=3.0.0          # Known vulnerability scanning
 pip-audit>=2.0.0       # Dependency vulnerability checking
@@ -23,6 +23,3 @@ mypy>=1.0.0            # Type checking
 types-PyYAML>=6.0.0    # Type stubs for PyYAML
 types-requests>=2.32.0 # Type stubs for requests
 yamllint>=1.35.0       # YAML style and schema linting
-
-# Performance / system introspection (used in tests only)
-psutil==7.0.0          # Align with CI composite action pin; required by performance regression tests

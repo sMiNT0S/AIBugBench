@@ -2,27 +2,84 @@ version: 2
 updates:
   - package-ecosystem: "pip"
     directory: "/"
-    schedule: {interval: "daily", time: "09:00", timezone: "Etc/UTC"}
-    open-pull-requests-limit: 5
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Amsterdam"
+    target-branch: "deps/staging"  # version updates go here; security updates still go to default
+    open-pull-requests-limit: 10  # room for a few grouped PRs
     versioning-strategy: increase-if-necessary
+    rebase-strategy: "disabled"
     assignees: ["sMiNT0S"]
-    commit-message: {prefix: "deps", prefix-development: "deps-dev", include: "scope"}
+    commit-message:
+      {prefix: "deps", prefix-development: "deps-dev", include: "scope"}
     labels: ["dependencies"]
     allow: [{dependency-type: "direct"}]
+
+    # Optional: smooth the noise without losing currency
+    cooldown:
+      semver-patch-days: 3
+      semver-minor-days: 7
+
     groups:
-      requests-group: {patterns: ["requests*", "urllib3", "certifi"]}
-      yaml-group: {patterns: ["pyyaml", "yaml*"]}
-      dev-tools: {patterns: ["ruff", "mypy", "pytest*", "coverage*", "pip-tools"]}
-      security-tools: {patterns: ["bandit", "safety", "pip-audit"]}
-      typing: {patterns: ["types-*"]}
-      docs-stack: {patterns: ["mkdocs*", "pymdown-extensions*", "sphinx*"]}
+      # keep small, focused buckets and separate majors from minor/patch
+      requests-minor:
+        patterns: ["requests*", "urllib3", "certifi"]
+        update-types: ["minor", "patch"]
+      requests-major:
+        patterns: ["requests*", "urllib3", "certifi"]
+        update-types: ["major"]
+
+      yaml-minor:
+        patterns: ["pyyaml", "yaml*"]
+        update-types: ["minor", "patch"]
+      yaml-major:
+        patterns: ["pyyaml", "yaml*"]
+        update-types: ["major"]
+
+      dev-tools-minor:
+        patterns: ["ruff", "mypy", "pytest*", "coverage*", "pip-tools"]
+        update-types: ["minor", "patch"]
+      dev-tools-major:
+        patterns: ["ruff", "mypy", "pytest*", "coverage*", "pip-tools"]
+        update-types: ["major"]
+
+      security-tools-minor:
+        patterns: ["bandit", "safety", "pip-audit"]
+        update-types: ["minor", "patch"]
+
+      typing-minor:
+        patterns: ["types-*"]
+        update-types: ["minor", "patch"]
+
+      docs-stack-minor:
+        patterns: ["mkdocs*", "pymdown-extensions*", "sphinx*"]
+        update-types: ["minor", "patch"]
+
+      # catch-all for other majors so they don't sneak in
+      majors:
+        patterns: ["*"]
+        update-types: ["major"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule: {interval: "weekly", day: "monday", time: "09:00", timezone: "Etc/UTC"}
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 5
     assignees: ["sMiNT0S"]
     commit-message: {prefix: "ci", include: "scope"}
     labels: ["dependencies"]
     groups:
-      github-actions-core: {patterns: ["actions/*"]}
-      github-actions-security: {patterns: ["github/codeql-action*", "aquasecurity/*"]}
+      actions-minor:
+        patterns: ["actions/*"]
+        update-types: ["minor", "patch"]
+      actions-major:
+        patterns: ["actions/*"]
+        update-types: ["major"]
+      actions-security:
+        patterns: ["github/codeql-action*", "aquasecurity/*"]
+        update-types: ["minor", "patch"]

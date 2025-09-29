@@ -1,0 +1,32 @@
+name: Dependabot auto-merge (minor/patch)
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autobump:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          # Use GITHUB_TOKEN by default. Only set a PAT if you enable alert/compat lookups.
+          github-token: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Enable auto-merge for safe bumps
+        if: >
+          startsWith(steps.meta.outputs.update-type, 'version-update:semver-patch') ||
+          startsWith(steps.meta.outputs.update-type, 'version-update:semver-minor')
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          # merge options: --squash | --merge | --rebase
+          gh pr merge --auto --squash "$PR_URL"

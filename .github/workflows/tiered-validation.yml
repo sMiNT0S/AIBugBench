@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@eb64bae5fb50751c3d6a1163348676d0eae3c4d6
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@bb2ad36284b5c32128c7ad653036c1a96e14a37e
         with:
           python-version: ${{env.PYTHON_VERSION}}
           install-dev: 'true'
@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@eb64bae5fb50751c3d6a1163348676d0eae3c4d6
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@bb2ad36284b5c32128c7ad653036c1a96e14a37e
         with:
           python-version: ${{env.PYTHON_VERSION}}
           install-dev: 'true'

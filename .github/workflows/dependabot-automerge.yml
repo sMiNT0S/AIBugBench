@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: meta
-        uses: dependabot/08eff52bf64351f401fb50d4972fa95b9f2c2d1b
+        uses: dependabot/fetch-metadata@08eff52bf64351f401fb50d4972fa95b9f2c2d1b
         with:
           # Use GITHUB_TOKEN by default. Only set a PAT if you enable alert/compat lookups.
           github-token: ${{secrets.GITHUB_TOKEN}}

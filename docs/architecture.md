@@ -10,7 +10,7 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Interface Layer                    │
-│                  (CLI: scripts/bootstrap_repo.py)           │
+│                  (CLI: run_benchmark.py)                    │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
@@ -30,6 +30,32 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 │                      Data Layer                             │
 │     (test_data/, submissions/, results/, prompts/)          │
 └─────────────────────────────────────────────────────────────┘
+
+### DRY/SRP refactor prompts 1/4 (prompt 1 shipped, prompt 2 in progress)
+
+┌─────────────────────────────────────────────────────────────┐
+│      Validation Architecture (Prompt Refactor Path)         │
+│  (factory, analyzers, schema utilities, staged prompt flow) │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼──────────────────────────────┐
+        │                     │                              │
+┌───────▼────────┐   ┌────────▼────────┐         ┌───────────▼──────────┐
+│   P1Validator  │   │   P2Validator   │         │   Legacy P. Adapter  │
+│(impl/prompt1.py│   │(impl/prompt2.py │         │  (adapters/legacy_*) │
+│    shipped)    │   │  in progress)   │         │     prompts 3 & 4)   │
+└───────┬────────┘   └────────┬────────┘         └───────────┬──────────┘
+        │                     │                              │
+        └─────────────┬───────┴──────────────┬───────────────┘
+                      │                      │
+┌─────────────────────▼──────────┐   ┌───────▼────────────────────────┐
+│ Deterministic Analyzer Layer   │   │ Shared Schema & Utilities       │
+│ (validation/analyzers/format/, │   │ (validation/schema.py,          │
+│  security.py, performance.py,  │   │  errors.py, utils/result_*,     │
+│  maintainability.py)           │   │  file_discovery.py, scoring_*)  │
+└────────────────────────────────┘   └─────────────────────────────────┘
+
+*Prompt 2 migration is underway: the factory routes `p1` to the new validator, `p2` will join after the format analyzers land, and remaining prompts stay on the legacy adapter until their refactors ship.*
 
 ## Component Design
 

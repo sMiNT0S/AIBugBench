@@ -25,4 +25,4 @@ types-requests>=2.32.0 # Type stubs for requests
 yamllint>=1.35.0       # YAML style and schema linting
 
 # Performance / system introspection (used in tests only)
-psutil==7.0.0          # Align with CI composite action pin; required by performance regression tests
+psutil==7.1.0          # Align with CI composite action pin; required by performance regression tests

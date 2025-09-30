@@ -27,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@bb2ad36284b5c32128c7ad653036c1a96e14a37e
+      - uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@f609d66a120187b7002371e4caf49a85cba26f2e
         with:
           python-version: "3.13.7"
           install-dev: 'true'

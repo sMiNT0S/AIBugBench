@@ -27,41 +27,47 @@ jobs:
       - name: Install MkDocs and plugins
         run: |
           python -m pip install -U "pip==24.3.1"
-          # Docs deps are separate; if a docs lock exists in future, switch to it with --require-hashes
           pip install -r docs/requirements.txt
       # Generate Safety badge JSON to be published under /badges/safety.json on Pages
-      - name: Generate Safety badge JSON
+      - name: Generate Safety badge JSON (no jq)
         env:
-          SAFETY_API_KEY: ${{secrets.SAFETY_API_KEY}}
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
           SAFETY_DISABLE_ANALYTICS: "1"
           CI: "true"
         run: |
           set -euo pipefail
-          python -m pip install --upgrade pip
           pip install "safety>=3,<4"
 
           # Prefer scanning a lockfile if available; else scan the dev lock
           ARG=""
-          if [-f requirements.lock]; then
+          if [ -f requirements.lock ]; then
             ARG="--file=requirements.lock"
-          elif [-f requirements-dev.lock]; then
+          elif [ -f requirements-dev.lock ]; then
             ARG="--file=requirements-dev.lock"
           fi
 
           # Non-interactive Safety v3 scan; tolerate failures to keep docs publishing
           safety scan --key "${SAFETY_API_KEY:-}" $ARG --json > safety-results.json || true
 
-          # Count issues and build Shields.io JSON
-          COUNT=$(jq '(.issues // []) | length' safety-results.json 2>/dev/null || echo 0)
-          if ["${COUNT:-0}" -eq 0]; then
-            COLOR="brightgreen"; MSG="0 vulns"
-          else
-            COLOR="red"; MSG="${COUNT} vulns"
-          fi
-
-          mkdir -p docs/badges
-          printf '{"schemaVersion":1,"label":"safety","message":"%s","color":"%s"}\n' "$MSG" "$COLOR" > docs/badges/safety.json
+          # Pure Python count + badge JSON
+          python - <<'PY'
+          import json, pathlib
+          issues = 0
+          try:
+              with open("safety-results.json","r",encoding="utf-8") as f:
+                  data = json.load(f) or {}
+                  issues = len(data.get("issues", []))
+          except Exception:
+              pass
+          color = "brightgreen" if issues == 0 else "red"
+          msg = "0 vulns" if issues == 0 else f"{issues} vulns"
+          pathlib.Path("docs/badges").mkdir(parents=True, exist_ok=True)
+          with open("docs/badges/safety.json","w",encoding="utf-8") as f:
+              json.dump({"schemaVersion":1,"label":"safety","message":msg,"color":color}, f)
+          PY
       - name: Build site
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: mkdocs build --strict
       - name: Upload artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b

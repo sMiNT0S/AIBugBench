@@ -8,9 +8,10 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 
 ### High-Level Architecture
 
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Interface Layer                    │
-│                  (CLI: scripts/bootstrap_repo.py)           │
+│                  (CLI: run_benchmark.py)                    │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
@@ -30,6 +31,33 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 │                      Data Layer                             │
 │     (test_data/, submissions/, results/, prompts/)          │
 └─────────────────────────────────────────────────────────────┘
+
+### DRY/SRP refactor prompts 1/4 (prompt 1 shipped, prompt 2 in progress)
+
+┌─────────────────────────────────────────────────────────────┐
+│      Validation Architecture (Prompt Refactor Path)         │
+│  (factory, analyzers, schema utilities, staged prompt flow) │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼──────────────────────────────┐
+        │                     │                              │
+┌───────▼────────┐   ┌────────▼────────┐         ┌───────────▼──────────┐
+│   P1Validator  │   │   P2Validator   │         │   Legacy P. Adapter  │
+│(impl/prompt1.py│   │(impl/prompt2.py │         │  (adapters/legacy_*) │
+│    shipped)    │   │  in progress)   │         │     prompts 3 & 4)   │
+└───────┬────────┘   └────────┬────────┘         └───────────┬──────────┘
+        │                     │                              │
+        └─────────────┬───────┴──────────────┬───────────────┘
+                      │                      │
+┌─────────────────────▼──────────┐   ┌───────▼────────────────────────┐
+│ Deterministic Analyzer Layer   │   │ Shared Schema & Utilities      │
+│ (validation/analyzers/format/, │   │ (validation/schema.py,         │
+│  security.py, performance.py,  │   │  errors.py, utils/result_*,    │
+│  maintainability.py)           │   │  file_discovery.py, scoring_*) │
+└────────────────────────────────┘   └────────────────────────────────┘
+```
+
+*Prompt 2 migration is underway: the factory routes `p1` to the new validator, `p2` will join after the format analyzers land, and remaining prompts stay on the legacy adapter until their refactors ship.*
 
 ## Component Design
 
@@ -460,6 +488,38 @@ def deprecated(message: str):
 - Container-based execution for isolation
 - Event-driven architecture for extensibility
 - GraphQL API for flexible querying
+
+## Project Scope & Roadmap Overview
+
+### Current Release Scope (0.x beta)
+
+**Implemented Features:**
+
+- Deterministic scoring & comparison output (timestamped results directories)
+- Sandbox enforcement (process isolation helpers, filesystem guard, dynamic canaries)
+- Resource limits (POSIX rlimits; Windows Job Objects when pywin32 available)
+- Dynamic code / subprocess / dangerous import blocking
+- Python-level network egress blocking (socket denial unless `--allow-network`)
+- Strict environment whitelist (minimal allow-list rebuild of env)
+- Hash-pinned dependency supply-chain integrity
+- Security + dependency audit workflows
+
+**Planned Features (tracked in ROADMAP):**
+
+- Container / namespace isolation (bwrap / nsjail / docker) for defense-in-depth
+- OS / kernel-level network isolation (firewall / namespaces) beyond Python socket guards
+- SBOM + artifact signing
+- Automated PR-tier sandbox fuzz stress harness
+- Optional Semgrep ruleset integration
+- Public CodeQL adoption (post public repo / GHAS availability)
+
+**Explicitly Out of Scope (near-term):**
+
+- Multi-language model execution (Python-only focus)
+- GPU / accelerator resource accounting
+- Distributed execution orchestration
+
+For detailed roadmap with implementation timelines and technical specifications, see [ROADMAP.md](ROADMAP.md).
 
 ## See Also
 

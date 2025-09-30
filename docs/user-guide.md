@@ -19,12 +19,33 @@ Comprehensive guide for running benchmarks and understanding AIBugBench results.
    python run_benchmark.py --model example_model
    ```
 
-3. **Review results** (v0.8.1+ layout):
+3. **Review results** (v0.8.1+ timestamped layout):
+
+Each benchmark run writes to a timestamped directory preserving history:
+
+```text
+results/
+  latest_results.json                # Pointer to most recent run (backward-compatible)
+  20250827_143215/                   # Run-specific directory (YYYYMMDD_HHMMSS format)
+    latest_results.json              # Full JSON (models + comparison + _metadata)
+    detailed/
+      detailed_results.json          # Stable path for tooling
+      summary_report_20250827_143215.txt
+    comparison_charts/
+      comparison_chart.txt           # ASCII comparison bars
+```
+
+**Key advantages**:
+
+- Atomic writes (no partial files)
+- Historical retention (track model performance over time)
+- Dynamic prompt support (new prompts automatically appear in comparison data)
+
+Quick access:
 
 - Check console output for immediate feedback
-- Open `results/latest_results.json` (pointer to most recent)
-- Inspect `results/<RUN_TS>/latest_results.json` for full run data
-- Review `results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt` for analysis
+- Open `results/latest_results.json` (most recent run)
+- Review `results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt` for human-readable analysis
 
 ## Understanding the Benchmark Process
 
@@ -125,6 +146,42 @@ Visual representation of scores:
 | **C** | 70-79% | Functional but needs improvement |
 | **D** | 60-69% | Minimal passing, significant issues |
 | **F** | 0-59% | Critical failures, not production-ready |
+
+## Result Metadata & Privacy
+
+### What Information is Captured
+
+Benchmark results embed minimal provenance metadata to aid reproducibility and debugging:
+
+- **spec_version**: Benchmark scoring specification revision
+- **git_commit**: Short commit hash of the repository state (local only, never transmitted)
+- **python_version**: Interpreter version used to run the benchmark
+- **platform**: Operating system, release, and architecture string
+- **timestamp_utc**: UTC run time (RFC 3339 format with Z suffix)
+- **dependency_fingerprint**: First 16 hex characters of SHA256 hash of `requirements.txt` (non-reversible drift indicator)
+
+### Privacy Assurance
+
+**No personal data is collected or transmitted**. All data is written only to local `results/` JSON and text files. If you publish results publicly, you may reveal commit hashes or platform details, but no identifying information is included by default.
+
+### Opting Out
+
+If you need to share results from private repositories or sensitive environments, you can suppress metadata collection:
+
+**CLI Flag:**
+
+```bash
+python run_benchmark.py --model your_model --no-metadata
+```
+
+**Environment Variable:**
+
+```bash
+export AIBUGBENCH_DISABLE_METADATA=1
+python run_benchmark.py --model your_model
+```
+
+Either mechanism retains only `spec_version` and suppresses git/platform/timestamp/dependency fingerprint fields.
 
 ## Best Practices for High Scores
 
@@ -283,6 +340,8 @@ done
 
 Example GitHub Actions workflow:
 
+{% raw %}
+
 ```yaml
 - name: Run AIBugBench
   run: |
@@ -297,6 +356,8 @@ Example GitHub Actions workflow:
       exit 1
     fi
 ```
+
+{% endraw %}
 
 ## Next Steps
 

@@ -121,8 +121,12 @@ python run_benchmark.py --model your_model_name
 
 **Results Location (v0.8.1+):**
 
-- `results/latest_results.json` – Most recent run (pointer)
-- `results/<RUN_TS>/latest_results.json` – Full run JSON (stable within timestamped folder)
+Benchmark results are organized in timestamped directories for historical tracking. See the [User Guide - Running Your First Benchmark](user-guide.md#running-your-first-benchmark) for the complete directory structure and detailed explanation.
+
+Quick access:
+
+- `results/latest_results.json` – Pointer to most recent run
+- `results/<RUN_TS>/latest_results.json` – Full run JSON
 - `results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt` – Human-readable analysis
 - `results/<RUN_TS>/comparison_charts/comparison_chart.txt` – Visual progress bars
 

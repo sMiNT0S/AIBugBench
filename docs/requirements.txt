@@ -9,3 +9,9 @@ mkdocs-material[imaging]==9.6.20 # Material design theme for MkDocs
 mkdocs-include-markdown-plugin>=6.0.0 # Include markdown files plugin
 mkdocs-minify-plugin>=0.8.0
 mkdocs-git-revision-date-localized-plugin>=1.3.0
+mkdocstrings>=0.26
+mkdocstrings-python>=1.10
+mkdocs-redirects>=1.2
+mkdocs-glightbox>=0.3.6
+mkdocs-macros-plugin>=1.0
+mkdocs-autorefs>=0.5

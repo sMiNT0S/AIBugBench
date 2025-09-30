@@ -487,6 +487,38 @@ def deprecated(message: str):
 - Event-driven architecture for extensibility
 - GraphQL API for flexible querying
 
+## Project Scope & Roadmap Overview
+
+### Current Release Scope (0.x beta)
+
+**Implemented Features:**
+
+- Deterministic scoring & comparison output (timestamped results directories)
+- Sandbox enforcement (process isolation helpers, filesystem guard, dynamic canaries)
+- Resource limits (POSIX rlimits; Windows Job Objects when pywin32 available)
+- Dynamic code / subprocess / dangerous import blocking
+- Python-level network egress blocking (socket denial unless `--allow-network`)
+- Strict environment whitelist (minimal allow-list rebuild of env)
+- Hash-pinned dependency supply-chain integrity
+- Security + dependency audit workflows
+
+**Planned Features (tracked in ROADMAP):**
+
+- Container / namespace isolation (bwrap / nsjail / docker) for defense-in-depth
+- OS / kernel-level network isolation (firewall / namespaces) beyond Python socket guards
+- SBOM + artifact signing
+- Automated PR-tier sandbox fuzz stress harness
+- Optional Semgrep ruleset integration
+- Public CodeQL adoption (post public repo / GHAS availability)
+
+**Explicitly Out of Scope (near-term):**
+
+- Multi-language model execution (Python-only focus)
+- GPU / accelerator resource accounting
+- Distributed execution orchestration
+
+For detailed roadmap with implementation timelines and technical specifications, see [ROADMAP.md](ROADMAP.md).
+
 ## See Also
 
 - **[Getting Started](getting-started.md)** - Setup and usage

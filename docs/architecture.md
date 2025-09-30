@@ -8,6 +8,7 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 
 ### High-Level Architecture
 
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Interface Layer                    │
 │                  (CLI: run_benchmark.py)                    │
@@ -49,11 +50,12 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
         └─────────────┬───────┴──────────────┬───────────────┘
                       │                      │
 ┌─────────────────────▼──────────┐   ┌───────▼────────────────────────┐
-│ Deterministic Analyzer Layer   │   │ Shared Schema & Utilities       │
-│ (validation/analyzers/format/, │   │ (validation/schema.py,          │
-│  security.py, performance.py,  │   │  errors.py, utils/result_*,     │
-│  maintainability.py)           │   │  file_discovery.py, scoring_*)  │
-└────────────────────────────────┘   └─────────────────────────────────┘
+│ Deterministic Analyzer Layer   │   │ Shared Schema & Utilities      │
+│ (validation/analyzers/format/, │   │ (validation/schema.py,         │
+│  security.py, performance.py,  │   │  errors.py, utils/result_*,    │
+│  maintainability.py)           │   │  file_discovery.py, scoring_*) │
+└────────────────────────────────┘   └────────────────────────────────┘
+```
 
 *Prompt 2 migration is underway: the factory routes `p1` to the new validator, `p2` will join after the format analyzers land, and remaining prompts stay on the legacy adapter until their refactors ship.*
 

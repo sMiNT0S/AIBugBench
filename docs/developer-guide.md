@@ -427,15 +427,6 @@ Compare results between models:
 python scripts/compare_benchmarks.py --models gpt4 claude_opus llama_70b
 ```
 
-### Custom Validation
-
-For additional validation beyond the benchmark:
-
-```bash
-python scripts/validate_docs.py
-python scripts/validate_security.py
-```
-
 ## Contributing
 
 ### Sharing Results

@@ -80,6 +80,22 @@ plugins:
   - macros
   - glightbox
 
+extra_css:
+  - assets/stylesheets/mermaid-panzoom.css
+  - assets/stylesheets/extra.css
+  - assets/stylesheets/mermaid-wide.css
+
+
+extra_javascript:
+  # 1) Mermaid library (must load FIRST)
+  - assets/javascripts/vendor/mermaid.min.js
+  # 2) Pan/zoom vendor library
+  - assets/javascripts/vendor/svg-pan-zoom.min.js
+  # 3) Initialize mermaid diagrams (custom formatter creates raw div, needs manual init)
+  - assets/javascripts/init_mermaid.js
+  # 4) Attach pan/zoom to rendered SVGs
+  - assets/javascripts/mermaid-panzoom.js
+
 nav:
   - Home: index.md
   - Getting Started: getting-started.md

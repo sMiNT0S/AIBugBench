@@ -1,0 +1,8 @@
+:root {
+  --md-code-font: "Cascadia Mono","JetBrains Mono","Fira Mono",
+                  "DejaVu Sans Mono","Consolas","Menlo","monospace";
+}
+.md-typeset pre code {
+  font-feature-settings: "liga" 0;  /* kill ligatures just in case */
+  tab-size: 4;                      /* VS Code default, avoid width 8 */
+}

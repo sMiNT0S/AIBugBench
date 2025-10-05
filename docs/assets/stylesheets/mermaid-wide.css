@@ -1,0 +1,24 @@
+/* Scroll horizontally when needed */
+.md-typeset .mermaid {
+  overflow-x: auto;
+  padding-bottom: .25rem;
+}
+
+/* Clamp width: between --mermaid-min and --mermaid-max */
+:root {
+  --mermaid-min: 900px;    /* slightly smaller baseline */
+  --mermaid-max: 1200px;   /* tighter cap for readability */
+}
+
+.md-typeset .mermaid > svg {
+  display: block;
+  width: min(100%, var(--mermaid-max)) !important;  /* enforce cap */
+  min-width: var(--mermaid-min);         /* don't shrink below readability */
+  height: auto !important;
+}
+
+/* Opt-in wider diagrams via a class on the fence: ```mermaid {.diagram-xl} */
+.md-typeset .diagram-xl.mermaid > svg {
+  --mermaid-max: 1600px;
+  --mermaid-min: 1100px;
+}

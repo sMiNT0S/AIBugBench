@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD046 -->
+<!-- markdownlint-disable MD033 -->
 # Architecture
 
 Technical overview of AIBugBench's design, components, and implementation patterns.
@@ -8,56 +10,203 @@ AIBugBench is a Python-based benchmarking framework designed to evaluate AI mode
 
 ### High-Level Architecture
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                     User Interface Layer                    │
-│                  (CLI: run_benchmark.py)                    │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                    Orchestration Layer                      │
-│                   (benchmark/runner.py)                     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-┌───────▼────────┐  ┌─────────▼──────────┐  ┌─────▼─────────┐
-│  Validation    │  │    Scoring         │  │   Utils       │
-│  Engine        │  │    Engine          │  │   Layer       │
-│ (validators.py)│  │  (scoring.py)      │  │  (utils.py)   │
-└────────────────┘  └────────────────────┘  └───────────────┘
-        │                     │                     │
-┌───────▼─────────────────────▼─────────────────────▼─────────┐
-│                      Data Layer                             │
-│     (test_data/, submissions/, results/, prompts/)          │
-└─────────────────────────────────────────────────────────────┘
+#### Sequence: Entry & orchestration
 
-### DRY/SRP refactor prompts 1/4 (prompt 1 shipped, prompt 2 in progress)
+```sequence
+sequenceDiagram
+        autonumber
+        participant U as User
+        participant CLI as CLI
+        participant R as Runner
+        participant F as Factory
 
-┌─────────────────────────────────────────────────────────────┐
-│      Validation Architecture (Prompt Refactor Path)         │
-│  (factory, analyzers, schema utilities, staged prompt flow) │
-└─────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼──────────────────────────────┐
-        │                     │                              │
-┌───────▼────────┐   ┌────────▼────────┐         ┌───────────▼──────────┐
-│   P1Validator  │   │   P2Validator   │         │   Legacy P. Adapter  │
-│(impl/prompt1.py│   │(impl/prompt2.py │         │  (adapters/legacy_*) │
-│    shipped)    │   │  in progress)   │         │     prompts 3 & 4)   │
-└───────┬────────┘   └────────┬────────┘         └───────────┬──────────┘
-        │                     │                              │
-        └─────────────┬───────┴──────────────┬───────────────┘
-                      │                      │
-┌─────────────────────▼──────────┐   ┌───────▼────────────────────────┐
-│ Deterministic Analyzer Layer   │   │ Shared Schema & Utilities      │
-│ (validation/analyzers/format/, │   │ (validation/schema.py,         │
-│  security.py, performance.py,  │   │  errors.py, utils/result_*,    │
-│  maintainability.py)           │   │  file_discovery.py, scoring_*) │
-└────────────────────────────────┘   └────────────────────────────────┘
+        U->>CLI: run_benchmark(model)
+        CLI->>R: build runner / resolve paths
+        R->>F: make_validator("p1")
+        F-->>R: Prompt1Validator
 ```
 
-*Prompt 2 migration is underway: the factory routes `p1` to the new validator, `p2` will join after the format analyzers land, and remaining prompts stay on the legacy adapter until their refactors ship.*
+_Prompt 2 migration is underway: the factory routes `p1` to the new validator, `p2` will join after the format analyzers land, and remaining prompts stay on the legacy adapter until their refactors ship._
+
+Next → Analysis & sandbox
+
+#### Sequence: Analysis & sandbox
+
+```sequence
+sequenceDiagram
+        autonumber
+        participant R as Runner
+        participant V1 as P1 Validator
+        participant SR as SecureRunner
+        participant SB as Sandbox FS
+    participant A as Analyzers (security/performance/maintainability scoring)
+
+        R->>V1: analyze(run_dir)
+        alt sandbox enabled
+            V1->>SR: sandbox(model)
+            SR->>SB: setup env & dirs
+            SR-->>V1: with sandbox
+        else unsafe mode
+            V1->>V1: run on host
+        end
+        V1->>A: run checks
+        A-->>V1: checks[], stats{}
+        V1-->>R: analysis
+```
+
+← Previous: Entry & orchestration • Next → Scoring, persistence, and return
+
+#### Sequence: Scoring, persistence, and return
+
+```sequence
+sequenceDiagram
+        autonumber
+        participant R as Runner
+        participant S as Scoring
+        participant FS as Results FS
+        participant CLI as CLI
+        participant U as User
+
+        R->>S: score(analysis)
+        S-->>R: totals
+        R->>FS: write results (atomic)
+        R-->>CLI: summary + badges
+        CLI-->>U: pass/fail + locations
+```
+
+← Previous: Analysis & sandbox
+
+### Flowcharts
+
+#### Flowchart: Full process
+
+```mermaid
+%%{init: {"flowchart":{"useMaxWidth": false}, "themeVariables":{"fontSize":"14px"}}}%%
+flowchart RL
+
+    %% Entry (User first)
+    subgraph Entry
+        U["User (invokes benchmark)"]
+    end
+
+    %% Orchestration & CLI
+    subgraph Orchestration
+        CLI["CLI (run_benchmark.py)"]
+        RB["AICodeBenchmark.__init__()"]
+        ORCH["AICodeBenchmark.run()"]
+        DISC["discover_models()"]
+        VALS["validate_submission_structure()"]
+        ENS["ensure_directories()"]
+        LOAD["load_test_data()"]
+        FPR["dependency_fingerprint"]
+        LOOP["for each prompt (1..4)"]
+        CLI --> RB --> ORCH
+        RB --> ENS --> LOAD --> FPR
+        ORCH --> DISC --> VALS
+        ORCH --> LOOP
+    end
+
+    %% Validation surface
+    subgraph Validators
+        V1["validate_prompt_1_refactoring()"]
+        V2["validate_prompt_2_yaml_json()"]
+        V3["validate_prompt_3_transformation()"]
+        V4["validate_prompt_4_api()"]
+        A["Analyzers: Security, Performance, Maintainability"]
+        UQL["UniqueKeyLoader (YAML)"]
+        D{"Sandbox enabled?"}
+    end
+
+    %% Secure sandbox
+    subgraph Sandbox
+        SR["SecureRunner.sandbox()<br/>copy submissions & test_data<br/>_prepare_environment()<br/>_write_sitecustomize.py"]
+        SB["Sandbox FS"]
+        SR --> SB
+    end
+
+    %% Scoring & persistence
+    subgraph Scoring & Persistence
+        SCOR["BenchmarkScorer"]
+        CAT["syntax • structure • execution • quality • security • performance • maintainability"]
+        GRADE["grade + badge + feedback"]
+        FS["Results FS (atomic writes)"]
+        CHART["generate_comparison_chart()"]
+        STYLE["summary + badges"]
+        SCOR --> CAT --> GRADE
+        GRADE --> FS --> CHART
+    end
+
+    %% Entry to CLI
+    U --> CLI
+
+    %% Prompt loop fan-out
+    LOOP -->|P1| V1
+    LOOP -->|P2| V2
+    LOOP -->|P3| V3
+    LOOP -->|P4| V4
+
+    %% Sandbox decision path (applies to validators operating on submissions)
+    V1 --> D
+    V2 --> D
+    V3 --> D
+    V4 --> D
+    D -- Yes --> SR --> SB
+    D -- No  --> HOST["Host FS"]
+
+    %% Validator specifics and return to runner
+    SB --> V1
+    SB --> V2
+    SB --> V3
+    SB --> V4
+    HOST --> V1
+    HOST --> V2
+    HOST --> V3
+    HOST --> V4
+    V1 --> A --> V1
+    V2 --> UQL --> V2
+    %% V3/V4 run their checks inside chosen FS
+
+    %% Back to orchestration and scoring
+    V1 --> ORCH
+    V2 --> ORCH
+    V3 --> ORCH
+    V4 --> ORCH
+    ORCH --> SCOR --> FS
+
+    %% Return path to user
+    FS --> STYLE --> CLI --> U
+```
+
+??? details "Mapping notes (what each box maps to, and why)"
+    **Entry & Orchestration**
+    - **CLI** → `run_benchmark.py`  
+      Parses flags, builds the runner, prints the security banner, and kicks off the prompt loop.
+    - **Runner** → orchestrates prompt validators, hands analysis to scoring, writes results.
+
+    **Sandbox layer**
+    - **SecureRunner.sandbox()** → creates an isolated temp root; writes `sitecustomize.py`; rebuilds env vars  
+      `HOME`, `TMP*`, `PYTHONDONTWRITEBYTECODE=1`, `AIBUGBENCH_ALLOW_NETWORK=0/1`.
+    - **run_python_sandboxed(...)** → executes Python inside the sandbox with resource caps and stdout capture.
+    - **Unsafe path** → when `--unsafe` or `AIBUGBENCH_UNSAFE=1`, validators run on host FS (guards relaxed).
+
+    **Prompt 1 (migrated path)**
+    - **Prompt1Validator.analyze(...)** → runs staged checks, calls analyzers  
+      security/performance/maintainability, returns a structured `analysis` dict + artifacts.
+    - Mid-migration prompts follow the legacy adapter until their validators move to this stack.
+
+    **Scoring**
+    - **BenchmarkScorer** → computes seven category scores  
+      syntax, structure, execution, quality, security, performance, maintainability; returns detailed + total.
+
+    **Persistence & artifacts**
+    - **Atomic writes** → results JSON and summaries written via `*.tmp` then `os.replace`.  
+      Artifacts: run JSON, summary text, charts, any per-prompt attachments.
+
+    **Flags that change flow**
+    - `--unsafe` → skip sandbox; run on host.  
+    - `--allow-network` → allow network inside sandbox.  
+    - `--mem {256..1024}` → memory cap for sandboxed runs.  
+    - `--trusted-model` → suppresses unsafe-mode confirmation (CI convenience).
 
 ## Component Design
 
@@ -115,39 +264,58 @@ class BenchmarkRunner:
 - Timeout management
 - Result persistence
 
+See [Benchmark Execution Flow](#benchmark-execution-flow) for detailed step-by-step orchestration.
+
 #### 3. Validation Engine (`benchmark/validators.py`)
 
 Implements prompt-specific validation logic:
 
 ```python
 class PromptValidator:
-    """Base class for prompt validation."""
-    
+    """Base class for prompt validation with 7-category assessment."""
+
     def validate_syntax(self, file_path: str) -> ValidationResult:
-        """Check syntax validity."""
-        
+        """Syntax validation: Parse checking and import verification.
+
+        Ensures code is syntactically valid Python and imports are resolvable.
+        """
+
+    def validate_structure(self, file_path: str) -> ValidationResult:
+        """Structure validation: Function signatures and required components.
+
+        Verifies expected functions, classes, and interfaces are present and correct.
+        """
+
     def validate_execution(self, file_path: str) -> ValidationResult:
-        """Test runtime behavior."""
-        
+        """Execution testing: Runtime behavior and output correctness.
+
+        Runs code against test cases and validates outputs match expectations.
+        """
+
+    def analyze_quality(self, code: str) -> QualityAnalysis:
+        """Quality assessment: Code patterns and best practices.
+
+        Evaluates adherence to Python idioms, PEP standards, and general code quality.
+        """
+
     def analyze_security(self, code: str) -> SecurityAnalysis:
-        """Detect security vulnerabilities."""
-        
+        """Security analysis: Vulnerability detection and unsafe patterns.
+
+        Implements patterns described in Security Model section.
+        """
+
     def analyze_performance(self, code: str) -> PerformanceAnalysis:
-        """Identify performance issues."""
-        
+        """Performance analysis: Algorithm efficiency and resource usage.
+
+        Identifies inefficient algorithms, excessive memory usage, and bottlenecks.
+        """
+
     def analyze_maintainability(self, code: str) -> MaintainabilityAnalysis:
-        """Assess code quality and maintainability."""
+        """Maintainability analysis: Code complexity, duplication, and naming.
+
+        Assesses cyclomatic complexity, code duplication, and identifier clarity.
+        """
 ```
-
-**Validation Categories:**
-
-1. **Syntax Validation**: Parse checking, import verification
-2. **Structure Validation**: Function signatures, required components
-3. **Execution Testing**: Runtime behavior, output correctness
-4. **Quality Assessment**: Code patterns, best practices
-5. **Security Analysis**: Vulnerability detection, unsafe patterns
-6. **Performance Analysis**: Algorithm efficiency, resource usage
-7. **Maintainability Analysis**: Complexity, duplication, naming
 
 #### 4. Scoring Engine (`benchmark/scoring.py`)
 
@@ -177,12 +345,7 @@ class ScoringEngine:
         """Map numerical score to letter grade."""
 ```
 
-**Scoring Distribution:**
-
-- Prompt 1: 5/3/6/3/4/2/2 = 25 points
-- Prompt 2: 4/6/8/6/1/0/0 = 25 points
-- Prompt 3: 3/3/12/3/1/1/2 = 25 points
-- Prompt 4: 2/3/7/3/7/2/1 = 25 points
+**Note:** Each prompt totals 25 points distributed across the 7 validation categories to ensure consistent scoring across different complexity levels.
 
 #### 5. Utility Layer (`benchmark/utils.py`)
 
@@ -243,6 +406,8 @@ class CustomPromptValidator(BaseValidator):
         
         return result
 ```
+
+See [Extensibility Points](#extensibility-points) for information on custom validators and formatters.
 
 ## Testing Strategy
 
@@ -367,6 +532,8 @@ def test_models_parallel(model_names: List[str]):
 
 ### Benchmark Execution Flow
 
+The [Runner Module](#2-runner-module-benchmarkrunnerpy) orchestrates this flow:
+
 1. User invokes: python run_benchmark.py --model X
                             │
 2. Load submission files from submissions/X/
@@ -471,27 +638,9 @@ def deprecated(message: str):
     return decorator
 ```
 
-## Future Enhancements
+## Roadmap & Future Direction
 
-### Planned Features
-
-1. **Web Dashboard**: Interactive result visualization
-2. **Model Comparison Matrix**: Advanced statistical analysis
-3. **Custom Challenge Creator**: UI for adding new prompts
-4. **Cloud Execution**: Distributed testing capability
-5. **Real-time Monitoring**: Live progress tracking
-6. **Advanced Analytics**: ML-based pattern detection
-
-### Architecture Evolution
-
-- Microservice decomposition for scalability
-- Container-based execution for isolation
-- Event-driven architecture for extensibility
-- GraphQL API for flexible querying
-
-## Project Scope & Roadmap Overview
-
-### Current Release Scope (0.x beta)
+### Current Release (0.x beta)
 
 **Implemented Features:**
 
@@ -504,22 +653,48 @@ def deprecated(message: str):
 - Hash-pinned dependency supply-chain integrity
 - Security + dependency audit workflows
 
-**Planned Features (tracked in ROADMAP):**
+For implementation details, see [Security Model](#security-model) section.
+
+### Committed Roadmap (tracked in ROADMAP.md)
+
+**Near-term Planned Features:**
 
 - Container / namespace isolation (bwrap / nsjail / docker) for defense-in-depth
 - OS / kernel-level network isolation (firewall / namespaces) beyond Python socket guards
-- SBOM + artifact signing
+- SBOM + artifact signing for supply chain transparency
 - Automated PR-tier sandbox fuzz stress harness
-- Optional Semgrep ruleset integration
+- Optional Semgrep ruleset integration for static analysis
 - Public CodeQL adoption (post public repo / GHAS availability)
 
-**Explicitly Out of Scope (near-term):**
+See [ROADMAP.md](ROADMAP.md) for detailed timelines and technical specifications.
+
+### Long-term Vision (Exploratory)
+
+**Product Features Under Consideration:**
+
+- Web Dashboard for interactive result visualization and comparison
+- Model Comparison Matrix with advanced statistical analysis
+- Custom Challenge Creator UI for adding new prompts without code changes
+- Cloud Execution capability for distributed testing at scale
+- Real-time Monitoring with live progress tracking and notifications
+- Advanced Analytics with ML-based pattern detection in model outputs
+
+**Architecture Evolution Concepts:**
+
+- Microservice decomposition for horizontal scalability
+- Container-based execution for enhanced isolation
+- Event-driven architecture for extensibility and integration
+- GraphQL API for flexible data querying
+
+_These are exploratory concepts and not committed features. Feedback welcome._
+
+### Explicitly Out of Scope (Near-term)
 
 - Multi-language model execution (Python-only focus)
 - GPU / accelerator resource accounting
 - Distributed execution orchestration
 
-For detailed roadmap with implementation timelines and technical specifications, see [ROADMAP.md](ROADMAP.md).
+For rationale and long-term considerations, see [ROADMAP.md](ROADMAP.md).
 
 ## See Also
 

@@ -1,0 +1,149 @@
+/* Mermaid pan/zoom viewport + theme overrides */
+:root {
+  --mermaid-auto-height: clamp(360px, 55vh, 720px);
+  --mermaid-node-fill: rgba(245, 247, 255, 0.98);
+  --mermaid-node-stroke: rgba(76, 106, 255, 0.45);
+  --mermaid-edge-stroke: rgba(76, 106, 255, 0.55);
+  --mermaid-canvas-fill: rgba(250, 252, 255, 0.98);
+  --mermaid-cluster-fill: rgba(232, 237, 253, 0.95);
+  --mermaid-text-color: rgba(17, 24, 39, 0.92);
+  --mermaid-hint-color: rgba(17, 24, 39, 0.7);
+}
+
+[data-md-color-scheme="slate"] {
+  --mermaid-node-fill: rgba(69, 80, 110, 0.88);
+  --mermaid-node-stroke: rgba(164, 210, 255, 0.6);
+  --mermaid-edge-stroke: rgba(140, 215, 255, 0.65);
+  --mermaid-canvas-fill: rgba(27, 35, 52, 0.95);
+  --mermaid-cluster-fill: rgba(45, 56, 78, 0.92);
+  --mermaid-text-color: rgba(234, 241, 255, 0.97);
+  --mermaid-hint-color: rgba(217, 226, 247, 0.78);
+}
+
+/* Pan/zoom container */
+.mermaid {
+  position: relative;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: .6rem;
+  background: var(--mermaid-canvas-fill);
+  margin: 0.75rem 0 1.25rem;
+  padding: 3rem 1.5rem 1.5rem;
+  min-height: var(--mermaid-auto-height);
+}
+
+.mermaid > div {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+}
+
+.mermaid svg {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  touch-action: none;
+}
+
+.mermaid svg:active {
+  cursor: grabbing;
+}
+
+/* Controls */
+.mermaid .zoom-controls {
+  position: absolute;
+  top: .75rem;
+  left: 1rem;
+  right: auto;
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.mermaid .zoom-controls button {
+  font: inherit;
+  padding: .2rem .7rem;
+  border: 0;
+  border-radius: .4rem;
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  opacity: .88;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
+}
+
+.mermaid .zoom-controls button:hover {
+  opacity: 1;
+}
+
+.mermaid .zoom-controls .hint {
+  font-size: .78rem;
+  opacity: .8;
+  margin-left: .4rem;
+  pointer-events: none;
+  color: var(--mermaid-hint-color);
+}
+
+/* Harmonise Mermaid SVG palette */
+.mermaid svg rect[class$='background'],
+.mermaid svg rect[class*='background'],
+.mermaid svg rect[data-background],
+.mermaid svg rect#canvas {
+  fill: var(--mermaid-canvas-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+  stroke-width: .8px;
+}
+
+.mermaid svg .cluster rect,
+.mermaid svg .cluster polygon {
+  fill: var(--mermaid-cluster-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+.mermaid svg .node rect,
+.mermaid svg .node polygon,
+.mermaid svg .node circle,
+.mermaid svg .node ellipse {
+  fill: var(--mermaid-node-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+  stroke-width: 1px !important;
+}
+
+.mermaid svg .node path {
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+.mermaid svg .edgePath path,
+.mermaid svg .edgePaths path,
+.mermaid svg path[class*='edge'] {
+  stroke: var(--mermaid-edge-stroke) !important;
+}
+
+.mermaid svg marker path {
+  fill: var(--mermaid-edge-stroke) !important;
+  stroke: var(--mermaid-edge-stroke) !important;
+}
+
+.mermaid svg .label,
+.mermaid svg .label text,
+.mermaid svg text,
+.mermaid svg tspan {
+  fill: var(--mermaid-text-color) !important;
+  stroke: none !important;
+}
+
+.mermaid svg foreignObject,
+.mermaid svg foreignObject div,
+.mermaid svg foreignObject span,
+.mermaid svg foreignObject p,
+.mermaid svg foreignObject * {
+  color: var(--mermaid-text-color) !important;
+  background: transparent !important;
+}

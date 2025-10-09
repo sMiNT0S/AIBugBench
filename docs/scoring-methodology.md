@@ -2,40 +2,24 @@
 
 ## Overview
 
-AIBugBench uses a comprehensive 7-category scoring system to evaluate AI-generated code across multiple quality dimensions. Each prompt is worth 25 points for a total of 100 points, with passing threshold at 60% (15/25 points per prompt).
+Seven categories, 25 points per prompt (100 total). Passing is 60% (15/25 per prompt).
 
-**Scoring Features:**
-
-- **Security analysis**: Detects vulnerabilities, hardcoded secrets, unsafe patterns
-- **Performance evaluation**: Identifies inefficient algorithms and memory issues
-- **Maintainability metrics**: Analyzes code complexity and maintainability patterns
-- **Detailed feedback**: Specific rationale for each scoring decision with actionable insights
-- **7-category assessment**: Comprehensive evaluation across all code quality dimensions
+- Security • Performance • Maintainability • Syntax • Structure • Execution • Quality
+- Detailed feedback explains deductions and partial credit.
 
 ## Understanding Your Results
 
 ### Results File Structure
 
-After running a benchmark (v0.8.1+), outputs are written to a timestamped directory under `results/`:
-
-1. **`latest_results.json` (root)** – Pointer to most recent run
-2. **`<RUN_TS>/latest_results.json`** – Complete scoring breakdown (models + comparison + metadata)
-3. **`<RUN_TS>/detailed/summary_report_<RUN_TS>.txt`** – Human-readable analysis and feedback
-4. **`<RUN_TS>/comparison_charts/comparison_chart.txt`** – Visual progress bars for quick assessment
-
-Historical runs persist; tooling can enumerate directories matching `YYYYMMDD_HHMMSS` for trend analysis.
+See [User Guide – Running Your First Benchmark](user-guide.md#running-your-first-benchmark) for the canonical results directory layout and file descriptions.
 
 ### Enhanced Feedback Format
 
-**Traditional Format**: `"✅ Error handling (5/5)"`
+- Traditional: `✅ Error handling (5/5)`
+- Enhanced: `✅ Code Structure (3.0/3.0): ✓yaml_import, json_import, logging`
+- Partial credit: `⚠️ Performance (1.9/2.0): ✓no_nested_loops ✗string_concat_in_loops`
 
-**Enhanced Format**: `"✅ Code Structure (3.0/3.0): ✓yaml_import, json_import, error_handling, logging, type_hints"`
-
-**Partial Credit Example**: `"⚠️ Performance Analysis (1.87/2.0): ✓no_nested_loops ✗string_concat_in_loops"`
-
-**Issue Detection**: `"⚠️ Maintainability Analysis (0.9/2.0): ✓no_duplication, good_naming ✗no_long_functions"`
-
-### Grade Scale Interpretation
+### Grade Scale
 
 | Percentage | Letter Grade | Description |
 |------------|--------------|-------------|
@@ -45,7 +29,7 @@ Historical runs persist; tooling can enumerate directories matching `YYYYMMDD_HH
 | 60-69%     | D           | **Minimal** - Meets basic requirements, significant improvements needed |
 | 0-59%      | F           | **Fail** - Major issues, security risks, or non-functional code |
 
-## Detailed Scoring Breakdown
+## Scoring Breakdown
 
 ### Prompt 1: Code Refactoring & Analysis (25 points)
 

@@ -611,7 +611,7 @@ def main():
     rocket_ready = "🚀" if not safe_mode else "[READY]"
     print(f"\n{rocket_ready} Ready to start benchmarking!")
     print("\nNext steps:")
-    print("1. Install dependencies: pip install -r requirements.txt")
+    print("1. Install dependencies: pip install -r requirements.lock")
     print("2. Copy template to create a submission:")
     print("   • Windows CMD: xcopy /E /I submissions\\template submissions\\your_model")
     print(

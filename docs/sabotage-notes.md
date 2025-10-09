@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document catalogs the realistic edge cases and coding pitfalls intentionally introduced to enhance AIBugBench difficulty while maintaining solvability. Each modification reflects real-world QA scenarios and tests AI models' ability to handle inconsistent, legacy, or problematic input data.
+Catalog of deliberate, solvable edge cases reflecting real production pitfalls. These tests probe how models handle inconsistent, legacy, or problematic inputs without changing core requirements.
 
 **Design Principles**:
 
@@ -15,79 +15,23 @@ This document catalogs the realistic edge cases and coding pitfalls intentionall
 
 ### test_data/process_records.py
 
-**Hazards Introduced**:
+**Hazards Introduced** (compact):
 
-1. **Builtin Shadowing** (`list = []`)
-   - **What**: Shadows Python's built-in `list` type but never uses the variable
-   - **Real-world Context**: Legacy code accumulates unused variables that shadow builtins
-   - **Impact**: Can confuse code analysis, potential runtime issues if variable used
-   - **Solution**: Remove unused variable or rename to non-conflicting name
-
-2. **Mixed Import Patterns** (`from datetime import datetime as dt` + `import datetime`)
-   - **What**: Both `dt` and `datetime` available, creating potential confusion
-   - **Real-world Context**: Multiple developers adding imports over time
-   - **Impact**: Code readability issues, potential for using wrong reference
-   - **Solution**: Standardize on single import pattern throughout module
-
-3. **Exception Masking with NameError Risk**
-   - **What**: Broad `except Exception: pass` creates undefined variable scenarios
-   - **Real-world Context**: Quick fixes that hide real problems
-   - **Impact**: Silent failures, potential NameError when accessing undefined variables
-   - **Solution**: Specific exception handling with proper error recovery
-
-4. **Unsafe YAML Loading** (`yaml.load()` without Loader)
-   - **What**: Uses deprecated unsafe YAML loading method
-   - **Real-world Context**: Legacy code before security best practices
-   - **Impact**: Security vulnerability, deprecation warnings
-   - **Solution**: Use `yaml.safe_load()` or specify `Loader=yaml.SafeLoader`
-
-5. **Mixed Date Format Support with Naive Datetime**
-   - **What**: Supports multiple date formats but uses naive datetime operations
-   - **Real-world Context**: Systems integrating data from multiple sources
-   - **Impact**: Timezone issues, format parsing failures
-   - **Solution**: Timezone-aware datetime handling, robust format validation
-
-6. **Misleading Parameter Names**
-   - **What**: Hardcoded values passed to parameters with names suggesting flexibility
-   - **Real-world Context**: Technical debt where interfaces evolved but implementations didn't
-   - **Impact**: Maintenance confusion, false expectations about configurability
-   - **Solution**: Either make parameters truly configurable or rename to reflect reality
+1. **Builtin shadowing** (`list = []`): confusing and unsafe → remove/rename.
+2. **Mixed imports** (`dt` + `datetime`): inconsistent references → standardize.
+3. **Exception masking** (`except Exception: pass`): silent failures/NameError risk → catch specific errors.
+4. **Unsafe YAML loading** (`yaml.load`): security risk → use `yaml.safe_load`.
+5. **Naive datetime** (mixed formats): TZ/parse issues → use aware datetimes and validate formats.
+6. **Misleading params** (hardcoded values): false flexibility → rename or make configurable.
 
 ### test_data/user_data.json
 
-**Hazards Introduced**:
+**Hazards Introduced** (compact):
 
-1. **JSON Syntax Violations**
-   - **Trailing Commas**: After final array/object elements
-   - **JavaScript Comments**: `//` and `/* */` style comments
-   - **Duplicate Keys**: Same key appears multiple times (last value wins)
-   - **Real-world Context**: JSON exports from systems with relaxed parsing
-   - **Impact**: Parsing errors in strict JSON parsers
-   - **Solution**: JSON preprocessing to remove comments and trailing commas
-
-2. **Data Type Inconsistencies**
-   - **String NaN**: Age field as `"NaN"` string instead of null
-   - **Leading Zeros**: Numbers as strings with leading zeros (`"0004"`)
-   - **Mixed Number Types**: Ages as strings, integers, and floats
-   - **Real-world Context**: Data exports from different database systems
-   - **Impact**: Type coercion issues, invalid calculations
-   - **Solution**: Robust type normalization and validation
-
-3. **Unicode Edge Cases**
-   - **Zero-Width Spaces**: Invisible characters in names (U+200B)
-   - **Combining Diacritics**: Characters composed of multiple Unicode code points
-   - **BOM Characters**: Byte Order Mark at file start
-   - **Real-world Context**: Data from international systems, copy-paste errors
-   - **Impact**: Display issues, string comparison failures, encoding problems
-   - **Solution**: Unicode normalization, BOM stripping, proper encoding handling
-
-4. **Structure Variations**
-   - **Contact Field Types**: String vs object vs array across users
-   - **Missing Required Fields**: Some users lack expected properties
-   - **Nested Object Depth**: Inconsistent nesting levels
-   - **Real-world Context**: API evolution, optional field handling
-   - **Impact**: Field access errors, type assumption failures
-   - **Solution**: Defensive field access, type checking, schema validation
+1. **JSON syntax**: trailing commas, JS comments, duplicate keys → preprocess then parse.
+2. **Types**: "NaN" strings, leading zeros, mixed numeric types → normalize/coerce.
+3. **Unicode**: zero‑width, combining diacritics, BOM → normalize Unicode and strip BOM.
+4. **Structure**: contact can be string/object/array; missing fields; variable depth → defensive access and schema checks.
 
 **Success Path Preservation**:
 Users 101, 105, and one additional clean record maintain perfect structure for successful processing:

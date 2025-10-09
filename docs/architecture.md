@@ -451,6 +451,8 @@ pytest -m "not slow"
 
 ## Security Model
 
+High-level overview; see [Security](security.md) for full details and the authoritative threat model.
+
 ### Input Validation
 
 All user inputs are validated before processing:
@@ -462,36 +464,13 @@ All user inputs are validated before processing:
 
 ### Sandboxing Strategy
 
-```python
-class SafeExecutor:
-    """Execute user code in controlled environment."""
-    
-    def __init__(self, timeout: int = 30):
-        self.timeout = timeout
-        
-    def execute_with_timeout(self, func, *args, **kwargs):
-        """Run function with timeout and resource limits."""
-        
-    def validate_imports(self, code: str) -> bool:
-        """Check for dangerous import statements."""
-        
-    def sanitize_paths(self, path: str) -> str:
-        """Prevent directory traversal attacks."""
-```
+- Isolated temp root with sanitized environment and paths.
+- Resource caps with timeouts; deterministic execution (no import-time side effects).
+- Strict guards against dangerous imports and execution primitives.
 
 ### Vulnerability Detection
 
-Security analysis patterns:
-
-```python
-SECURITY_PATTERNS = {
-    'eval_exec': r'\b(eval|exec)\s*\(',
-    'sql_injection': r'f["\'].*SELECT.*WHERE.*{.*}',
-    'hardcoded_secrets': r'(password|api_key|token)\s*=\s*["\']',
-    'path_traversal': r'\.\./|\.\.\\',
-    'command_injection': r'subprocess.*shell\s*=\s*True'
-}
-```
+Detectors cover unsafe execution, secrets, injection patterns, and traversal. See [Security](security.md) for the complete rule set and handling.
 
 ## Performance Optimization
 
@@ -550,12 +529,8 @@ The [Runner Module](#2-runner-module-benchmarkrunnerpy) orchestrates this flow:
                             │
 5. Generate grade and feedback
                             │
-6. Save results (atomic) to timestamped run directory:
-    - JSON pointer: results/latest_results.json (most recent)
-    - Run JSON: results/<RUN_TS>/latest_results.json
-    - Text summary: results/<RUN_TS>/detailed/summary_report_<RUN_TS>.txt
-    - Comparison chart: results/<RUN_TS>/comparison_charts/comparison_chart.txt
-    (Historical run directories preserved for reproducibility.)
+6. Save results (atomic) to timestamped run directory.
+   See [User Guide – Running Your First Benchmark](user-guide.md#running-your-first-benchmark) for the canonical results layout.
 
 ### Error Handling Flow
 

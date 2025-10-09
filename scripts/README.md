@@ -205,7 +205,7 @@ jobs:
         python-version: '3.13'
     
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: pip install --require-hashes -r requirements.lock
     
     - name: Validate documentation commands
       run: python scripts/validate_docs.py --verbose --output validation-${{ matrix.os }}.txt --json --json-file validation-${{ matrix.os }}.json

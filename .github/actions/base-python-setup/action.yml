@@ -28,10 +28,28 @@ runs:
         }
         python -m pip --version
 
+    - name: Unix | align pip with lock pin
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        set -euo pipefail
+        lock="requirements-dev.lock"
+        if [[ ! -f "$lock" ]]; then
+          lock="requirements.lock"
+        fi
+        pip_line="$(grep -m1 '^pip==' "$lock" || true)"
+        if [[ -n "$pip_line" ]]; then
+          pip_version="$(printf '%s\n' "$pip_line" | sed -E 's/^pip==([^[:space:];]+).*/\1/')"
+          echo "Upgrading pip to ${pip_version} (pre-install)..."
+          python -m pip install --upgrade "pip==${pip_version}"
+        else
+          echo "No pip pin found; skipping pre-upgrade."
+        fi
+        python -m pip --version
+
     - name: Install base (hashed)
       shell: bash
       run: |
-        python -m pip install -U pip
         python -m pip install --require-hashes -r requirements.lock
 
     - name: Install dev/test/security (hashed)

@@ -283,7 +283,7 @@ jobs:
 
       - name: Run pip-audit for comprehensive dependency analysis
         run: |
-          pip-audit --format=json --output=pip-audit-report.json || echo "pip-audit completed"
+          pip-audit --requirement requirements.lock --requirement requirements-dev.lock --format=json --output=pip-audit-report.json || echo "pip-audit completed"
           cat pip-audit-report.json
 
       - name: Analyze dependency scan results

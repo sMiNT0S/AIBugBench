@@ -1,45 +1,44 @@
 # Getting Started
 
-Get AIBugBench running and test your AI model's code generation skills in 15 minutes.
+Get AIBugBench running and test a model fast.
 
 ## Before You Begin
 
-**Prerequisites:**
+**Prerequisites**
 
 - Python 3.13+
 - Git
-- 15 minutes
 
-**What This Does:** Tests AI models on 4 coding challenges (refactoring, format conversion, data transformation, API integration) with comprehensive 7-category quality assessment including security, performance, and maintainability analysis.
+You’ll run 4 fixed challenges (refactor, config repair, transform, API). Scoring covers 7 quality dimensions.
 
 ## Step 1: Clone and Set Up Environment
 
-**Windows CMD:**
+=== "Windows PowerShell"
 
-```cmd
-git clone https://github.com/sMiNT0S/AIBugBench.git
-cd AIBugBench
-python -m venv venv
-venv\Scripts\activate
-```
+    ```powershell
+    git clone https://github.com/sMiNT0S/AIBugBench.git
+    cd AIBugBench
+    python -m venv venv
+    venv\Scripts\Activate.ps1
+    ```
 
-**Windows PowerShell:**
+=== "Windows CMD"
 
-```powershell
-git clone https://github.com/sMiNT0S/AIBugBench.git
-cd AIBugBench
-python -m venv venv
-venv\Scripts\Activate.ps1
-```
+    ```cmd
+    git clone https://github.com/sMiNT0S/AIBugBench.git
+    cd AIBugBench
+    python -m venv venv
+    venv\Scripts\activate
+    ```
 
-**macOS/Linux Bash:**
+=== "macOS/Linux"
 
-```bash
-git clone https://github.com/sMiNT0S/AIBugBench.git
-cd AIBugBench
-python3 -m venv venv
-source venv/bin/activate
-```
+    ```bash
+    git clone https://github.com/sMiNT0S/AIBugBench.git
+    cd AIBugBench
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
 
 ## Step 2: Create Test Data and Install Dependencies
 
@@ -47,12 +46,10 @@ source venv/bin/activate
 
 ```bash
 python scripts/bootstrap_repo.py
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
-**What This Creates:** Deliberately broken Python scripts, YAML config, and JSON data that AI models must fix (sabotage fixtures). Also creates `ai_prompt.md` - a comprehensive context file to give your AI for better benchmark performance.
-
-💡 **Sabotage Fixtures:** The test data uses specific sabotage mechanisms to create realistic debugging scenarios. See **[Sabotage Documentation](sabotage-notes.md)** for details on how these challenges are designed.
+This creates deliberately broken test data (sabotage fixtures) and `ai_prompt.md` for AI context. See **[Sabotage Notes](sabotage-notes.md)** for details.
 
 ## Step 3: Verify Installation
 
@@ -80,25 +77,23 @@ Core structure:
 
 ## Step 4: Create Your AI Model Submission
 
-📋 **[Detailed Developer Guide](developer-guide.md)**
+=== "Windows PowerShell"
 
-**Windows CMD:**
+    ```powershell
+    Copy-Item -Recurse submissions\templates\template submissions\user_submissions\your_model_name
+    ```
 
-```cmd
-xcopy /E /I submissions\templates\template submissions\user_submissions\your_model_name
-```
+=== "Windows CMD"
 
-**Windows PowerShell:**
+    ```cmd
+    xcopy /E /I submissions\templates\template submissions\user_submissions\your_model_name
+    ```
 
-```powershell
-Copy-Item -Recurse submissions\templates\template submissions\user_submissions\your_model_name
-```
+=== "macOS/Linux"
 
-**macOS/Linux Bash:**
-
-```bash
-cp -r submissions/templates/template submissions/user_submissions/your_model_name
-```
+    ```bash
+    cp -r submissions/templates/template submissions/user_submissions/your_model_name
+    ```
 
 ## Step 5: Get AI Responses and Save Code
 
@@ -109,7 +104,7 @@ cp -r submissions/templates/template submissions/user_submissions/your_model_nam
    - `prompt_3_transformation.md` → Save Python code as `prompt_3_transform.py`
    - `prompt_4_api_simulation.md` → Save Python code as `prompt_4_api_sync.py`
 
-**Important:** Save only the Python/YAML/JSON code, not explanations or markdown formatting.
+Save only the Python/YAML/JSON code (no explanations or markdown).
 
 ## Step 6: Run Benchmark and Review Results
 
@@ -119,9 +114,7 @@ cp -r submissions/templates/template submissions/user_submissions/your_model_nam
 python run_benchmark.py --model your_model_name
 ```
 
-**Results Location (v0.8.1+):**
-
-Benchmark results are organized in timestamped directories for historical tracking. See the [User Guide - Running Your First Benchmark](user-guide.md#running-your-first-benchmark) for the complete directory structure and detailed explanation.
+Results use timestamped directories. See the [User Guide](user-guide.md#running-your-first-benchmark) for the full layout.
 
 Quick access:
 
@@ -132,45 +125,43 @@ Quick access:
 
 Historical runs accumulate; each benchmark invocation creates a new `<RUN_TS>` directory.
 
-**Grade Scale:**
-
-- A (90%+) Production Ready
-- B (80%+) Good
-- C (70%+) Satisfactory
-- D (60%+) Minimal
-- F (<60%) Failing
+See [Scoring Methodology – Grade Scale](scoring-methodology.md#grade-scale) for letter-grade thresholds.
 
 📊 **[Understanding Your Results](scoring-methodology.md)**
-
-## Advanced: Automate the Process
-
-**Note:** The automation script `scripts/automate_models.py` is currently **DEPRECATED** and operates in **offline-only mode**. No live API calls are supported.
-
-**Recommended Approach:** Follow the manual workflow in Steps 4-5 above for reliable results.
 
 ## Troubleshooting
 
 **Common Issues:**
 
-- **"No module named 'yaml'":** Run `pip install pyyaml requests`
-- **"Permission denied" (Windows PowerShell):** Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-- **"FileNotFoundError: test_data":** Ensure you ran `python scripts/bootstrap_repo.py`
-- **All scores are 0.00:** Check that your files contain actual code, not explanations
-- **Virtual environment issues:** Try `python3` instead of `python`, or `py` on Windows
+- "No module named 'yaml'": `pip install pyyaml requests`
+- Permission denied (PowerShell): `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+- FileNotFoundError: test_data: `python scripts/bootstrap_repo.py`
+- All scores are 0.00: files must contain code only (no markdown)
+- Venv issues: try `python3` or `py` on Windows
 
 🔧 **[Comprehensive Troubleshooting Guide](troubleshooting.md)** - Includes Tiered Structure Errors taxonomy and detailed solutions.
 
-## What You've Accomplished
-
-✅ AIBugBench installed and verified  
-✅ Your AI model benchmarked across 4 challenges  
-✅ Comprehensive quality assessment including security and performance analysis  
-✅ Detailed results saved for analysis and comparison  
-
 ## Next Steps
 
-- Try different AI models
-- Explore detailed documentation
-- Contribute new challenges to the benchmark
+- Try other models
+- Read your results summary and dig into details
+- See **[Scoring Methodology](scoring-methodology.md)**
 
-📖 **[Full Documentation](index.md)** | 👨‍💻 **[Developer Guide](developer-guide.md)** | 📊 **[Scoring Details](scoring-methodology.md)**
+## Quick Reference (Cheat Sheet)
+
+```bash
+# Create venv and install (pinned)
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\Activate.ps1
+pip install -r requirements.lock
+python scripts/bootstrap_repo.py
+
+# Run an example model
+python run_benchmark.py --model example_model
+
+# Run your model
+python run_benchmark.py --model your_model_name
+
+# Results (quick look)
+cat results/latest_results.json | jq '.summary'
+```

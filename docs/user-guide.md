@@ -1,17 +1,12 @@
 # User Guide
 
-Comprehensive guide for running benchmarks and understanding AIBugBench results.
+How to run benchmarks and read results.
 
 ## Running Your First Benchmark
 
 ### Basic Workflow
 
-1. **Setup** (one-time):
-
-   ```bash
-   python scripts/bootstrap_repo.py
-   pip install -r requirements.txt
-   ```
+1. **Setup** (one-time): See [Getting Started](getting-started.md) for platform-specific installation and environment setup.
 
 2. **Test example model**:
 
@@ -64,25 +59,21 @@ Quick access:
 
 - **Goal**: Modernize legacy Python code
 - **Focus**: Clean code, error handling, security
-- **Key Skills**: Python best practices, logging, type hints
 
 #### Challenge 2: Configuration Repair (25 points)
 
 - **Goal**: Fix broken YAML/JSON files
 - **Focus**: Format validation, cross-format consistency
-- **Key Skills**: YAML/JSON syntax, data structure preservation
 
 #### Challenge 3: Data Transformation (25 points)
 
 - **Goal**: Implement business logic for data processing
 - **Focus**: Correct transformations, edge case handling
-- **Key Skills**: Data manipulation, business rule implementation
 
 #### Challenge 4: API Integration (25 points)
 
 - **Goal**: Create robust API client with error handling
 - **Focus**: Security, authentication, resilience
-- **Key Skills**: HTTP requests, error handling, security
 
 ## Interpreting Your Results
 
@@ -139,13 +130,7 @@ Visual representation of scores:
 
 ### Understanding Grades
 
-| Grade | Score Range | What It Means |
-|-------|------------|---------------|
-| **A** | 90-100% | Production-ready code with excellent quality |
-| **B** | 80-89% | Good code with minor issues to address |
-| **C** | 70-79% | Functional but needs improvement |
-| **D** | 60-69% | Minimal passing, significant issues |
-| **F** | 0-59% | Critical failures, not production-ready |
+See [Scoring Methodology – Grade Scale](scoring-methodology.md#grade-scale) for the canonical letter-grade interpretation and thresholds.
 
 ## Result Metadata & Privacy
 
@@ -217,23 +202,13 @@ Either mechanism retains only `spec_version` and suppresses git/platform/timesta
 
 ## Comparing Multiple Models
 
-### Running Comparisons & Concurrency
-
-Run all discovered models sequentially (default):
+Run all discovered models or a specific model. For concurrency and all CLI flags, see the [API Reference – CLI Reference](api-reference.md#cli-reference).
 
 ```bash
+# All models (sequential)
 python run_benchmark.py
-```
 
-Enable concurrent evaluation (thread pool):
-
-```bash
-python run_benchmark.py --workers 4
-```
-
-Run only specific model:
-
-```bash
+# Single model
 python run_benchmark.py --model your_model
 ```
 
@@ -252,31 +227,6 @@ This generates:
 - Statistical summaries
 - Recommendations for model selection
 
-## Common Patterns in Results
-
-### High Performers (90%+)
-
-- Comprehensive error handling
-- Modern Python idioms
-- Security-conscious coding
-- Efficient algorithms
-- Clear code organization
-
-### Medium Performers (70-89%)
-
-- Basic functionality works
-- Some error handling present
-- Minor security issues
-- Occasional inefficiencies
-- Room for refactoring
-
-### Low Performers (<70%)
-
-- Missing core functionality
-- Poor error handling
-- Security vulnerabilities
-- Inefficient algorithms
-- Code quality issues
 
 ## Troubleshooting Low Scores
 
@@ -307,57 +257,7 @@ This generates:
 
 ## Advanced Usage
 
-### Custom Test Configurations
-
-Override default settings:
-
-```bash
-# Extended timeout for complex models
-python run_benchmark.py --model complex_model --timeout 60
-
-# Verbose output for debugging
-python run_benchmark.py --model debug_model --verbose
-
-# Custom results directory
-python run_benchmark.py --model test --results-dir custom_results/
-```
-
-### Automating Benchmark Runs
-
-Create a batch testing script:
-
-```bash
-#!/bin/bash
-models=("gpt4" "claude" "llama")
-for model in "${models[@]}"; do
-    echo "Testing $model..."
-    python run_benchmark.py --model $model --quiet
-    sleep 2
-done
-```
-
-### Integration with CI/CD
-
-Example GitHub Actions workflow:
-
-{% raw %}
-
-```yaml
-- name: Run AIBugBench
-  run: |
-    python scripts/bootstrap_repo.py
-    python run_benchmark.py --model ${{ matrix.model }} --quiet
-    
-- name: Check Score Threshold
-  run: |
-    score=$(jq '.total_score' results/latest_results.json)
-    if (( $(echo "$score < 70" | bc -l) )); then
-      echo "Score below threshold: $score"
-      exit 1
-    fi
-```
-
-{% endraw %}
+For full CLI options (timeouts, verbosity, concurrency, output directories) and CI examples, see the [API Reference – CLI Reference](api-reference.md#cli-reference).
 
 ## Next Steps
 
@@ -379,6 +279,16 @@ After running benchmarks:
 ## See Also
 
 - **[Getting Started](getting-started.md)** - Initial setup
-- **[Developer Guide](developer-guide.md)** - Adding models
 - **[Scoring Methodology](scoring-methodology.md)** - Score details
-- **[API Reference](api-reference.md)** - Technical reference
+
+## Glossary
+
+- Benchmark Runner: Orchestrates submissions, validators, scoring, and writes outputs (entry: `run_benchmark.py`).
+- Validator: Checks syntax, structure, execution; analyzes quality, security, performance, maintainability.
+- SecureRunner (Sandbox): Confines filesystem, cleans env vars, enforces resource/time limits.
+- Sabotage Fixtures: Intentionally broken inputs in `test_data/` representing real-world failure modes.
+- Tiered Submissions: `submissions/` layout with `reference_implementations/`, `templates/template/`, `user_submissions/`.
+- RUN_TS: Timestamped directory `YYYYMMDD_HHMMSS` under `results/` for detailed artifacts.
+- latest_results.json: Root pointer to most recent run under `results/`.
+- Grade Scale: Percentage→letter mapping in [Scoring Methodology](scoring-methodology.md#grade-scale).
+- Determinism: Reproducible, offline-by-default runs with no import-time side effects.

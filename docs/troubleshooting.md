@@ -4,6 +4,17 @@
 
 This guide covers common issues encountered when working with AIBugBench and provides step-by-step solutions.
 
+## Quick FAQ
+
+- What Python version do I need? — Python 3.13+. Check with `python --version`.
+- How do I install and run? — See Getting Started for platform steps; then `python run_benchmark.py --model example_model`.
+- Where are results written? — See User Guide (start with `results/latest_results.json`).
+- How are grades calculated? — See Scoring Methodology (Grade Scale).
+- Can I run offline? — Yes. Offline and sandboxed by default (see Security).
+- All scores are 0.00 — Ensure files contain only code (no markdown) and exact filenames.
+- YAML/JSON parsing fails — Use safe loaders and preserve structure; see Troubleshooting + Prompt 2 notes.
+- How do I add a model? — Copy template to `submissions/user_submissions/<your_model>/`; see Developer Guide.
+
 ## Common Issues and Solutions
 
 ### Tiered Structure Errors (New Layout)
@@ -50,15 +61,15 @@ Expected discovery line after migration (with at least example_model in referenc
 Discovered models: reference=1 user=0 templates=OK
 ```
 
-### 1. Benchmark Execution Failures
+### Benchmark Execution Failures
 
-#### Issue: "No module named 'benchmark'"
+#### "No module named 'benchmark'"
 
 **Symptoms:**
 
 ModuleNotFoundError: No module named 'benchmark'
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Ensure you're in the project root
@@ -69,19 +80,19 @@ ls -la benchmark/
 python run_benchmark.py --model example_model
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python -c "import benchmark; print('OK')"
 ```
 
-#### Issue: "FileNotFoundError: test_data directory not found"
+#### "FileNotFoundError: test_data directory not found"
 
 **Symptoms:**
 
 FileNotFoundError: [Errno 2] No such file or directory: 'test_data/config.yaml'
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Run setup to create test data
@@ -90,21 +101,21 @@ python scripts/bootstrap_repo.py
 ls -la test_data/
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python -c "import os; print('OK' if os.path.exists('test_data/config.yaml') else 'FAIL')"
 ```
 
-### 2. Validation Tool Failures
+### Validation Tool Failures
 
-#### Issue: "scripts/validate_docs.py fails with platform mismatch"
+#### "scripts/validate_docs.py fails with platform mismatch"
 
 **Symptoms:**
 
 Platform mismatch: macos_linux vs windows_cmd
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Windows users should run with platform override
@@ -113,68 +124,68 @@ python scripts/validate_docs.py --platform windows_cmd --docs-only
 python scripts/validate_docs.py --platform windows_powershell --docs-only
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python scripts/validate_docs.py --docs-only --verbose
 ```
 
-#### Issue: "validate_security.py fails with exit code 127"
+#### "validate_security.py fails with exit code 127"
 
 **Symptoms:**
 
 Command failed with return code 127
 bandit: command not found
 
-**Solution:**
+**Fix:**
 
 ```bash
-# Install dev dependencies
-pip install -r requirements-dev.txt
+# Install dev dependencies (pinned)
+pip install -r requirements-dev.lock
 # Verify bandit is installed
 bandit --version
 # Re-run security validation
 python scripts/validate_security.py
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python scripts/validate_security.py --dry-run
 ```
 
-### 3. Testing Issues
+### Testing Issues
 
-#### Issue: "pytest command not found"
+#### "pytest command not found"
 
 **Symptoms:**
 
 'pytest' is not recognized as an internal or external command
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Install pytest via pip
 pip install pytest pytest-cov
-# Or install dev dependencies
-pip install -r requirements-dev.txt
+# Or install dev dependencies (pinned)
+pip install -r requirements-dev.lock
 # Re-run tests
 pytest tests/ -v
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 pytest --version
 ```
 
-#### Issue: "Tests fail with import errors"
+#### "Tests fail with import errors"
 
 **Symptoms:**
 
 ImportError: cannot import name 'validators' from 'benchmark'
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Ensure you're in project root
@@ -185,21 +196,21 @@ PYTHONPATH=. pytest tests/ -v
 python -m pytest tests/ -v
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python -c "from benchmark import validators; print('OK')"
 ```
 
-### 4. Submission Issues
+### Submission Issues
 
-#### Issue: "Model submission not recognized"
+#### "Model submission not recognized"
 
 **Symptoms:**
 
 Error: Model directory 'my_model' not found (reference_implementations/ or user_submissions/)
 
-**Solution:**
+**Fix:**
 
 ```bash
 # List available models by tier
@@ -211,19 +222,19 @@ cp -r submissions/templates/template submissions/user_submissions/my_model
 ls -la submissions/user_submissions/my_model/
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python run_benchmark.py --model my_model --dry-run
 ```
 
-#### Issue: "Missing required solution files"
+#### "Missing required solution files"
 
 **Symptoms:**
 
 Missing required file: prompt_1_solution.py
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Check what files are missing
@@ -235,9 +246,9 @@ cp submissions/templates/template/prompt_1_solution.py submissions/my_model/
 python scripts/validate_submission.py my_model
 ```
 
-### 5. Environment Setup Issues
+### Environment Setup Issues
 
-#### Issue: "Virtual environment activation fails"
+#### "Virtual environment activation fails"
 
 **Symptoms:**
 
@@ -249,7 +260,7 @@ python scripts/validate_submission.py my_model
 bash: venv/bin/activate: No such file or directory
 ```
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Windows
@@ -264,30 +275,30 @@ source venv/bin/activate
 pip list
 ```
 
-**Command to verify fix:**
+**Verify:**
 
 ```bash
 python -c "import sys; print('Virtual env:', hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))"
 ```
 
-#### Issue: "pip install fails with permission errors"
+#### "pip install fails with permission errors"
 
 **Symptoms:**
 
 ERROR: Could not install packages due to an EnvironmentError: [Errno 13] Permission denied
 
-**Solution:**
+**Fix:**
 
 ```bash
-# Use user installation
-pip install --user -r requirements.txt
+# Use user installation (pinned)
+pip install --user -r requirements.lock
 # Or fix virtual environment
 python -m venv venv --clear
 source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
-### 6. Log File Analysis
+### Log File Analysis
 
 #### Common Log Locations
 
@@ -309,16 +320,16 @@ cat reports/session/$(ls -t reports/session/ | head -1)/ruff_check.log | tail -2
 cat reports/session/$(ls -t reports/session/ | head -1)/bandit.log | grep -A5 -B5 "HIGH\|MEDIUM"
 ```
 
-### 7. Performance Issues
+### Performance Issues
 
-#### Issue: "Validation takes too long"
+#### "Validation takes too long"
 
 **Symptoms:**
 
 - validate_docs.py hangs for minutes
 - High CPU usage during validation
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Skip sandbox creation for faster validation
@@ -329,13 +340,13 @@ python scripts/validate_docs.py --skip-network
 python scripts/validate_docs.py --verbose
 ```
 
-#### Issue: "Benchmark runs out of memory"
+#### "Benchmark runs out of memory"
 
 **Symptoms:**
 
 MemoryError: Unable to allocate array
 
-**Solution:**
+**Fix:**
 
 ```bash
 # Run with smaller batch sizes
@@ -402,7 +413,7 @@ find . -name "*.pyc" -delete
 # Recreate environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.lock
 python scripts/bootstrap_repo.py
 ```
 

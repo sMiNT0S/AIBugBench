@@ -126,7 +126,7 @@ This release establishes a solid foundation for future development with:
 git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
 python scripts/bootstrap_repo.py
-pip install -r requirements.txt
+pip install -r requirements.lock
 python run_benchmark.py --model example_model
 ```
 

@@ -2,7 +2,7 @@
 title: Internal Components Overview
 description: Consolidated index of internal maintenance tooling (validation package, documentation validator, submissions workflow, repository audit) for advanced project operations.
 search:
-	boost: 0.5
+  boost: 0.5
 ---
 
 Concise links to internal operational READMEs not previously surfaced in site navigation.

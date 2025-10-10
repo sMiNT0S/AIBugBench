@@ -40,7 +40,6 @@ Use AIBugBench to compare models and monitor behavior over time, not to validate
 
 - Python 3.13+
 - Git
-- 15 minutes
 
 ### Installation & First Run
 
@@ -51,7 +50,7 @@ git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
 python -m venv venv
 venv\Scripts\Activate.ps1
-pip install --require-hashes -r requirements.lock
+pip install -r requirements.lock
 python run_benchmark.py --model example_model
 ```
 
@@ -62,11 +61,11 @@ git clone https://github.com/sMiNT0S/AIBugBench.git
 cd AIBugBench
 python3 -m venv venv
 source venv/bin/activate
-pip install --require-hashes -r requirements.lock
+pip install -r requirements.lock
 python run_benchmark.py --model example_model
 ```
 
-**Expected result:** ~90/100 score (A grade) in under a minute.
+Expected result: ~90/100 (A grade) in under a minute.
 
 ![Benchmark run and scorecard summary](media/summary.png)
 

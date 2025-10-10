@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for considering contributing to AIBugBench! This guide will help you get started with development, testing, and submission workflows.
+This guide explains how to set up development, run checks, and contribute changes.
 
 ## Development Setup
 
@@ -78,6 +78,7 @@ Quick reference for common development and maintenance tasks:
 | Pre-commit hooks | `pip install pre-commit && pre-commit install` |
 
 **Notes:**
+
 - Coverage thresholds are enforced in CI; local full runs are optional unless changing scoring or sandbox logic.
 - Always use lock files for reproducible installs; `requirements.txt` lists only direct top-level dependencies.
 
@@ -234,6 +235,7 @@ By contributing to AIBugBench, you agree that your contributions will be license
 ## Recognition
 
 Contributors are recognized in:
+
 - Git commit history
 - Release notes (for significant contributions)
 - Project README (for major features)

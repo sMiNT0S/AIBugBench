@@ -1,8 +1,8 @@
 # Security
 
-## Security Features Overview
+## Overview
 
-AIBugBench executes AI-generated code in a controlled sandbox environment with multiple layers of protection:
+Runs AI‑generated code in a sandbox with layered protections:
 
 - **Execution isolation**: `SecureRunner` sandbox with temp working directory and cleanup on exit
 - **Runtime guards**: Block eval/exec/compile, subprocess, dangerous imports (ctypes, pickle, marshal, etc.)
@@ -19,4 +19,5 @@ For complete threat model, enforcement details, and verification procedures, see
 
 ---
 
---8<-- "../SECURITY.md"
+--8<-- "SAFETY.md"
+

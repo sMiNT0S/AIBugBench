@@ -1,1 +1,2 @@
---8<-- "../CODE_OF_CONDUCT.md"
+--8<-- ".github/CODE_OF_CONDUCT.md"
+

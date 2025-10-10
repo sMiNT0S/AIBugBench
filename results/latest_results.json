@@ -1,13 +1,428 @@
 {
   "benchmark_run": {
-    "timestamp": "2025-09-27T15:21:16.381774",
-    "total_models": 1,
-    "prompts_tested": 4
+    "timestamp": "2025-10-08T05:15:34.908838",
+    "total_models": 3
   },
   "models": {
+    "GPT5_Thinking": {
+      "model_name": "GPT5_Thinking",
+      "timestamp": "2025-10-08T05:15:34.909223",
+      "prompts": {
+        "prompt_1": {
+          "passed": true,
+          "score": 17.166666666666664,
+          "max_score": 25,
+          "feedback": [
+            "✅ Python Syntax (5.0/5.0):  ✓valid_syntax",
+            "⚠️ Code Structure (2.4/3.0):  ✓yaml_import, json_import, error_handling, type_hints ✗logging",
+            "❌ Execution (0.0/6.0):  ✗runs_without_error, correct_filtering",
+            "✅ Code Quality (3.0/3.0):  ✓no_global_vars, uses_pathlib, has_main_guard, proper_file_handling",
+            "✅ Security Analysis (4.0/4.0):  ✓no_security_issues",
+            "⚠️ Performance Analysis (1.9/2.0):  ✓no_nested_loops",
+            "⚠️ Maintainability Analysis (0.9/2.0):  ✓no_duplication, good_naming ✗no_long_functions"
+          ],
+          "tests_passed": {
+            "valid_python": true,
+            "good_quality": true,
+            "secure_code": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 5.0,
+              "max": 5.0
+            },
+            "structure": {
+              "earned": 2.4,
+              "max": 3.0
+            },
+            "execution": {
+              "earned": 0.0,
+              "max": 6.0
+            },
+            "quality": {
+              "earned": 3.0,
+              "max": 3.0
+            },
+            "security": {
+              "earned": 4.0,
+              "max": 4.0
+            },
+            "performance": {
+              "earned": 1.8666666666666665,
+              "max": 2.0
+            },
+            "maintainability": {
+              "earned": 0.9,
+              "max": 2.0
+            }
+          }
+        },
+        "prompt_2": {
+          "passed": true,
+          "score": 25.0,
+          "max_score": 25,
+          "feedback": [
+            "✅ Syntax (4.0/4.0):  ✓yaml_parses, json_parses",
+            "✅ Structure (6.0/6.0):  ✓required_keys, nested_shapes, arrays_scalars",
+            "✅ Execution (8.0/8.0):  ✓deep_equivalence, partial_matches",
+            "✅ Quality (6.0/6.0):  ✓yaml_indentation, json_literals, formatting_style, no_duplication",
+            "✅ Security (1.0/1.0):  ✓yaml_safety"
+          ],
+          "tests_passed": {
+            "valid_yaml": true,
+            "valid_json": true,
+            "structure_preserved": true,
+            "equivalence_test": true,
+            "correct_types": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 4.0,
+              "max": 4
+            },
+            "structure": {
+              "earned": 6.0,
+              "max": 6
+            },
+            "execution": {
+              "earned": 8.0,
+              "max": 8
+            },
+            "quality": {
+              "earned": 6.0,
+              "max": 6
+            },
+            "security": {
+              "earned": 1.0,
+              "max": 1
+            },
+            "performance": {
+              "earned": 0,
+              "max": 0
+            },
+            "maintainability": {
+              "earned": 0,
+              "max": 0
+            }
+          }
+        },
+        "prompt_3": {
+          "passed": true,
+          "score": 21.0,
+          "max_score": 25,
+          "feedback": [
+            "✅ Syntax (3.0/3.0):  ✓file_compiles, function_exists",
+            "✅ Structure (3.0/3.0):  ✓correct_signature, basic_organization",
+            "✅ Execution (12.0/12.0):  ✓function_runs, id_standardization, email_provider, age_normalization, account_tiers, error_handling",
+            "⚠️ Quality (2.0/3.0):  ✓try_except, type_conversions ✗readable_loops",
+            "❌ Security (0.0/1.0):  ✗no_unsafe_constructs",
+            "✅ Performance (1.0/1.0):  ✓single_pass",
+            "❌ Maintainability (0.0/2.0):  ✗code_organization"
+          ],
+          "tests_passed": {
+            "function_exists": true,
+            "no_crash": true,
+            "id_standardization": true,
+            "email_provider": true,
+            "account_tiers": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "structure": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "execution": {
+              "earned": 12.0,
+              "max": 12
+            },
+            "quality": {
+              "earned": 2.0,
+              "max": 3
+            },
+            "security": {
+              "earned": 0.0,
+              "max": 1
+            },
+            "performance": {
+              "earned": 1.0,
+              "max": 1
+            },
+            "maintainability": {
+              "earned": 0.0,
+              "max": 2
+            }
+          }
+        },
+        "prompt_4": {
+          "passed": true,
+          "score": 15.0,
+          "max_score": 25,
+          "feedback": [
+            "✅ Syntax (2.0/2.0):  ✓file_compiles, function_exists",
+            "✅ Structure (3.0/3.0):  ✓correct_signature, request_structure",
+            "⚠️ Execution (4.0/7.0):  ✓handle_400, handle_401, handle_503, handle_connection_error ✗success_handling, json_parsing",
+            "✅ Quality (3.0/3.0):  ✓informative_errors, documentation",
+            "❌ Security (0.0/7.0):  ✗security_analysis",
+            "✅ Performance (2.0/2.0):  ✓retry_resilience",
+            "✅ Maintainability (1.0/1.0):  ✓code_organization"
+          ],
+          "tests_passed": {
+            "function_signature": true,
+            "uses_requests": true,
+            "error_handling": true,
+            "api_structure": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 2.0,
+              "max": 2
+            },
+            "structure": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "execution": {
+              "earned": 4.0,
+              "max": 7
+            },
+            "quality": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "security": {
+              "earned": 0.0,
+              "max": 7
+            },
+            "performance": {
+              "earned": 2.0,
+              "max": 2
+            },
+            "maintainability": {
+              "earned": 1.0,
+              "max": 1
+            }
+          }
+        }
+      },
+      "overall_score": 78.16666666666666,
+      "total_possible": 100,
+      "percentage": 78.2
+    },
+    "Mistral_LeChat": {
+      "model_name": "Mistral_LeChat",
+      "timestamp": "2025-10-08T05:15:41.060217",
+      "prompts": {
+        "prompt_1": {
+          "passed": true,
+          "score": 16.316666666666666,
+          "max_score": 25,
+          "feedback": [
+            "✅ Python Syntax (5.0/5.0):  ✓valid_syntax",
+            "⚠️ Code Structure (1.8/3.0):  ✓yaml_import, json_import, error_handling ✗logging, type_hints",
+            "❌ Execution (0.0/6.0):  ✗correct_filtering",
+            "⚠️ Code Quality (2.2/3.0):  ✓no_global_vars, has_main_guard, proper_file_handling ✗uses_pathlib",
+            "✅ Security Analysis (4.0/4.0):  ✓no_security_issues",
+            "⚠️ Performance Analysis (1.9/2.0):  ✓no_nested_loops",
+            "⚠️ Maintainability Analysis (1.4/2.0):  ✓no_long_functions, no_duplication, good_naming"
+          ],
+          "tests_passed": {
+            "valid_python": true,
+            "good_quality": true,
+            "secure_code": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 5.0,
+              "max": 5.0
+            },
+            "structure": {
+              "earned": 1.7999999999999998,
+              "max": 3.0
+            },
+            "execution": {
+              "earned": 0.0,
+              "max": 6.0
+            },
+            "quality": {
+              "earned": 2.25,
+              "max": 3.0
+            },
+            "security": {
+              "earned": 4.0,
+              "max": 4.0
+            },
+            "performance": {
+              "earned": 1.8666666666666665,
+              "max": 2.0
+            },
+            "maintainability": {
+              "earned": 1.4,
+              "max": 2.0
+            }
+          }
+        },
+        "prompt_2": {
+          "passed": true,
+          "score": 25.0,
+          "max_score": 25,
+          "feedback": [
+            "✅ Syntax (4.0/4.0):  ✓yaml_parses, json_parses",
+            "✅ Structure (6.0/6.0):  ✓required_keys, nested_shapes, arrays_scalars",
+            "✅ Execution (8.0/8.0):  ✓deep_equivalence, partial_matches",
+            "✅ Quality (6.0/6.0):  ✓yaml_indentation, json_literals, formatting_style, no_duplication",
+            "✅ Security (1.0/1.0):  ✓yaml_safety"
+          ],
+          "tests_passed": {
+            "valid_yaml": true,
+            "valid_json": true,
+            "structure_preserved": true,
+            "equivalence_test": true,
+            "correct_types": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 4.0,
+              "max": 4
+            },
+            "structure": {
+              "earned": 6.0,
+              "max": 6
+            },
+            "execution": {
+              "earned": 8.0,
+              "max": 8
+            },
+            "quality": {
+              "earned": 6.0,
+              "max": 6
+            },
+            "security": {
+              "earned": 1.0,
+              "max": 1
+            },
+            "performance": {
+              "earned": 0,
+              "max": 0
+            },
+            "maintainability": {
+              "earned": 0,
+              "max": 0
+            }
+          }
+        },
+        "prompt_3": {
+          "passed": true,
+          "score": 22.0,
+          "max_score": 25,
+          "feedback": [
+            "✅ Syntax (3.0/3.0):  ✓file_compiles, function_exists",
+            "✅ Structure (3.0/3.0):  ✓correct_signature, basic_organization",
+            "✅ Execution (12.0/12.0):  ✓function_runs, id_standardization, email_provider, age_normalization, account_tiers, error_handling",
+            "✅ Quality (3.0/3.0):  ✓try_except, type_conversions, readable_loops",
+            "❌ Security (0.0/1.0):  ✗no_unsafe_constructs",
+            "✅ Performance (1.0/1.0):  ✓single_pass",
+            "❌ Maintainability (0.0/2.0):  ✗code_organization"
+          ],
+          "tests_passed": {
+            "function_exists": true,
+            "no_crash": true,
+            "id_standardization": true,
+            "email_provider": true,
+            "account_tiers": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "structure": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "execution": {
+              "earned": 12.0,
+              "max": 12
+            },
+            "quality": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "security": {
+              "earned": 0.0,
+              "max": 1
+            },
+            "performance": {
+              "earned": 1.0,
+              "max": 1
+            },
+            "maintainability": {
+              "earned": 0.0,
+              "max": 2
+            }
+          }
+        },
+        "prompt_4": {
+          "passed": true,
+          "score": 21.0,
+          "max_score": 25,
+          "feedback": [
+            "✅ Syntax (2.0/2.0):  ✓file_compiles, function_exists",
+            "✅ Structure (3.0/3.0):  ✓correct_signature, request_structure",
+            "✅ Execution (7.0/7.0):  ✓success_handling, handle_400, handle_401, handle_503, handle_connection_error, json_parsing",
+            "✅ Quality (3.0/3.0):  ✓informative_errors, documentation",
+            "⚠️ Security (5.0/7.0):  ✓bearer_auth, no_token_leak ✗explicit_timeout",
+            "❌ Performance (0.0/2.0):  ✗retry_resilience",
+            "✅ Maintainability (1.0/1.0):  ✓code_organization"
+          ],
+          "tests_passed": {
+            "function_signature": true,
+            "uses_requests": true,
+            "error_handling": true,
+            "api_structure": true
+          },
+          "detailed_scoring": {
+            "syntax": {
+              "earned": 2.0,
+              "max": 2
+            },
+            "structure": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "execution": {
+              "earned": 7.0,
+              "max": 7
+            },
+            "quality": {
+              "earned": 3.0,
+              "max": 3
+            },
+            "security": {
+              "earned": 5.0,
+              "max": 7
+            },
+            "performance": {
+              "earned": 0.0,
+              "max": 2
+            },
+            "maintainability": {
+              "earned": 1.0,
+              "max": 1
+            }
+          }
+        }
+      },
+      "overall_score": 84.31666666666666,
+      "total_possible": 100,
+      "percentage": 84.3
+    },
     "example_model": {
       "model_name": "example_model",
-      "timestamp": "2025-09-27T15:21:16.245661",
+      "timestamp": "2025-10-08T05:15:41.146131",
       "prompts": {
         "prompt_1": {
           "passed": true,
@@ -221,17 +636,37 @@
         "model": "example_model",
         "score": 92.16666666666666,
         "percentage": 92.2
+      },
+      {
+        "model": "Mistral_LeChat",
+        "score": 84.31666666666666,
+        "percentage": 84.3
+      },
+      {
+        "model": "GPT5_Thinking",
+        "score": 78.16666666666666,
+        "percentage": 78.2
       }
     ],
     "prompt_performance": {
       "prompt_1": {
         "best_score": 23.166666666666664,
-        "avg_score": 23.2,
+        "avg_score": 18.9,
         "pass_rate": 100.0,
         "ranking": [
           {
             "model": "example_model",
             "score": 23.166666666666664,
+            "passed": true
+          },
+          {
+            "model": "GPT5_Thinking",
+            "score": 17.166666666666664,
+            "passed": true
+          },
+          {
+            "model": "Mistral_LeChat",
+            "score": 16.316666666666666,
             "passed": true
           }
         ]
@@ -242,6 +677,16 @@
         "pass_rate": 100.0,
         "ranking": [
           {
+            "model": "GPT5_Thinking",
+            "score": 25.0,
+            "passed": true
+          },
+          {
+            "model": "Mistral_LeChat",
+            "score": 25.0,
+            "passed": true
+          },
+          {
             "model": "example_model",
             "score": 25.0,
             "passed": true
@@ -250,24 +695,44 @@
       },
       "prompt_3": {
         "best_score": 22.0,
-        "avg_score": 22.0,
+        "avg_score": 21.7,
         "pass_rate": 100.0,
         "ranking": [
           {
+            "model": "Mistral_LeChat",
+            "score": 22.0,
+            "passed": true
+          },
+          {
             "model": "example_model",
             "score": 22.0,
+            "passed": true
+          },
+          {
+            "model": "GPT5_Thinking",
+            "score": 21.0,
             "passed": true
           }
         ]
       },
       "prompt_4": {
         "best_score": 22.0,
-        "avg_score": 22.0,
+        "avg_score": 19.3,
         "pass_rate": 100.0,
         "ranking": [
           {
             "model": "example_model",
             "score": 22.0,
+            "passed": true
+          },
+          {
+            "model": "Mistral_LeChat",
+            "score": 21.0,
+            "passed": true
+          },
+          {
+            "model": "GPT5_Thinking",
+            "score": 15.0,
             "passed": true
           }
         ]
@@ -277,10 +742,10 @@
   },
   "_metadata": {
     "spec_version": "0.8.0",
-    "git_commit": "266a348",
+    "git_commit": "048cfa2",
     "python_version": "3.13.7",
     "platform": "Windows-11-10.0.26100-SP0",
-    "timestamp_utc": "2025-09-27T13:21:16.434553Z",
-    "dependency_fingerprint": "29dabc714ba0f957"
+    "timestamp_utc": "2025-10-08T03:15:41.333646Z",
+    "dependency_fingerprint": "efa462512888b811"
   }
 }

@@ -1,1 +1,6 @@
---8<-- "../LICENSE"
+# License
+
+```text
+--8<-- "LICENSE"
+```
+

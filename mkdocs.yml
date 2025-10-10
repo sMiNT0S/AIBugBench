@@ -21,12 +21,9 @@ theme:
     - navigation.tracking
     - navigation.instant
     - navigation.indexes
-    - header.show-on-scroll
     - header.autohide
-    - header.scroll
     - toc.integrate
     - navigation.footer
-    - navigation.tracking
     - content.action.edit
     - content.action.view
     - content.tabs.link
@@ -100,27 +97,28 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - User Guide: user-guide.md
-  - Developer Guide: developer-guide.md
-  - Reference:
-      - API Reference: api-reference.md
-      - Scoring Methodology: scoring-methodology.md
-      - Architecture: architecture.md
+  - Scoring Methodology: scoring-methodology.md
   - Troubleshooting:
       - Troubleshooting Guide: troubleshooting.md
       - Sabotage Notes: sabotage-notes.md
+  - Security Policy: security.md
+  - Developer:
+      - Developer Guide: developer-guide.md
+      - Architecture: architecture.md
+      - API Reference: api-reference.md
+      - Internals:
+          - Overview: INTERNALS.md
+          - Validation: internal/validation-readme.md
+          - Scripts: internal/scripts-readme.md
+          - Submissions: internal/submissions-readme.md
+          - Template: internal/submission-template-readme.md
   - Project:
       - Contributing: contributing.md
       - Code of Conduct: code-of-conduct.md
-      - Security Policy: security.md
       - License: license.md
       - Roadmap: ROADMAP.md
+      - Release Notes: https://github.com/sMiNT0S/AIBugBench/blob/main/RELEASE_NOTES.md
       - Changelog: https://github.com/sMiNT0S/AIBugBench/blob/main/CHANGELOG.md
-  - Internal:
-      - Overview: INTERNALS.md
-      - Validation Package README: internal/validation-readme.md
-      - Scripts README: internal/scripts-readme.md
-      - Submissions README: internal/submissions-readme.md
-      - Template README: internal/submission-template-readme.md
 
 markdown_extensions:
   - attr_list
@@ -143,7 +141,11 @@ markdown_extensions:
       custom_checkbox: true
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path:
+        - docs
+        - .
+      check_paths: true
   - tables
   - footnotes
   - abbr

@@ -40,7 +40,8 @@ jobs:
 
       - name: pip-audit Vulnerability Check
         run: |
-          pip-audit --format=json
+          # Temporary ignore for pip GHSA-4xh5-x5gv-qwph until pip 25.3+ lands.
+          pip-audit --requirement requirements.lock --requirement requirements-dev.lock --ignore-vuln GHSA-4xh5-x5gv-qwph --format=json
 
       - name: Security Audit Script
         run: |

@@ -283,7 +283,8 @@ jobs:
 
       - name: Run pip-audit for comprehensive dependency analysis
         run: |
-          pip-audit --requirement requirements.lock --requirement requirements-dev.lock --format=json --output=pip-audit-report.json || echo "pip-audit completed"
+          # Temporary ignore for pip GHSA-4xh5-x5gv-qwph until upstream releases pip 25.3 with the patch.
+          pip-audit --requirement requirements.lock --requirement requirements-dev.lock --ignore-vuln GHSA-4xh5-x5gv-qwph --format=json --output=pip-audit-report.json || echo "pip-audit completed"
           cat pip-audit-report.json
 
       - name: Analyze dependency scan results

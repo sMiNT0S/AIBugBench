@@ -76,7 +76,8 @@ Secrets & Dependency Hygiene:
 
 - GitHub secret scanning (native)
 - TruffleHog (extended secret pattern sweep) — referenced in CHANGELOG
-- pip-audit dependency vulnerability scanning (Safety tool also available with Safety 3.6.1)
+ - pip-audit dependency vulnerability scanning (Safety tool also available with Safety 3.6.1)
+ - Temporary exception: CI runs pip-audit with `--ignore-vuln GHSA-4xh5-x5gv-qwph` because the upstream fix for `pip` ships starting in the planned 25.3 release; remove this waiver and update the pin (`requirements-dev.lock`) once 25.3 or later is available.
 - **Hash-pinned requirements**: `requirements.lock` provides cryptographic integrity verification via `pip install --require-hashes`
 - Production deployments should use: `pip install --require-hashes -r requirements.lock`
 - `requirements.txt` remains human-readable; `requirements.lock` is auto-generated with hashes

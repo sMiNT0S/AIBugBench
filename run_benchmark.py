@@ -23,10 +23,9 @@ import traceback
 from pathlib import Path
 from shutil import which
 from typing import Any, TypedDict, cast
-from benchmark.types import PromptResult, ModelResults
 
-# Local imports
 from benchmark.scoring import BenchmarkScorer
+from benchmark.types import ModelResults, PromptResult
 from benchmark.utils import (
     ensure_directories,
     generate_comparison_chart,
@@ -34,6 +33,8 @@ from benchmark.utils import (
     validate_submission_structure,
 )
 from benchmark.validators import PromptValidators
+from aibugbench.validation.factory import make_validator
+from aibugbench.validation.utils import create_prompt2_categories
 
 # Default directory constant (Phase 1 restructure)
 DEFAULT_SUBMISSIONS_DIR = Path(__file__).parent / "submissions" / "user_submissions"
@@ -133,6 +134,7 @@ class AICodeBenchmark:
 
         # Initialize components
         self.validators = PromptValidators(self.test_data_dir)
+        self.prompt2_validator = make_validator("p2", env=os.environ)
         self.scorer = BenchmarkScorer()
 
         # Ensure directories exist
@@ -216,9 +218,45 @@ class AICodeBenchmark:
 
     def _test_prompt_2(self, model_dir: Path) -> PromptResult:
         """Test Prompt 2: YAML/JSON Correction."""
-        yaml_file = model_dir / "prompt_2_config_fixed.yaml"
-        json_file = model_dir / "prompt_2_config.json"
-        return self.validators.validate_prompt_2_yaml_json(yaml_file, json_file)
+        validator = self.prompt2_validator
+        analysis = validator.analyze(str(model_dir))
+        score = validator.score(analysis)
+
+        breakdown: dict[str, float] = {}
+        category_breakdown = getattr(validator, "category_breakdown", None)
+        if callable(category_breakdown):
+            breakdown = cast(dict[str, float], category_breakdown(analysis))
+
+        tests_passed: dict[str, bool] = {}
+        tests_passed_fn = getattr(validator, "tests_passed", None)
+        if callable(tests_passed_fn):
+            tests_passed = cast(dict[str, bool], tests_passed_fn(analysis))
+
+        category_weights = getattr(validator, "category_weights", create_prompt2_categories())
+        detailed_scoring = {
+            category: {
+                "earned": breakdown.get(category, 0.0),
+                "max": category_weights.get(category, 0.0),
+            }
+            for category in category_weights
+        }
+        feedback: list[str] = []
+        for category in category_weights:
+            earned = breakdown.get(category, 0.0)
+            max_cat = category_weights.get(category, 0.0)
+            feedback.append(f"{category.title()}: {earned:.1f}/{max_cat:.1f}")
+        if not feedback:
+            feedback.append(f"Total: {score:.1f}/{sum(category_weights.values()):.1f}")
+        max_score = int(sum(category_weights.values()))
+
+        return PromptResult(
+            passed=score >= 15.0,
+            score=score,
+            max_score=max_score,
+            feedback=feedback,
+            tests_passed=tests_passed,
+            detailed_scoring=detailed_scoring,
+        )
 
     def _test_prompt_3(self, model_dir: Path) -> PromptResult:
         """Test Prompt 3: Data Transformation."""

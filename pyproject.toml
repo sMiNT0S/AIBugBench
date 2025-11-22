@@ -89,6 +89,7 @@ explicit_package_bases = true
 exclude = [
   "submissions/reference_implementations/example_model/",
   "submissions/templates/",
+  "submissions/user_submissions/",
   "test_data/",
   "venv/",
   "htmlcov/",
@@ -190,7 +191,6 @@ source = [
 ]
 
 [tool.coverage.report]
-include = ["aibugbench/*"]
 fail_under = 45
 precision = 2
 show_missing = true

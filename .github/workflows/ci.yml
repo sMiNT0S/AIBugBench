@@ -102,7 +102,7 @@ jobs:
         env:
           PYTHONUTF8: "1"
         run: |
-          python -m pip install -U pip "pip-tools==7.5.0"
+          python -m pip install -U pip "pip-tools==7.5.2"
           # Uses our canonicalizer: LF-only write + sorted/deduped '# via ...'
           python scripts/update_requirements_lock.py --check || (echo "runtime lock drift"; exit 3)
           python scripts/update_requirements_lock.py --check --dev || (echo "dev lock drift"; exit 3)
@@ -111,7 +111,7 @@ jobs:
         shell: bash
         id: lock_check_json
         run: |
-          python -m pip install "pip-tools==7.5.0"
+          python -m pip install "pip-tools==7.5.2"
           python scripts/update_requirements_lock.py --check --json || true
           python scripts/update_requirements_lock.py --check --dev --json || true
 
@@ -236,7 +236,7 @@ jobs:
       - name: Recompile locks for artifact (on fail)
         if: failure()
         run: |
-          python -m pip install -U pip "pip-tools==7.5.0"
+          python -m pip install -U pip "pip-tools==7.5.2"
           pip-compile --allow-unsafe --generate-hashes -o new.requirements.lock requirements.txt
           pip-compile --allow-unsafe --generate-hashes -o new.requirements-dev.lock requirements-dev.txt
       - name: Upload recompiled locks

@@ -10,7 +10,7 @@
 
 - SAFETY2.0 hardening finalized (sandbox guards, Windows Job Objects, import gate) and security audit workflow stable
 - Script consolidation & argparse adoption (single canonical tools) + new lock-verification CI gate
-- Dependency integrity: hash‑pinned `requirements.lock` enforced; pip-tools upgraded to `>=7.5.0` for pip 24 compatibility
+- Dependency integrity: hash‑pinned `requirements.lock` enforced; pip-tools upgraded to `>=7.5.2` for pip 25 compatibility
 - Type hygiene: strict-core typing cleanup; new `benchmark/types.py` & `benchmark/typing_helpers.py`
 - README & badges overhaul; dependency lock documentation; tiered validation & security badges added
 - Results comparison directory: `results/collected-results/` + atomic write model

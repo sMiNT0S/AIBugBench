@@ -42,6 +42,8 @@ def check_quality(
     duplicate_details: list[str] = []
     if yaml_content:
         try:
+            # UniqueKeyLoader subclasses yaml.SafeLoader; we invoke it solely to detect duplicate
+            # keys, not to construct arbitrary Python objects, mirroring the legacy validator.
             yaml.load(yaml_content, Loader=UniqueKeyLoader)  # nosec B506  # noqa: S506
         except ConstructorError as exc:
             yaml_has_duplicates = True

@@ -24,11 +24,19 @@ from ..utils.file_discovery import find_prompt2_files
 from ..utils.result_builder import build_validation_result
 from ..utils.scoring_factory import create_prompt2_categories
 
+PASS_THRESHOLD_RATIO = 0.6
+
 
 class Prompt2Validator:
     """Validate Prompt 2 YAML/JSON correction submissions."""
 
     category_weights = create_prompt2_categories()
+    pass_threshold_ratio: float = PASS_THRESHOLD_RATIO
+
+    @classmethod
+    def pass_threshold(cls) -> float:
+        """Return the numeric passing score for current category weights."""
+        return sum(cls.category_weights.values()) * cls.pass_threshold_ratio
 
     def __init__(self, *, env: Mapping[str, str] | None = None) -> None:
         self._env = dict(env or {})

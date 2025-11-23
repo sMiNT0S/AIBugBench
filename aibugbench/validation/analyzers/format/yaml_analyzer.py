@@ -155,6 +155,9 @@ def analyze_yaml(file_path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]
     has_duplicates = False
     duplicate_msg = ""
     try:
+        # UniqueKeyLoader extends yaml.SafeLoader and is invoked purely to detect duplicate keys.
+        # Dangerous YAML tags are already rejected via regex checks above, so this SafeLoader-based
+        # pass is confined to structure validation rather than executing user-supplied objects.
         yaml.load(content, Loader=UniqueKeyLoader)  # nosec B506  # noqa: S506
     except ConstructorError as e:
         has_duplicates = True

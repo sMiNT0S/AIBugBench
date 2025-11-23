@@ -84,7 +84,8 @@ def test_prompt2_parametric(temp_dir, name, yaml_text, json_obj, should_pass):
     json_file.write_text(_json.dumps(json_obj), newline="\n")
     validator = Prompt2Validator()
     analysis = validator.analyze(run_dir)
-    passed = validator.score(analysis) >= 15.0
+    threshold = Prompt2Validator.pass_threshold()
+    passed = validator.score(analysis) >= threshold
     assert passed is should_pass
 
 

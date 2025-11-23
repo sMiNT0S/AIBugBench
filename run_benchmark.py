@@ -248,9 +248,14 @@ class AICodeBenchmark:
         if not feedback:
             feedback.append(f"Total: {score:.1f}/{sum(category_weights.values()):.1f}")
         max_score = int(sum(category_weights.values()))
+        threshold_fn = getattr(validator, "pass_threshold", None)
+        if callable(threshold_fn):
+            pass_threshold = float(threshold_fn())
+        else:
+            pass_threshold = max_score * self.DEFAULT_PASS_THRESHOLD
 
         return PromptResult(
-            passed=score >= 15.0,
+            passed=score >= pass_threshold,
             score=score,
             max_score=max_score,
             feedback=feedback,

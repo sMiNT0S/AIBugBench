@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for cross-format comparison analyzer."""
 
-
-
 from aibugbench.validation.analyzers.format.cross_format import (
     compare_formats,
     deep_compare,

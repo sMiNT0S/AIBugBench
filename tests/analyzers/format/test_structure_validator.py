@@ -39,7 +39,9 @@ def test_validate_structure_all_sections_ok():
     assert arrays["ok"] is True
     assert stats["required_keys_yaml"] == len(structure_validator.EXPECTED_KEYS)
     assert stats["required_keys_json"] == len(structure_validator.EXPECTED_KEYS)
-    assert stats["shape_matches"] == stats["total_shape_checks"] == len(structure_validator.DICT_KEYS)
+    assert (
+        stats["shape_matches"] == stats["total_shape_checks"] == len(structure_validator.DICT_KEYS)
+    )
     assert stats["arrays_scalar_correct"] is True
 
 

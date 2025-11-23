@@ -43,13 +43,16 @@ def test_prompt2_validator_matches_legacy(tmp_path: Path):
 
     modern_breakdown = modern.category_breakdown(modern_analysis)
     legacy_breakdown = {
-        key: float(value.get("earned", 0.0)) for key, value in legacy_analysis["detailed_scoring"].items()
+        key: float(value.get("earned", 0.0))
+        for key, value in legacy_analysis["detailed_scoring"].items()
     }
     for category, legacy_value in legacy_breakdown.items():
         assert modern_breakdown[category] == pytest.approx(legacy_value, abs=1e-6)
 
     modern_tests = modern.tests_passed(modern_analysis)
-    legacy_tests = {key: bool(value) for key, value in legacy_analysis.get("tests_passed", {}).items()}
+    legacy_tests = {
+        key: bool(value) for key, value in legacy_analysis.get("tests_passed", {}).items()
+    }
     for key, expected in legacy_tests.items():
         assert modern_tests.get(key) == expected
 

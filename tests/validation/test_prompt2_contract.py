@@ -103,9 +103,7 @@ def test_prompt2_score_monotonicity(tmp_path: Path):
     improved = {
         **analysis,
         "checks": [
-            {**check, "ok": True}
-            if check.get("id") == "fmt.quality.literal_types"
-            else dict(check)
+            {**check, "ok": True} if check.get("id") == "fmt.quality.literal_types" else dict(check)
             for check in analysis["checks"]
         ],
     }

@@ -71,6 +71,14 @@ Expected result: ~90/100 (A grade) in under a minute.
 
 ---
 
+## Prompt 2 Format Analyzers
+
+- Prompt 2 now runs on the modular validator stack introduced in Phase 3, reusing the shared format analyzers (YAML, JSON, structure, cross-format, quality) and schema-v1 scoring helpers. The new `Prompt2Validator` emits the same check IDs and scoring breakdowns as the legacy implementation but is easier to test and extend.
+- A legacy golden snapshot (`tests/fixtures/prompt2/legacy_analysis.json`) guards parity: contract tests compare the new validator against the original monolithic analysis to ensure no regressions slip in.
+- Need to bisect or roll back? Set `USE_LEGACY_PROMPT2=true` before invoking `run_benchmark.py` and the factory will route Prompt 2 back through the archived adapter. Example (PowerShell): ``$env:USE_LEGACY_PROMPT2="true"; python run_benchmark.py --model example_model``. Unset or clear the variable to return to the modular path.
+
+---
+
 ## Documentation
 
 📚 **[Complete Documentation](https://sMiNT0S.github.io/AIBugBench/)** - Full guides, API reference, and examples

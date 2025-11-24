@@ -26,7 +26,7 @@ sequenceDiagram
         F-->>R: Prompt1Validator
 ```
 
-_Prompt 2 migration is underway: the factory routes `p1` to the new validator, `p2` will join after the format analyzers land, and remaining prompts stay on the legacy adapter until their refactors ship._
+_Prompt 2 now runs on the modular validation stack (p1 and p2 share the new factory), while the remaining prompts stay on the legacy adapter until their refactors ship._
 
 Next → Analysis & sandbox
 

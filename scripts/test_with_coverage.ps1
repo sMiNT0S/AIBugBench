@@ -15,8 +15,8 @@ if (!(Test-Path $py)) {
 # Get coverage minimum threshold from environment or use .coveragerc default
 $coverageMin = $env:COVERAGE_MIN
 if (-not $coverageMin) {
-    # Default threshold if not specified - .coveragerc will control the actual value
-    $coverageMin = "62"
+    # Default threshold matches tool.coverage.report.fail_under in pyproject.toml
+    $coverageMin = "45"
 }
 
 $pytestArgs = @(

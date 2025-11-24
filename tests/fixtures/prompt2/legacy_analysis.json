@@ -1,0 +1,49 @@
+{
+  "detailed_scoring": {
+    "execution": {
+      "earned": 8.0,
+      "max": 8
+    },
+    "maintainability": {
+      "earned": 0,
+      "max": 0
+    },
+    "performance": {
+      "earned": 0,
+      "max": 0
+    },
+    "quality": {
+      "earned": 6.0,
+      "max": 6
+    },
+    "security": {
+      "earned": 1.0,
+      "max": 1
+    },
+    "structure": {
+      "earned": 6.0,
+      "max": 6
+    },
+    "syntax": {
+      "earned": 4.0,
+      "max": 4
+    }
+  },
+  "feedback": [
+    "\u2705 Syntax (4.0/4.0):  \u2713yaml_parses, json_parses",
+    "\u2705 Structure (6.0/6.0):  \u2713required_keys, nested_shapes, arrays_scalars",
+    "\u2705 Execution (8.0/8.0):  \u2713deep_equivalence, partial_matches",
+    "\u2705 Quality (6.0/6.0):  \u2713yaml_indentation, json_literals, formatting_style, no_duplication",
+    "\u2705 Security (1.0/1.0):  \u2713yaml_safety"
+  ],
+  "max_score": 25,
+  "passed": true,
+  "score": 25.0,
+  "tests_passed": {
+    "correct_types": true,
+    "equivalence_test": true,
+    "structure_preserved": true,
+    "valid_json": true,
+    "valid_yaml": true
+  }
+}

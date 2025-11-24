@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
+from aibugbench.validation.impl.prompt2 import Prompt2Validator
 from benchmark.validators import PromptValidators
 
 
@@ -72,15 +73,20 @@ PROMPT2_CASES = [
 
 @pytest.mark.unit
 @pytest.mark.parametrize("name,yaml_text,json_obj,should_pass", PROMPT2_CASES)
-def test_prompt2_parametric(validators_fixture, temp_dir, name, yaml_text, json_obj, should_pass):
-    yaml_file = temp_dir / f"p2_{name}.yaml"
-    json_file = temp_dir / f"p2_{name}.json"
+def test_prompt2_parametric(temp_dir, name, yaml_text, json_obj, should_pass):
+    run_dir = temp_dir / f"p2_{name}"
+    run_dir.mkdir()
+    yaml_file = run_dir / "prompt_2_config_fixed.yaml"
+    json_file = run_dir / "prompt_2_config.json"
     yaml_file.write_text(yaml_text, newline="\n")
     import json as _json
 
     json_file.write_text(_json.dumps(json_obj), newline="\n")
-    result = validators_fixture.validate_prompt_2_yaml_json(yaml_file, json_file)
-    assert result["passed"] is should_pass
+    validator = Prompt2Validator()
+    analysis = validator.analyze(run_dir)
+    threshold = Prompt2Validator.pass_threshold()
+    passed = validator.score(analysis) >= threshold
+    assert passed is should_pass
 
 
 PROMPT4_CASES = [

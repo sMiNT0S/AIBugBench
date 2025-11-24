@@ -23,6 +23,7 @@ REQ_RUNTIME = ROOT / "requirements.txt"
 LOCK_RUNTIME = ROOT / "requirements.lock"
 REQ_DEV = ROOT / "requirements-dev.txt"
 LOCK_DEV = ROOT / "requirements-dev.lock"
+PIPTOOLS_MIN_VERSION = "7.5.2"
 
 # Canonical ephemeral output name used in CI diff job. We embed this in the
 # header even though the committed file is requirements.lock so that local
@@ -49,7 +50,7 @@ def _require_modern_piptools() -> str | None:
         import importlib.metadata as _im
 
         ver = _pkgver.Version(_im.version("pip-tools"))
-        if ver >= _pkgver.Version("7.5.0"):
+        if ver >= _pkgver.Version(PIPTOOLS_MIN_VERSION):
             return str(ver)
         return None
     except Exception:  # pragma: no cover
@@ -252,10 +253,11 @@ def compile_lock(req: Path, output: Path, allow_unsafe: bool, strip_platform: bo
     """
     _say(f"Using pip-tools to generate hash-pinned lock for {req.name}...")
     if _require_modern_piptools() is None:
-        print(
-            "pip-tools ==7.5.0 required. Install with: pip install -U 'pip-tools==7.5.0'",
-            file=sys.stderr,
+        install_msg = (
+            f"pip-tools =={PIPTOOLS_MIN_VERSION} required. "
+            f"Install with: pip install -U 'pip-tools=={PIPTOOLS_MIN_VERSION}'"
         )
+        print(install_msg, file=sys.stderr)
         return 4
     cmd: list[str] = [sys.executable, "-m", "piptools", "compile"]
     if allow_unsafe:
@@ -362,7 +364,11 @@ def main() -> int:
                 )
                 return 2
 
-            _say("pip-tools not found. Install with: pip install 'pip-tools==7.5.0'")
+            install_hint = (
+                "pip-tools not found. "
+                f"Install with: pip install 'pip-tools=={PIPTOOLS_MIN_VERSION}'"
+            )
+            _say(install_hint)
             return 2
 
     # Canonical policy: always include unsafe packages to avoid resolver drift.
@@ -411,7 +417,7 @@ EXIT_CODE_LEGEND = {
     1: "missing files / basic error",
     2: "pip-tools missing",
     3: "drift detected in --check",
-    4: "pip-tools too old (<7.5.0)",
+    4: f"pip-tools too old (<{PIPTOOLS_MIN_VERSION})",
 }
 
 if __name__ == "__main__":

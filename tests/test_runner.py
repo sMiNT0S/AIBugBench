@@ -282,6 +282,7 @@ def process_records(filename):
         # Mock all external dependencies
         with (
             patch("run_benchmark.PromptValidators") as mock_validators,
+            patch("run_benchmark.make_validator") as mock_make_validator,
             patch("run_benchmark.BenchmarkScorer") as mock_scorer,
             patch("run_benchmark.ensure_directories") as mock_ensure_dirs,
             patch("run_benchmark.load_test_data") as mock_load_data,
@@ -312,13 +313,26 @@ def process_records(filename):
             mock_validator_instance.validate_prompt_1_refactoring.return_value = (
                 mock_validation_result
             )
-            mock_validator_instance.validate_prompt_2_yaml_json.return_value = (
-                mock_validation_result
-            )
             mock_validator_instance.validate_prompt_3_transformation.return_value = (
                 mock_validation_result
             )
             mock_validator_instance.validate_prompt_4_api.return_value = mock_validation_result
+
+            prompt2_breakdown = {
+                category: mock_validation_result["detailed_scoring"][category]["earned"]
+                for category in ["syntax", "structure", "execution", "quality", "security"]
+                if category in mock_validation_result["detailed_scoring"]
+            }
+            mock_prompt2_instance = Mock()
+            mock_make_validator.return_value = mock_prompt2_instance
+            mock_prompt2_instance.analyze.return_value = {
+                "checks": [],
+                "stats": {},
+                "artifacts": {},
+            }
+            mock_prompt2_instance.score.return_value = mock_validation_result["score"]
+            mock_prompt2_instance.category_breakdown.return_value = prompt2_breakdown
+            mock_prompt2_instance.tests_passed.return_value = {"valid_yaml": True}
 
             mock_scorer_instance = Mock()
             mock_scorer.return_value = mock_scorer_instance
@@ -413,13 +427,14 @@ class TestBenchmarkUtilities:
     def test_benchmark_imports(self):
         """Test that all benchmark modules can be imported."""
         # Test core imports don't fail
+        from aibugbench.validation.impl.prompt2 import Prompt2Validator
         from benchmark.scoring import BenchmarkScorer
-        from benchmark.validators import PromptValidators, ScoringDetail, UniqueKeyLoader
+        from benchmark.validators import PromptValidators, ScoringDetail
 
         # Verify classes can be instantiated (basic smoke test)
         assert PromptValidators is not None
         assert ScoringDetail is not None
-        assert UniqueKeyLoader is not None
+        assert Prompt2Validator is not None
         assert BenchmarkScorer is not None
 
     @pytest.mark.integration

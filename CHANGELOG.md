@@ -25,7 +25,9 @@ build: Update mkdocs configuration with new plugins and site metadata
 
 ### Added
 
-- **Phase 3 validation architecture (DRY/SRP refactor completion)**: Complete new validation package structure with modular analyzers, schema validation, error taxonomy, and factory-based validator routing supporting extensible validation implementations while preserving CLI compatibility.
+- **Prompt 2 modular validator + rollback toggle**: Prompt 2 now runs on the shared analyzer stack (schema v1 scaffold, YAML/JSON/structure/cross-format/quality analyzers) with contract + golden coverage. A legacy snapshot (`tests/fixtures/prompt2/legacy_analysis.json`) guards parity, and the `USE_LEGACY_PROMPT2` env flag lets operators temporarily route the CLI back through the archived adapter.
+- **Prompt 2 legacy parity tooling**: Added `scripts/capture_prompt2_legacy_fixture.py`, refreshed `tests/fixtures/prompt2/legacy_analysis.json` from the monolith, and updated `tests/validation/test_prompt2_golden.py` to compare the modular validator’s score/category breakdown/tests_passed against the authentic legacy baseline.
+- **Prompt 1 phase 1, 2, 3 validation architecture (DRY/SRP refactor completion)**: Complete new validation package structure with modular analyzers, schema validation, error taxonomy, and factory-based validator routing supporting extensible validation implementations while preserving CLI compatibility.
 - **Security analyzer implementation**: Credential detection (AWS keys, hardcoded secrets), policy configuration checks, and filesystem-based security scanning with bounded file size limits (64KB) and deterministic pattern matching.
 - **Maintainability analyzer implementation**: Lint-style checks for line length violations (120 char threshold), file count thresholds (200 max), complexity detection via AST analysis, and code structure quality metrics.
 - **Performance analyzer implementation**: Basic performance signal detection including asset size analysis, large file identification (1MB+ threshold), and resource usage statistics with deterministic scanning bounds.
@@ -40,14 +42,6 @@ build: Update mkdocs configuration with new plugins and site metadata
 - CODEOWNERS baseline plus `.editorconfig` added for ownership clarity and consistent editor defaults.
 - Scheduled dependency refresh automation using pinned `peter-evans/create-pull-request` with diff stat in job summary (idempotent single PR model).
 - CI action pin verification job enforcing full SHA usage across all workflows.
-
-- **Refactor scaffolding (Phase 0 — no behavior change)**: initial package structure & stubs for future DRY/SRP refactor:
-  - Core placeholder packages (`io/`, `config/`, `orchestration/`, `validation/`) created.
-  - Coverage configuration and `.gitignore` updated for new scaffold & artifacts.
-  - Basic I/O and validation facades delegating to legacy implementations (import surface stabilization).
-  - Artifact path resolution helper and CLI runner stub established for upcoming orchestration split.
-  - Initial seam tests added (artifact precedence, validation contract, runner API `xfail`) to lock external behavior.
-  - Documentation updated (`REFACTOR_PLAN.md`, `DRY_OP_REVISED.md`) outlining Phase 0 structure & importability checks.
 
 ### Changed
 
@@ -114,7 +108,7 @@ build: Update mkdocs configuration with new plugins and site metadata
 
 ### Quality Assurance
 
-- **Phase 3 validation architecture quality metrics**: Achieved 83.29% test coverage (85% over ≥45% requirement), 100% static analysis compliance (ruff, bandit, mypy), 100% architectural specification adherence, and 164/165 passing tests.
+- **Prompt 1 phase 3 validation architecture quality metrics**: Achieved 83.29% test coverage (85% over ≥45% requirement), 100% static analysis compliance (ruff, bandit, mypy), 100% architectural specification adherence, and 164/165 passing tests.
 - **Deterministic validation behavior**: Enforced bounded file scanning (200 files max, 64KB per file), eliminated RNG/time dependencies, and implemented consistent error handling patterns across all validation modules.
 
 - **Test coverage improvements**: Multiple test compliance fixes for CI and pre-commit compatibility
@@ -145,7 +139,7 @@ build: Update mkdocs configuration with new plugins and site metadata
 - **SAFETY2.0 comprehensive security implementation**: Filesystem confinement, subprocess & dynamic code execution blocking (`eval/exec/compile`), dangerous import protection (`ctypes/marshal/pickle`), Windows Job Objects, bypass prevention, pre-release security audit script (`scripts/security_audit.py`), PR security workflow (`.github/workflows/pr-security.yml`), Safety & pip-audit integration, hash‑pinned dependencies (`requirements.lock`).
 - Missing results directory: Created `results/collected-results/` for benchmark comparison functionality
 - Scripts cleanup: Functional lock updater (`scripts/update_requirements_lock.py`), argparse CLIs for `scripts/compare_benchmarks.py` & enhanced `scripts/pin_actions_to_sha.py` (`--list/--dry-run/--apply`), centralized `classify_command` in `validation/docs_core.py`.
-- Dependency lock enforcement: Added CI `lock-verification` job (pip-tools>=7.5.0) to fail when `requirements.lock` is out of sync with `requirements.txt`; PR security workflow installs with `--require-hashes`.
+- Dependency lock enforcement: Added CI `lock-verification` job (pip-tools>=7.5.2) to fail when `requirements.lock` is out of sync with `requirements.txt`; PR security workflow installs with `--require-hashes`.
 
 ### Changed
 

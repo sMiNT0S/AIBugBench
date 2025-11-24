@@ -146,7 +146,7 @@ Locked runtime dependencies live in `requirements.lock` (hashes enforced in PR s
 2. Regenerate lock (same Python major/minor):
 
    ```bash
-   pip install "pip-tools>=7.5.0"
+   pip install "pip-tools>=7.5.2"
    python -m piptools compile --generate-hashes -o requirements.lock requirements.txt
    ```
 
@@ -164,7 +164,7 @@ Flow mirrors the runtime lock but sources `requirements-dev.txt`:
 2. Rebuild lock (same interpreter version):
 
    ```bash
-   pip install "pip-tools>=7.5.0"
+   pip install "pip-tools>=7.5.2"
    python -m piptools compile --generate-hashes -o requirements-dev.lock requirements-dev.txt
    ```
 

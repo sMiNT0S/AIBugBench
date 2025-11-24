@@ -241,7 +241,7 @@ jobs:
           pip-compile --allow-unsafe --generate-hashes -o new.requirements-dev.lock requirements-dev.txt
       - name: Upload recompiled locks
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: lock-drift
           path: |
@@ -377,7 +377,7 @@ jobs:
 
       # New: publish the HTML coverage report for PR browsing
       - name: Upload HTML coverage
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: htmlcov
           path: htmlcov
@@ -504,7 +504,7 @@ jobs:
 
       - name: Upload debug artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: pep517-debug-${{ matrix.platform_name }}-py${{ matrix.python-version }}
           path: |
@@ -612,7 +612,7 @@ jobs:
           fi
 
       - name: Upload consistency report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:
           name: consistency-report
@@ -694,7 +694,7 @@ jobs:
         run: python scripts/generate_audit_summary.py audit.json || true
 
       - name: Upload security reports
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:
           name: security-reports

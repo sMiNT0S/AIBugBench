@@ -263,7 +263,7 @@ jobs:
     steps:
       # remove any malformed 'uses: sMiNT0S/AIBugBench/.' step; use the pinned composite action
       - name: Base Python + dev tools
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@37feb04f0de3145a412628e22feefe4f8fb84554
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@57c3fa441f4c366a0b1b97495b50776d8989125b
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-dev: "true"
@@ -303,7 +303,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Base Python + test tooling
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@37feb04f0de3145a412628e22feefe4f8fb84554
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@57c3fa441f4c366a0b1b97495b50776d8989125b
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-test: "true"
@@ -435,7 +435,7 @@ jobs:
           Get-ChildItem -Path . -Recurse -Filter '*.egg-info' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName } | Out-File -Append -Encoding UTF8 .ci/egginfo-pre-clean.txt
 
       - name: Base Python + test tooling
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@37feb04f0de3145a412628e22feefe4f8fb84554
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@57c3fa441f4c366a0b1b97495b50776d8989125b
         with:
           python-version: ${{matrix.python-version}}
           install-test: "true"
@@ -537,7 +537,7 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Base Python setup
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@37feb04f0de3145a412628e22feefe4f8fb84554
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@57c3fa441f4c366a0b1b97495b50776d8989125b
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
 
@@ -631,7 +631,7 @@ jobs:
       checks: write
     steps:
       - name: Base Python + security tooling
-        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@37feb04f0de3145a412628e22feefe4f8fb84554
+        uses: sMiNT0S/AIBugBench/.github/actions/base-python-setup@57c3fa441f4c366a0b1b97495b50776d8989125b
         with:
           python-version: ${{env.PYTHON_DEFAULT_VERSION}}
           install-security: "true"
